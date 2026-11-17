@@ -81,6 +81,7 @@
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const animeId = urlParams.get('id') || '1';
+    const malId = urlParams.get('malId') || animeId;
     const animeTitle = urlParams.get('title') || 'Anime Stream';
     let totalEpisodes = parseInt(urlParams.get('eps')) || 12;
     if (isNaN(totalEpisodes) || totalEpisodes <= 0) totalEpisodes = 12;
@@ -118,7 +119,7 @@
 
     function loadPlayer() {
       document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()} • Zoko Stream Active`;
-      // Stream embed routed via AniList ID parameter
+      // Supports AniList or MAL routing
       playerFrame.src = `https://zokoanime.video/stream/anilist/${animeId}/${currentEpisode}/${currentType}`;
     }
 
