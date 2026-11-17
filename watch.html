@@ -40,6 +40,7 @@
           id="playerFrame" 
           src="" 
           class="w-full h-full border-0" 
+          allow="fullscreen; autoplay"
           allowfullscreen 
           scrolling="no">
         </iframe>
@@ -52,6 +53,11 @@
         </div>
         
         <div class="flex items-center gap-3 w-full sm:w-auto">
+          <select id="sourceSelect" onchange="changeSource()" class="bg-zinc-900 border border-zinc-800 text-xs font-medium px-3 py-2.5 rounded-xl text-zinc-300 focus:outline-none focus:border-brand-500">
+            <option value="mal">MyAnimeList (MAL)</option>
+            <option value="anilist">AniList</option>
+          </select>
+
           <select id="streamTypeSelect" onchange="changeStreamType()" class="bg-zinc-900 border border-zinc-800 text-xs font-medium px-3 py-2.5 rounded-xl text-zinc-300 focus:outline-none focus:border-brand-500">
             <option value="sub">Subtitled</option>
             <option value="dub">Dubbed</option>
@@ -88,6 +94,7 @@
     
     let currentEpisode = 1;
     let currentType = 'sub';
+    let currentSource = 'mal'; // Zoko's primary catalog is MyAnimeList (MAL)
 
     const playerFrame = document.getElementById('playerFrame');
     const episodeGrid = document.getElementById('episodeGrid');
@@ -118,9 +125,14 @@
     }
 
     function loadPlayer() {
-      document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()} • Zoko Stream Active`;
-      // Supports AniList or MAL routing
-      playerFrame.src = `https://zokoanime.video/stream/anilist/${animeId}/${currentEpisode}/${currentType}`;
+      const selectedId = currentSource === 'mal' ? malId : animeId;
+      document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()} • Zoko Stream (${currentSource.toUpperCase()})`;
+      playerFrame.src = `https://zokoanime.video/stream/${currentSource}/${selectedId}/${currentEpisode}/${currentType}?color=14b8a6&autoplay=1`;
+    }
+
+    function changeSource() {
+      currentSource = document.getElementById('sourceSelect').value;
+      loadPlayer();
     }
 
     function changeStreamType() {
