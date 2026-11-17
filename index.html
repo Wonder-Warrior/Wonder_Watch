@@ -6,7 +6,7 @@
   <title>WonderWatch | Stream Anime Free in HD</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Phosphor Icons for HiAnime-style UI -->
+  <!-- FontAwesome Icons for HiAnime-style UI -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script>
     tailwind.config = {
@@ -20,9 +20,10 @@
               600: '#0d9488',
             },
             surface: {
-              800: '#1e2029',
-              900: '#13141b',
-              950: '#0c0d12',
+              800: '#1c1e28',
+              850: '#151722',
+              900: '#11121a',
+              950: '#0a0b10',
             }
           }
         }
@@ -36,14 +37,21 @@
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #0c0d12;
+      background: #0a0b10;
     }
     ::-webkit-scrollbar-thumb {
-      background: #272733;
+      background: #252837;
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
       background: #14b8a6;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
   </style>
 </head>
@@ -52,7 +60,7 @@
   <!-- Header / Navigation Bar -->
   <header class="border-b border-zinc-800/80 bg-surface-950/80 backdrop-blur-xl sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4">
     <div class="flex items-center gap-8">
-      <a href="index.html" class="flex items-center gap-2 group">
+      <a href="index.html" class="flex items-center gap-2.5 group">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-teal-300 flex items-center justify-center text-zinc-950 font-black text-lg shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
           <i class="fa-solid fa-play text-xs ml-0.5"></i>
         </div>
@@ -60,62 +68,79 @@
       </a>
 
       <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
-        <a href="#trending" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-fire text-amber-500 text-xs"></i> Trending</a>
-        <a href="#airing" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-brand-400 text-xs"></i> Top Airing</a>
-        <a href="#popular" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-star text-yellow-400 text-xs"></i> Most Popular</a>
-        <a href="#movies" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-film text-indigo-400 text-xs"></i> Movies</a>
+        <a href="#spotlightTabs" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-fire text-amber-500 text-xs"></i> Trending</a>
+        <a href="#spotlightTabs" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-brand-400 text-xs"></i> Airing</a>
+        <a href="#spotlightTabs" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-film text-indigo-400 text-xs"></i> Movies</a>
+        <a href="#genreSection" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-shapes text-teal-400 text-xs"></i> Genres</a>
       </nav>
     </div>
 
-    <!-- Enhanced Search Bar -->
-    <div class="flex-1 max-w-md relative">
-      <div class="relative flex items-center">
-        <i class="fa-solid fa-magnifying-glass absolute left-3.5 text-zinc-500 text-sm"></i>
-        <input 
-          type="text" 
-          id="searchInput" 
-          placeholder="Search anime, characters, movies..." 
-          class="w-full bg-surface-900 border border-zinc-800/80 pl-10 pr-24 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 transition placeholder-zinc-500 text-zinc-100 shadow-inner"
-          autocomplete="off"
-        >
-        <button id="searchClearBtn" class="hidden absolute right-12 text-xs text-zinc-500 hover:text-zinc-300 px-2 py-1">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-        <div class="absolute right-2.5 flex items-center gap-1.5 text-[10px] font-semibold text-zinc-500 bg-surface-800 px-2 py-1 rounded-md border border-zinc-700/50 pointer-events-none">
-          <i class="fa-solid fa-bolt text-brand-400"></i> LIVE
-        </div>
-      </div>
-
-      <!-- Quick Filter Pills under Search -->
-      <div id="searchGenreChips" class="hidden absolute left-0 right-0 top-full mt-1 bg-surface-900/95 border border-zinc-800 p-2 rounded-xl backdrop-blur-lg z-50 flex-wrap gap-1.5 shadow-2xl">
-        <span class="text-[11px] font-medium text-zinc-400 px-2 py-1">Popular:</span>
-        <button onclick="setSearchFilter('Action')" class="text-[11px] bg-surface-800 hover:bg-brand-500 hover:text-zinc-950 px-2.5 py-1 rounded-lg text-zinc-300 transition">Action</button>
-        <button onclick="setSearchFilter('Shounen')" class="text-[11px] bg-surface-800 hover:bg-brand-500 hover:text-zinc-950 px-2.5 py-1 rounded-lg text-zinc-300 transition">Shounen</button>
-        <button onclick="setSearchFilter('Fantasy')" class="text-[11px] bg-surface-800 hover:bg-brand-500 hover:text-zinc-950 px-2.5 py-1 rounded-lg text-zinc-300 transition">Fantasy</button>
-        <button onclick="setSearchFilter('Romance')" class="text-[11px] bg-surface-800 hover:bg-brand-500 hover:text-zinc-950 px-2.5 py-1 rounded-lg text-zinc-300 transition">Romance</button>
-      </div>
-
-      <!-- Search Dropdown Results with Badges & Genres -->
-      <div id="searchResults" class="absolute left-0 right-0 mt-2 bg-surface-900/95 border border-zinc-800 rounded-2xl shadow-2xl max-h-[460px] overflow-y-auto hidden z-50 divide-y divide-zinc-800/60 backdrop-blur-xl"></div>
+    <!-- Quick header status badge -->
+    <div class="flex items-center gap-3">
+      <span class="hidden sm:inline-flex items-center gap-1.5 text-xs text-zinc-400 bg-surface-900 border border-zinc-800 px-3 py-1.5 rounded-full">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+        Direct Zoko Player
+      </span>
     </div>
   </header>
 
-  <!-- Hero Spotlight Slider -->
-  <section id="heroSection" class="relative max-w-7xl mx-auto w-full px-4 sm:px-6 pt-6">
-    <div id="heroCard" class="relative min-h-[340px] sm:min-h-[400px] rounded-3xl overflow-hidden border border-zinc-800/80 bg-surface-900 shadow-2xl flex flex-col justify-end p-6 sm:p-12 transition-all duration-700">
-      <div id="heroBannerBg" class="absolute inset-0 bg-cover bg-center opacity-40 scale-105 transition-all duration-700"></div>
+  <!-- Hero Spotlight Section with Category Tabs -->
+  <section id="heroSection" class="relative max-w-7xl mx-auto w-full px-4 sm:px-6 pt-5 space-y-4">
+    
+    <!-- Spotlight Category Navigation Tabs -->
+    <div id="spotlightTabs" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+      <button onclick="switchSpotlightTab('trending')" id="tab-trending" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition bg-brand-500 text-zinc-950 shadow-lg shadow-brand-500/20">
+        <i class="fa-solid fa-fire text-xs"></i> Trending
+      </button>
+      <button onclick="switchSpotlightTab('airing')" id="tab-airing" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800 hover:text-white hover:border-zinc-700">
+        <i class="fa-solid fa-tower-broadcast text-xs"></i> Top Airing
+      </button>
+      <button onclick="switchSpotlightTab('popular')" id="tab-popular" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800 hover:text-white hover:border-zinc-700">
+        <i class="fa-solid fa-star text-xs"></i> All-Time Most Popular
+      </button>
+      <button onclick="switchSpotlightTab('movies')" id="tab-movies" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800 hover:text-white hover:border-zinc-700">
+        <i class="fa-solid fa-film text-xs"></i> Top Movies
+      </button>
+      <button onclick="switchSpotlightTab('action')" id="tab-action" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800 hover:text-white hover:border-zinc-700">
+        <i class="fa-solid fa-burst text-xs"></i> Action & Shounen
+      </button>
+      <button onclick="switchSpotlightTab('romance')" id="tab-romance" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800 hover:text-white hover:border-zinc-700">
+        <i class="fa-solid fa-heart text-xs"></i> Romance
+      </button>
+      <button onclick="switchSpotlightTab('scifi')" id="tab-scifi" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800 hover:text-white hover:border-zinc-700">
+        <i class="fa-solid fa-robot text-xs"></i> Sci-Fi & Mecha
+      </button>
+    </div>
+
+    <!-- Spotlight Banner Container -->
+    <div id="heroCard" class="relative min-h-[350px] sm:min-h-[420px] rounded-3xl overflow-hidden border border-zinc-800/80 bg-surface-900 shadow-2xl flex flex-col justify-end p-6 sm:p-12 transition-all duration-700">
+      <div id="heroBannerBg" class="absolute inset-0 bg-cover bg-center opacity-35 scale-105 transition-all duration-700"></div>
       <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-surface-950/70 to-transparent"></div>
       <div class="absolute inset-0 bg-gradient-to-r from-surface-950 via-surface-950/40 to-transparent"></div>
 
+      <!-- Slide Indicator Controls on Top Right -->
+      <div class="absolute top-5 right-5 sm:top-8 sm:right-8 z-20 flex items-center gap-2">
+        <span id="spotlightCount" class="text-xs font-bold text-zinc-400 bg-surface-950/80 px-3 py-1 rounded-xl border border-zinc-800 backdrop-blur-md">
+          1 / 6
+        </span>
+        <button onclick="prevSpotlight()" class="w-9 h-9 rounded-xl bg-surface-900/90 border border-zinc-800 text-zinc-300 hover:text-white hover:border-brand-500/50 flex items-center justify-center transition backdrop-blur-md">
+          <i class="fa-solid fa-chevron-left text-xs"></i>
+        </button>
+        <button onclick="nextSpotlight()" class="w-9 h-9 rounded-xl bg-surface-900/90 border border-zinc-800 text-zinc-300 hover:text-white hover:border-brand-500/50 flex items-center justify-center transition backdrop-blur-md">
+          <i class="fa-solid fa-chevron-right text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Spotlight Content -->
       <div class="relative z-10 max-w-2xl space-y-3">
         <div class="inline-flex items-center gap-2 bg-brand-500/20 border border-brand-500/30 text-brand-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-md">
-          <i class="fa-solid fa-crown text-amber-400 text-xs"></i> #1 Spotlight Anime
+          <i class="fa-solid fa-crown text-amber-400 text-xs"></i> <span id="heroRankTag">#1 Spotlight Anime</span>
         </div>
         <h1 id="heroTitle" class="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight line-clamp-2 leading-tight">
           Loading Spotlight...
         </h1>
         <div id="heroMeta" class="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-zinc-300">
-          <span class="bg-zinc-800 px-2.5 py-1 rounded-lg font-semibold text-zinc-200" id="heroFormat">TV</span>
+          <span class="bg-zinc-800 px-2.5 py-0.5 rounded-lg font-semibold text-zinc-200" id="heroFormat">TV</span>
           <span class="text-zinc-400" id="heroEpisodes">24 Episodes</span>
           <span>•</span>
           <span class="text-amber-400 font-bold flex items-center gap-1" id="heroScore"><i class="fa-solid fa-star text-xs"></i> 8.9</span>
@@ -123,84 +148,115 @@
           <span class="text-zinc-400" id="heroGenres">Action, Fantasy</span>
         </div>
         <p id="heroDescription" class="text-xs sm:text-sm text-zinc-400 line-clamp-3 leading-relaxed max-w-xl">
-          Discover the top anime streaming experience with multi-season grouped continuity and zero buffering.
+          Loading description...
         </p>
         <div class="pt-2 flex items-center gap-3">
-          <a id="heroWatchBtn" href="#" class="inline-flex items-center gap-2.5 bg-brand-500 hover:bg-brand-400 text-zinc-950 font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-brand-500/25">
+          <a id="heroWatchBtn" href="#" class="inline-flex items-center gap-2.5 bg-brand-500 hover:bg-brand-400 text-zinc-950 font-extrabold px-6 py-3.5 rounded-xl transition shadow-lg shadow-brand-500/25">
             <i class="fa-solid fa-play text-sm"></i> Watch Now
           </a>
-          <button id="heroNextBtn" onclick="nextSpotlight()" class="p-3 bg-surface-800/80 hover:bg-surface-800 text-zinc-300 hover:text-white rounded-xl border border-zinc-700/60 transition" title="Next Spotlight">
-            <i class="fa-solid fa-forward-step"></i>
+          <button onclick="nextSpotlight()" class="px-4 py-3.5 bg-surface-800/80 hover:bg-surface-800 text-zinc-300 hover:text-white rounded-xl border border-zinc-700/60 transition text-xs font-semibold flex items-center gap-2">
+            Next Slide <i class="fa-solid fa-arrow-right text-xs"></i>
           </button>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Main View Container -->
+  <!-- PRIMARY FOCUS: Prominent Centralized Search Bar beneath Spotlight -->
+  <section class="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-8 pb-2">
+    <div class="relative">
+      <div class="text-center space-y-1 mb-4">
+        <h2 class="text-lg sm:text-2xl font-black text-white tracking-tight">Find Any Anime in Seconds</h2>
+        <p class="text-xs sm:text-sm text-zinc-400">Search across millions of episodes, franchise movies, and seasons</p>
+      </div>
+
+      <!-- Large High-Focus Search Bar -->
+      <div class="relative flex items-center group">
+        <div class="absolute left-5 text-zinc-400 group-focus-within:text-brand-400 transition pointer-events-none">
+          <i class="fa-solid fa-magnifying-glass text-lg sm:text-xl"></i>
+        </div>
+        
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="Search by anime name, romaji, character, or genre..." 
+          class="w-full bg-surface-900 border-2 border-zinc-800 pl-14 sm:pl-16 pr-28 sm:pr-32 py-4 sm:py-5 rounded-2xl sm:rounded-3xl text-sm sm:text-base font-medium focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition shadow-2xl placeholder-zinc-500 text-zinc-100"
+          autocomplete="off"
+        >
+
+        <!-- Right Side Controls (Separated Clear Button & Live Badge) -->
+        <div class="absolute right-3.5 sm:right-4 flex items-center gap-2">
+          <!-- Clear button with distinct spacing -->
+          <button 
+            id="searchClearBtn" 
+            type="button"
+            class="hidden w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition" 
+            title="Clear search"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+
+          <!-- Live Badge -->
+          <div class="flex items-center gap-1.5 text-[11px] font-bold text-brand-400 bg-brand-500/10 px-3 py-1.5 rounded-xl border border-brand-500/30 select-none">
+            <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>
+            LIVE
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Genre Pills beneath Search -->
+      <div class="flex items-center gap-2 mt-3.5 overflow-x-auto no-scrollbar pb-1 text-xs">
+        <span class="text-zinc-500 font-semibold flex items-center gap-1 pl-1 flex-shrink-0">
+          <i class="fa-solid fa-tag text-[10px]"></i> Quick:
+        </span>
+        <button onclick="triggerQuickSearch('Demon Slayer')" class="bg-surface-900 hover:bg-brand-500 hover:text-zinc-950 border border-zinc-800 px-3 py-1 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap">Demon Slayer</button>
+        <button onclick="triggerQuickSearch('Attack on Titan')" class="bg-surface-900 hover:bg-brand-500 hover:text-zinc-950 border border-zinc-800 px-3 py-1 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap">Attack on Titan</button>
+        <button onclick="triggerQuickSearch('Jujutsu Kaisen')" class="bg-surface-900 hover:bg-brand-500 hover:text-zinc-950 border border-zinc-800 px-3 py-1 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap">Jujutsu Kaisen</button>
+        <button onclick="triggerQuickSearch('One Piece')" class="bg-surface-900 hover:bg-brand-500 hover:text-zinc-950 border border-zinc-800 px-3 py-1 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap">One Piece</button>
+        <button onclick="triggerQuickSearch('Solo Leveling')" class="bg-surface-900 hover:bg-brand-500 hover:text-zinc-950 border border-zinc-800 px-3 py-1 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap">Solo Leveling</button>
+      </div>
+
+      <!-- Live Search Results Dropdown -->
+      <div id="searchResults" class="absolute left-0 right-0 mt-3 bg-surface-900/98 border border-zinc-800/90 rounded-3xl shadow-2xl max-h-[500px] overflow-y-auto hidden z-50 divide-y divide-zinc-800/60 backdrop-blur-2xl"></div>
+    </div>
+  </section>
+
+  <!-- SUBFOCUS: Catalog Categories & Filter Grids -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-12">
     
-    <!-- Category 1: Trending Now -->
-    <section id="trending" class="space-y-4">
+    <!-- Tabbed Catalog Grid -->
+    <section class="space-y-4">
       <div class="flex justify-between items-center">
         <div class="flex items-center gap-2.5">
-          <div class="w-2 h-5 bg-amber-500 rounded-full"></div>
-          <h2 class="text-lg sm:text-xl font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
-            Trending This Week
-          </h2>
+          <div class="w-2.5 h-6 bg-brand-500 rounded-full"></div>
+          <div>
+            <h2 id="activeCatalogTitle" class="text-lg sm:text-xl font-bold tracking-wide uppercase text-zinc-100">
+              🔥 Trending This Week
+            </h2>
+            <p id="activeCatalogSubtitle" class="text-xs text-zinc-500">Live community trending catalog</p>
+          </div>
         </div>
-        <span class="text-xs text-zinc-500 flex items-center gap-1"><i class="fa-solid fa-arrows-rotate text-brand-400"></i> Updated live</span>
       </div>
-      <div id="grid-trending" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        <div class="col-span-full py-12 text-center text-zinc-500 text-sm animate-pulse">Loading trending titles...</div>
+
+      <!-- Active Catalog Items Grid -->
+      <div id="grid-current" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div class="col-span-full py-12 text-center text-zinc-500 text-sm animate-pulse">Loading anime catalog...</div>
       </div>
     </section>
 
-    <!-- Category 2: Top Airing Anime -->
-    <section id="airing" class="space-y-4">
-      <div class="flex justify-between items-center">
-        <div class="flex items-center gap-2.5">
-          <div class="w-2 h-5 bg-brand-500 rounded-full"></div>
-          <h2 class="text-lg sm:text-xl font-bold tracking-wide uppercase text-zinc-100">
-            Top Airing Shows
-          </h2>
+    <!-- Genre Discovery Carousel / Tag Section -->
+    <section id="genreSection" class="bg-surface-900/80 border border-zinc-800/80 rounded-3xl p-6 sm:p-8 space-y-5">
+      <div class="flex items-center justify-between">
+        <div class="space-y-1">
+          <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-shapes text-brand-400"></i> Explore By Genre
+          </h3>
+          <p class="text-xs text-zinc-400">Discover handpicked catalog collections by genre tags</p>
         </div>
-        <span class="text-xs text-zinc-500">Currently Broadcasting</span>
       </div>
-      <div id="grid-airing" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        <div class="col-span-full py-12 text-center text-zinc-500 text-sm animate-pulse">Loading airing shows...</div>
-      </div>
-    </section>
-
-    <!-- Category 3: Most Popular All-Time -->
-    <section id="popular" class="space-y-4">
-      <div class="flex justify-between items-center">
-        <div class="flex items-center gap-2.5">
-          <div class="w-2 h-5 bg-yellow-400 rounded-full"></div>
-          <h2 class="text-lg sm:text-xl font-bold tracking-wide uppercase text-zinc-100">
-            All-Time Favorites
-          </h2>
-        </div>
-        <span class="text-xs text-zinc-500">Most Watched</span>
-      </div>
-      <div id="grid-popular" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        <div class="col-span-full py-12 text-center text-zinc-500 text-sm animate-pulse">Loading popular titles...</div>
-      </div>
-    </section>
-
-    <!-- Category 4: Top Anime Movies -->
-    <section id="movies" class="space-y-4">
-      <div class="flex justify-between items-center">
-        <div class="flex items-center gap-2.5">
-          <div class="w-2 h-5 bg-indigo-500 rounded-full"></div>
-          <h2 class="text-lg sm:text-xl font-bold tracking-wide uppercase text-zinc-100">
-            Cinematic Masterpieces
-          </h2>
-        </div>
-        <span class="text-xs text-zinc-500">Full Feature Movies</span>
-      </div>
-      <div id="grid-movies" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        <div class="col-span-full py-12 text-center text-zinc-500 text-sm animate-pulse">Loading movies...</div>
+      
+      <div id="genresContainer" class="flex flex-wrap gap-2.5">
+        <!-- Dynamically populated genres -->
       </div>
     </section>
 
@@ -216,9 +272,10 @@
     const searchInput = document.getElementById('searchInput');
     const searchResults = document.getElementById('searchResults');
     const searchClearBtn = document.getElementById('searchClearBtn');
-    const searchGenreChips = document.getElementById('searchGenreChips');
 
-    let spotlightList = [];
+    let currentTab = 'trending';
+    let spotlightDataMap = {};
+    let currentSpotlightList = [];
     let currentSpotlightIdx = 0;
 
     async function fetchAniList(query, variables = {}) {
@@ -232,6 +289,156 @@
       });
       const json = await res.json();
       return json.data;
+    }
+
+    // Queries configured for each tab
+    const tabQueries = {
+      trending: `
+        query {
+          Page(perPage: 12) { 
+            media(sort: TRENDING_DESC, type: ANIME) { 
+              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
+            } 
+          }
+        }
+      `,
+      airing: `
+        query {
+          Page(perPage: 12) { 
+            media(status: RELEASING, sort: POPULARITY_DESC, type: ANIME) { 
+              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
+            } 
+          }
+        }
+      `,
+      popular: `
+        query {
+          Page(perPage: 12) { 
+            media(sort: POPULARITY_DESC, type: ANIME) { 
+              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
+            } 
+          }
+        }
+      `,
+      movies: `
+        query {
+          Page(perPage: 12) { 
+            media(format: MOVIE, sort: POPULARITY_DESC, type: ANIME) { 
+              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
+            } 
+          }
+        }
+      `,
+      action: `
+        query {
+          Page(perPage: 12) { 
+            media(genre: "Action", sort: POPULARITY_DESC, type: ANIME) { 
+              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
+            } 
+          }
+        }
+      `,
+      romance: `
+        query {
+          Page(perPage: 12) { 
+            media(genre: "Romance", sort: POPULARITY_DESC, type: ANIME) { 
+              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
+            } 
+          }
+        }
+      `,
+      scifi: `
+        query {
+          Page(perPage: 12) { 
+            media(genre: "Sci-Fi", sort: POPULARITY_DESC, type: ANIME) { 
+              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
+            } 
+          }
+        }
+      `
+    };
+
+    const tabTitles = {
+      trending: { title: "🔥 Trending This Week", sub: "Live community top trending releases" },
+      airing: { title: "✨ Top Airing Shows", sub: "Currently broadcasting anime" },
+      popular: { title: "⭐ All-Time Most Popular", sub: "Fan favorite classics and hits" },
+      movies: { title: "🎬 Top Anime Movies", sub: "Full feature films and cinematic releases" },
+      action: { title: "⚔️ Action & Shounen Hits", sub: "High adrenaline battles and journeys" },
+      romance: { title: "💖 Heartwarming Romance", sub: "Drama, love, and slice of life" },
+      scifi: { title: "🚀 Sci-Fi & Mecha", sub: "Futuristic worlds and cyberpunk journeys" }
+    };
+
+    async function switchSpotlightTab(tabKey) {
+      currentTab = tabKey;
+
+      // Update Tab Styles
+      document.querySelectorAll('.spotlight-tab').forEach(btn => {
+        btn.className = 'spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800 hover:text-white hover:border-zinc-700';
+      });
+      const activeBtn = document.getElementById(`tab-${tabKey}`);
+      if (activeBtn) {
+        activeBtn.className = 'spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition bg-brand-500 text-zinc-950 shadow-lg shadow-brand-500/20';
+      }
+
+      // Update Catalog Titles
+      const meta = tabTitles[tabKey] || tabTitles.trending;
+      document.getElementById('activeCatalogTitle').innerText = meta.title;
+      document.getElementById('activeCatalogSubtitle').innerText = meta.sub;
+
+      // Fetch or use cached data
+      if (!spotlightDataMap[tabKey]) {
+        document.getElementById('grid-current').innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 text-sm animate-pulse">Loading ${meta.title}...</div>`;
+        try {
+          const data = await fetchAniList(tabQueries[tabKey]);
+          spotlightDataMap[tabKey] = data.Page.media;
+        } catch (err) {
+          console.error('Error loading tab:', err);
+        }
+      }
+
+      currentSpotlightList = spotlightDataMap[tabKey] || [];
+      currentSpotlightIdx = 0;
+      setSpotlight(currentSpotlightList[0]);
+      renderGrid('grid-current', currentSpotlightList);
+    }
+
+    function setSpotlight(anime) {
+      if (!anime) return;
+      const title = anime.title.english || anime.title.romaji || 'Spotlight Anime';
+      const imgUrl = anime.bannerImage || anime.coverImage?.extraLarge || anime.coverImage?.large;
+      const score = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : '8.8';
+      const eps = anime.episodes || 12;
+      const anilistId = anime.id;
+      const malId = anime.idMal || anime.id;
+      
+      document.getElementById('heroBannerBg').style.backgroundImage = `url('${imgUrl}')`;
+      document.getElementById('heroTitle').innerText = title;
+      document.getElementById('heroFormat').innerText = anime.format || 'TV';
+      document.getElementById('heroEpisodes').innerText = `${eps} Episodes`;
+      document.getElementById('heroScore').innerHTML = `<i class="fa-solid fa-star text-xs"></i> ${score}`;
+      document.getElementById('heroGenres').innerText = anime.genres?.slice(0, 3).join(', ') || 'Action, Fantasy';
+      document.getElementById('spotlightCount').innerText = `${currentSpotlightIdx + 1} / ${Math.min(currentSpotlightList.length, 6)}`;
+      document.getElementById('heroRankTag').innerText = `#${currentSpotlightIdx + 1} Spotlight in ${tabTitles[currentTab]?.title.split(' ')[1] || 'Trending'}`;
+      
+      const cleanDesc = (anime.description || 'Watch now in high definition with English subtitles and dubbing.').replace(/<[^>]*>/g, '');
+      document.getElementById('heroDescription').innerText = cleanDesc;
+
+      const watchBtn = document.getElementById('heroWatchBtn');
+      watchBtn.href = `watch.html?id=${anilistId}&malId=${malId}&title=${encodeURIComponent(title)}&eps=${eps}`;
+    }
+
+    function nextSpotlight() {
+      if (currentSpotlightList.length === 0) return;
+      const maxSlides = Math.min(currentSpotlightList.length, 6);
+      currentSpotlightIdx = (currentSpotlightIdx + 1) % maxSlides;
+      setSpotlight(currentSpotlightList[currentSpotlightIdx]);
+    }
+
+    function prevSpotlight() {
+      if (currentSpotlightList.length === 0) return;
+      const maxSlides = Math.min(currentSpotlightList.length, 6);
+      currentSpotlightIdx = (currentSpotlightIdx - 1 + maxSlides) % maxSlides;
+      setSpotlight(currentSpotlightList[currentSpotlightIdx]);
     }
 
     function renderGrid(containerId, animeList) {
@@ -259,7 +466,7 @@
             <img src="${imgUrl}" alt="${title}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 group-hover:brightness-110 transition duration-500">
             <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition"></div>
             
-            <!-- Quality / Score Badges -->
+            <!-- Quality & Format Badges -->
             <div class="absolute top-2 left-2 flex items-center gap-1">
               <span class="bg-surface-950/85 backdrop-blur-md text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md text-brand-400 border border-brand-500/30">HD</span>
               <span class="bg-surface-950/85 backdrop-blur-md text-[10px] font-bold px-1.5 py-0.5 rounded-md text-zinc-300 border border-zinc-800">${format}</span>
@@ -269,7 +476,7 @@
               <i class="fa-solid fa-star text-[10px]"></i> ${score}
             </span>
 
-            <!-- Quick play hover icon -->
+            <!-- Quick Play Icon -->
             <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300">
               <div class="w-12 h-12 rounded-full bg-brand-500 text-zinc-950 flex items-center justify-center shadow-lg shadow-brand-500/40 scale-75 group-hover:scale-100 transition duration-300">
                 <i class="fa-solid fa-play text-sm ml-0.5"></i>
@@ -296,75 +503,7 @@
       });
     }
 
-    function setSpotlight(anime) {
-      if (!anime) return;
-      const title = anime.title.english || anime.title.romaji || 'Spotlight Anime';
-      const imgUrl = anime.bannerImage || anime.coverImage?.extraLarge || anime.coverImage?.large;
-      const score = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : '8.8';
-      const eps = anime.episodes || 12;
-      const anilistId = anime.id;
-      const malId = anime.idMal || anime.id;
-      
-      document.getElementById('heroBannerBg').style.backgroundImage = `url('${imgUrl}')`;
-      document.getElementById('heroTitle').innerText = title;
-      document.getElementById('heroFormat').innerText = anime.format || 'TV';
-      document.getElementById('heroEpisodes').innerText = `${eps} Episodes`;
-      document.getElementById('heroScore').innerHTML = `<i class="fa-solid fa-star text-xs"></i> ${score}`;
-      document.getElementById('heroGenres').innerText = anime.genres?.slice(0, 3).join(', ') || 'Action, Fantasy';
-      
-      const cleanDesc = (anime.description || 'Watch now in high definition with English subtitles and dubbing.').replace(/<[^>]*>/g, '');
-      document.getElementById('heroDescription').innerText = cleanDesc;
-
-      const watchBtn = document.getElementById('heroWatchBtn');
-      watchBtn.href = `watch.html?id=${anilistId}&malId=${malId}&title=${encodeURIComponent(title)}&eps=${eps}`;
-    }
-
-    function nextSpotlight() {
-      if (spotlightList.length === 0) return;
-      currentSpotlightIdx = (currentSpotlightIdx + 1) % spotlightList.length;
-      setSpotlight(spotlightList[currentSpotlightIdx]);
-    }
-
-    async function loadCatalogs() {
-      const query = `
-        query {
-          trending: Page(perPage: 6) { 
-            media(sort: TRENDING_DESC, type: ANIME) { 
-              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
-            } 
-          }
-          airing: Page(perPage: 6) { 
-            media(status: RELEASING, sort: POPULARITY_DESC, type: ANIME) { 
-              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
-            } 
-          }
-          popular: Page(perPage: 6) { 
-            media(sort: POPULARITY_DESC, type: ANIME) { 
-              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
-            } 
-          }
-          movies: Page(perPage: 6) { 
-            media(format: MOVIE, sort: POPULARITY_DESC, type: ANIME) { 
-              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
-            } 
-          }
-        }
-      `;
-      try {
-        const data = await fetchAniList(query);
-        spotlightList = data.trending.media;
-        setSpotlight(spotlightList[0]);
-
-        renderGrid('grid-trending', data.trending.media);
-        renderGrid('grid-airing', data.airing.media);
-        renderGrid('grid-popular', data.popular.media);
-        renderGrid('grid-movies', data.movies.media);
-      } catch (err) {
-        console.error('Failed to load catalogs:', err);
-      }
-    }
-
-    // Live search with debounce & rich results
+    // Live search handling with proper clear button layout
     let searchTimeout;
     searchInput.addEventListener('input', (e) => {
       clearTimeout(searchTimeout);
@@ -372,7 +511,9 @@
       
       if (query.length > 0) {
         searchClearBtn.classList.remove('hidden');
+        searchClearBtn.classList.add('flex');
       } else {
+        searchClearBtn.classList.remove('flex');
         searchClearBtn.classList.add('hidden');
       }
 
@@ -400,29 +541,27 @@
       }, 250);
     });
 
-    searchClearBtn.addEventListener('click', () => {
+    searchClearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       searchInput.value = '';
+      searchClearBtn.classList.remove('flex');
       searchClearBtn.classList.add('hidden');
       searchResults.classList.add('hidden');
       searchInput.focus();
     });
 
-    searchInput.addEventListener('focus', () => {
-      searchGenreChips.classList.remove('hidden');
-    });
-
-    function setSearchFilter(genre) {
-      searchInput.value = genre;
-      searchGenreChips.classList.add('hidden');
+    function triggerQuickSearch(term) {
+      searchInput.value = term;
       searchInput.dispatchEvent(new Event('input'));
+      searchInput.focus();
     }
 
     function renderSearchResults(animeList) {
       searchResults.innerHTML = '';
       if (!animeList || animeList.length === 0) {
         searchResults.innerHTML = `
-          <div class="p-6 text-center text-zinc-500 text-xs">
-            <i class="fa-solid fa-ghost text-2xl mb-2 text-zinc-600 block"></i>
+          <div class="p-8 text-center text-zinc-500 text-xs">
+            <i class="fa-solid fa-ghost text-3xl mb-2 text-zinc-600 block"></i>
             No anime found matching your query.
           </div>
         `;
@@ -441,22 +580,22 @@
         const year = anime.startDate?.year || '';
 
         const div = document.createElement('div');
-        div.className = 'flex items-center gap-3.5 p-3 hover:bg-surface-800/80 cursor-pointer transition group';
+        div.className = 'flex items-center gap-4 p-3.5 hover:bg-surface-800/80 cursor-pointer transition group';
         div.innerHTML = `
           <img src="${imgUrl}" class="w-12 h-16 object-cover rounded-xl bg-surface-950 flex-shrink-0 shadow-md group-hover:scale-105 transition">
           <div class="flex-1 min-w-0">
             <h4 class="text-sm font-bold text-zinc-100 group-hover:text-brand-400 transition truncate">${title}</h4>
-            ${nativeTitle ? `<p class="text-[10px] text-zinc-500 truncate">${nativeTitle}</p>` : ''}
+            ${nativeTitle ? `<p class="text-[11px] text-zinc-500 truncate">${nativeTitle}</p>` : ''}
             <div class="flex items-center gap-2 mt-1 text-[11px] text-zinc-400">
-              <span class="bg-zinc-800 px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-300">${anime.format || 'TV'}</span>
+              <span class="bg-surface-800 border border-zinc-700/60 px-2 py-0.5 rounded text-[10px] font-bold text-zinc-200">${anime.format || 'TV'}</span>
               <span>•</span>
-              <span class="text-zinc-400">${eps} eps</span>
+              <span class="text-zinc-300 font-medium">${eps} eps</span>
               ${year ? `<span>•</span><span>${year}</span>` : ''}
               <span>•</span>
-              <span class="text-amber-400 font-semibold"><i class="fa-solid fa-star text-[10px]"></i> ${score}</span>
+              <span class="text-amber-400 font-semibold flex items-center gap-1"><i class="fa-solid fa-star text-[10px]"></i> ${score}</span>
             </div>
           </div>
-          <i class="fa-solid fa-chevron-right text-zinc-600 group-hover:text-brand-400 group-hover:translate-x-1 transition text-xs pr-2"></i>
+          <i class="fa-solid fa-chevron-right text-zinc-600 group-hover:text-brand-400 group-hover:translate-x-1 transition text-sm pr-3"></i>
         `;
         div.onclick = () => {
           window.location.href = `watch.html?id=${anilistId}&malId=${malId}&title=${encodeURIComponent(title)}&eps=${eps}`;
@@ -466,14 +605,40 @@
       searchResults.classList.remove('hidden');
     }
 
+    // Populate Dynamic Genre Chips
+    async function loadGenres() {
+      try {
+        const data = await fetchAniList(`query { GenreCollection }`);
+        const genres = data?.GenreCollection || [
+          "Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "Mystery", 
+          "Psychological", "Romance", "Sci-Fi", "Slice of Life", "Sports", "Supernatural"
+        ];
+        
+        const container = document.getElementById('genresContainer');
+        container.innerHTML = '';
+        genres.forEach(genre => {
+          const btn = document.createElement('button');
+          btn.className = 'text-xs bg-surface-950/80 hover:bg-brand-500 hover:text-zinc-950 border border-zinc-800 hover:border-brand-500 px-3.5 py-2 rounded-xl text-zinc-300 font-medium transition shadow-sm';
+          btn.innerText = genre;
+          btn.onclick = () => {
+            triggerQuickSearch(genre);
+          };
+          container.appendChild(btn);
+        });
+      } catch (err) {
+        console.error('Failed to load genres:', err);
+      }
+    }
+
     document.addEventListener('click', (e) => {
-      if (!searchInput.contains(e.target) && !searchResults.contains(e.target) && !searchGenreChips.contains(e.target)) {
+      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
         searchResults.classList.add('hidden');
-        searchGenreChips.classList.add('hidden');
       }
     });
 
-    loadCatalogs();
+    // Initial load
+    switchSpotlightTab('trending');
+    loadGenres();
   </script>
 </body>
 </html>
