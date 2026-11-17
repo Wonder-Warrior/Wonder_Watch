@@ -86,13 +86,12 @@
       
       <!-- Left 2 Cols: Embed Player -->
       <div class="lg:col-span-2 flex flex-col gap-4">
-        <!-- Player Viewport with Anti-Redirect Sandbox -->
+        <!-- Player Viewport (Standard Iframe to avoid Embed Blocked error) -->
         <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
           <iframe 
             id="playerFrame" 
             src="" 
             class="w-full h-full border-0" 
-            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
             allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
             allowfullscreen 
             scrolling="no">
@@ -106,9 +105,7 @@
             <div class="flex items-center gap-2 text-xs text-zinc-400">
               <span id="animeSubInfo" class="text-brand-400 font-bold">Episode 1 • SUB</span>
               <span>•</span>
-              <span id="activeSourceBadge" class="bg-surface-800 px-2 py-0.5 rounded text-[11px] text-zinc-300 font-medium">Server 1 (Primary)</span>
-              <span>•</span>
-              <span class="text-emerald-400 font-medium flex items-center gap-1"><i class="fa-solid fa-shield-halved text-[10px]"></i> Anti-Redirect</span>
+              <span id="activeSourceBadge" class="bg-surface-800 px-2 py-0.5 rounded text-[11px] text-zinc-300 font-medium">Server 1 (Active)</span>
             </div>
           </div>
           
@@ -186,11 +183,49 @@
   </main>
 
   <script>
-    // Trap any accidental navigation beforeunload attempts from third-party scripts
-    window.addEventListener('beforeunload', (e) => {
-      // Allows user-initiated internal link navigations
+    // --- ANTI-REDIRECT & POPUP COUNTERMEASURE ---
+    // 1. Trap top-level window redirection attempts originating from cross-frame scripts
+    let allowInternalNavigation = false;
+
+    // Detect internal navigation clicks so legitimate back/nav links work smoothly
+    document.addEventListener('click', (e) => {
+      const target = e.target.closest('a, button');
+      if (target) {
+        allowInternalNavigation = true;
+        setTimeout(() => { allowInternalNavigation = false; }, 2000);
+      }
     });
 
+    // Prevent iframe from forcing top-level redirection away from the player
+    window.addEventListener('beforeunload', (e) => {
+      if (!allowInternalNavigation) {
+        // Cancel the navigation event triggered by third-party redirect scripts
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    });
+
+    // 2. Suppress automatic popups opened in the parent window context
+    const originalOpen = window.open;
+    window.open = function(url, target, features) {
+      if (allowInternalNavigation) {
+        return originalOpen.apply(this, arguments);
+      }
+      console.warn("Blocked unwanted popup/redirect window.open attempt:", url);
+      return null;
+    };
+
+    // 3. Keep focus trapped on WonderWatch when clicking the player to prevent popunders
+    window.addEventListener('blur', () => {
+      if (!allowInternalNavigation && document.activeElement && document.activeElement.tagName === 'IFRAME') {
+        setTimeout(() => {
+          window.focus();
+        }, 100);
+      }
+    });
+
+    // --- APPLICATION LOGIC ---
     const urlParams = new URLSearchParams(window.location.search);
     let animeId = urlParams.get('id') || '1';
     let malId = urlParams.get('malId') || animeId;
@@ -214,9 +249,11 @@
         const btn = document.createElement('button');
         btn.innerText = i;
         btn.onclick = () => {
+          allowInternalNavigation = true;
           currentEpisode = i;
           loadPlayer();
           renderEpisodes();
+          setTimeout(() => { allowInternalNavigation = false; }, 1000);
         };
         
         let baseClasses = "h-10 rounded-xl text-xs font-bold transition flex items-center justify-center border ";
@@ -240,20 +277,26 @@
     }
 
     function changeSource() {
+      allowInternalNavigation = true;
       currentSource = document.getElementById('sourceSelect').value;
       loadPlayer();
+      setTimeout(() => { allowInternalNavigation = false; }, 1000);
     }
 
     function changeStreamType() {
+      allowInternalNavigation = true;
       currentType = document.getElementById('streamTypeSelect').value;
       loadPlayer();
+      setTimeout(() => { allowInternalNavigation = false; }, 1000);
     }
 
     function handleNextEpisode() {
       if (currentEpisode < totalEpisodes) {
+        allowInternalNavigation = true;
         currentEpisode++;
         loadPlayer();
         renderEpisodes();
+        setTimeout(() => { allowInternalNavigation = false; }, 1000);
       }
     }
 
@@ -382,6 +425,7 @@
         `;
 
         card.onclick = () => {
+          allowInternalNavigation = true;
           window.location.href = `watch.html?id=${node.id}&malId=${node.idMal || node.id}&title=${encodeURIComponent(relTitle)}&eps=${node.episodes || 12}`;
         };
         container.appendChild(card);
