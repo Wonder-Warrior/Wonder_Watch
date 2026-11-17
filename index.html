@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WonderWatch | Stream Anime Free in HD</title>
+  <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -13,6 +17,10 @@
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            heading: ['"Outfit"', 'sans-serif'],
+          },
           colors: {
             brand: {
               300: '#bef264',
@@ -21,11 +29,11 @@
               600: '#65a30d',
             },
             surface: {
-              750: '#23252b',
-              800: '#1b1c22',
-              850: '#14151b',
-              900: '#0e0f14',
-              950: '#07070a',
+              750: '#20222a',
+              800: '#171821',
+              850: '#111218',
+              900: '#0b0c10',
+              950: '#050608',
             }
           }
         }
@@ -33,16 +41,22 @@
     }
   </script>
   <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    h1, h2, h3, h4, .font-heading {
+      font-family: 'Outfit', sans-serif;
+    }
     /* Custom scrollbars */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #07070a;
+      background: #050608;
     }
     ::-webkit-scrollbar-thumb {
-      background: #23252b;
+      background: #1f212a;
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
@@ -60,13 +74,13 @@
 <body class="bg-surface-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-black">
 
   <!-- Header / Navigation Bar -->
-  <header class="border-b border-zinc-900 bg-surface-950/85 backdrop-blur-xl sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4">
+  <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4">
     <div class="flex items-center gap-8">
       <a href="index.html" class="flex items-center gap-2.5 group">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-lg shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-lg shadow-lg shadow-brand-500/25 group-hover:scale-105 transition">
           <i class="fa-solid fa-play text-xs ml-0.5"></i>
         </div>
-        <span class="text-xl font-black tracking-wider text-white">WONDER<span class="text-brand-400">WATCH</span></span>
+        <span class="text-xl font-heading font-black tracking-wider text-white">WONDER<span class="text-brand-400">WATCH</span></span>
       </a>
 
       <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
@@ -82,7 +96,7 @@
     <div class="flex items-center gap-3">
       <span class="inline-flex items-center gap-2 text-xs font-semibold text-zinc-300 bg-surface-900 border border-zinc-800/80 px-3.5 py-1.5 rounded-full shadow-inner">
         <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>
-        HD Anime Streaming
+        Ad-Free Playback
       </span>
     </div>
   </header>
@@ -139,11 +153,11 @@
         <div class="inline-flex items-center gap-2 bg-brand-500/15 border border-brand-500/30 text-brand-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-md">
           <i class="fa-solid fa-crown text-brand-400 text-xs"></i> <span id="heroRankTag">#1 Spotlight Anime</span>
         </div>
-        <h1 id="heroTitle" class="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight line-clamp-2 leading-tight">
+        <h1 id="heroTitle" class="text-2xl sm:text-4xl md:text-5xl font-heading font-black text-white tracking-tight line-clamp-2 leading-tight">
           Loading Spotlight...
         </h1>
         <div id="heroMeta" class="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-zinc-300">
-          <span class="bg-zinc-800 px-2.5 py-0.5 rounded-lg font-semibold text-zinc-200 border border-zinc-700/50" id="heroFormat">TV</span>
+          <span class="bg-zinc-800/90 px-2.5 py-0.5 rounded-lg font-semibold text-zinc-200 border border-zinc-700/50" id="heroFormat">TV</span>
           <span class="text-zinc-400" id="heroEpisodes">24 Episodes</span>
           <span>•</span>
           <span class="text-brand-400 font-bold flex items-center gap-1" id="heroScore"><i class="fa-solid fa-star text-xs"></i> 8.9</span>
@@ -154,7 +168,7 @@
           Loading description...
         </p>
         <div class="pt-2">
-          <a id="heroWatchBtn" href="#" class="inline-flex items-center gap-2.5 bg-brand-500 hover:bg-brand-400 text-black font-extrabold px-6 py-3.5 rounded-xl transition shadow-lg shadow-brand-500/25">
+          <a id="heroWatchBtn" href="#" class="inline-flex items-center gap-2.5 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-6 py-3.5 rounded-xl transition shadow-lg shadow-brand-500/25">
             <i class="fa-solid fa-play text-sm"></i> Watch Now
           </a>
         </div>
@@ -171,8 +185,8 @@
   <section class="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-9 pb-3">
     <div class="relative">
       <div class="text-center space-y-1 mb-4">
-        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">Find Any Anime in Seconds</h2>
-        <p class="text-xs sm:text-sm text-zinc-400">Search across millions of episodes, franchise movies, and seasons</p>
+        <h2 class="text-xl sm:text-3xl font-heading font-black text-white tracking-tight">Find Any Anime in Seconds</h2>
+        <p class="text-xs sm:text-sm text-zinc-400">Search across thousands of episodes, franchise movies, and seasons</p>
       </div>
 
       <!-- Large High-Focus Search Bar -->
@@ -214,11 +228,11 @@
         <span class="text-zinc-500 font-semibold flex items-center gap-1 pl-1 flex-shrink-0">
           <i class="fa-solid fa-tag text-[10px]"></i> Quick:
         </span>
-        <button onclick="triggerQuickSearch('Demon Slayer')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3 py-1 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap">Demon Slayer</button>
-        <button onclick="triggerQuickSearch('Attack on Titan')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3 py-1 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap">Attack on Titan</button>
-        <button onclick="triggerQuickSearch('Jujutsu Kaisen')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3 py-1 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap">Jujutsu Kaisen</button>
-        <button onclick="triggerQuickSearch('One Piece')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3 py-1 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap">One Piece</button>
-        <button onclick="triggerQuickSearch('Solo Leveling')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3 py-1 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap">Solo Leveling</button>
+        <button onclick="triggerQuickSearch('Demon Slayer')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">Demon Slayer</button>
+        <button onclick="triggerQuickSearch('Attack on Titan')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">Attack on Titan</button>
+        <button onclick="triggerQuickSearch('Jujutsu Kaisen')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">Jujutsu Kaisen</button>
+        <button onclick="triggerQuickSearch('One Piece')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">One Piece</button>
+        <button onclick="triggerQuickSearch('Solo Leveling')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">Solo Leveling</button>
       </div>
 
       <!-- Live Search Results Dropdown -->
@@ -235,7 +249,7 @@
         <div class="flex items-center gap-2.5">
           <div class="w-2.5 h-6 bg-brand-500 rounded-full"></div>
           <div>
-            <h2 class="text-lg sm:text-xl font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
+            <h2 class="text-lg sm:text-xl font-heading font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
               🔥 Trending This Week
             </h2>
             <p class="text-xs text-zinc-500">Live community most watched titles</p>
@@ -253,7 +267,7 @@
         <div class="flex items-center gap-2.5">
           <div class="w-2.5 h-6 bg-brand-400 rounded-full"></div>
           <div>
-            <h2 class="text-lg sm:text-xl font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
+            <h2 class="text-lg sm:text-xl font-heading font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
               ✨ Top Airing Shows
             </h2>
             <p class="text-xs text-zinc-500">Currently broadcasting this season</p>
@@ -271,7 +285,7 @@
         <div class="flex items-center gap-2.5">
           <div class="w-2.5 h-6 bg-yellow-400 rounded-full"></div>
           <div>
-            <h2 class="text-lg sm:text-xl font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
+            <h2 class="text-lg sm:text-xl font-heading font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
               ⭐ All-Time Fan Favorites
             </h2>
             <p class="text-xs text-zinc-500">Highest rated and most watched classics</p>
@@ -289,7 +303,7 @@
         <div class="flex items-center gap-2.5">
           <div class="w-2.5 h-6 bg-emerald-400 rounded-full"></div>
           <div>
-            <h2 class="text-lg sm:text-xl font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
+            <h2 class="text-lg sm:text-xl font-heading font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
               🎬 Cinematic Masterpieces
             </h2>
             <p class="text-xs text-zinc-500">Full-length anime movies</p>
@@ -306,7 +320,7 @@
       <div class="flex items-center gap-2.5">
         <div class="w-2.5 h-6 bg-brand-500 rounded-full"></div>
         <div>
-          <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+          <h3 class="text-base sm:text-lg font-heading font-bold text-white flex items-center gap-2">
             <i class="fa-solid fa-shapes text-brand-400"></i> Explore By Genre
           </h3>
           <p class="text-xs text-zinc-400">Filter full catalog collections by genre</p>
@@ -322,7 +336,7 @@
 
   <!-- Footer -->
   <footer class="border-t border-zinc-900 bg-surface-950 py-8 px-6 text-center text-zinc-500 text-xs space-y-2">
-    <div class="text-zinc-400 font-semibold tracking-wider">WONDER<span class="text-brand-400">WATCH</span></div>
+    <div class="text-zinc-400 font-heading font-semibold tracking-wider">WONDER<span class="text-brand-400">WATCH</span></div>
     <p>WonderWatch does not host any media files on its servers. All content is provided by non-affiliated third parties.</p>
   </footer>
 
@@ -502,7 +516,6 @@
       stopAutoSlide();
       progressStartTime = Date.now();
       
-      // Smooth progress bar update
       progressInterval = setInterval(() => {
         const elapsed = Date.now() - progressStartTime;
         const pct = Math.min((elapsed / SLIDE_DURATION) * 100, 100);
@@ -510,7 +523,6 @@
         if (bar) bar.style.width = `${pct}%`;
       }, 50);
 
-      // Slide flip interval
       autoSlideInterval = setInterval(() => {
         nextSpotlight();
         progressStartTime = Date.now();
@@ -529,7 +541,6 @@
       startAutoSlide();
     }
 
-    // Pause auto-sliding when hovering over the hero card
     const heroCard = document.getElementById('heroCard');
     heroCard.addEventListener('mouseenter', () => stopAutoSlide());
     heroCard.addEventListener('mouseleave', () => startAutoSlide());
@@ -584,7 +595,7 @@
           </div>
 
           <div class="p-3 flex flex-col justify-between flex-1">
-            <h3 class="text-xs sm:text-sm font-bold text-zinc-200 line-clamp-1 group-hover:text-brand-400 transition" title="${title}">${title}</h3>
+            <h3 class="text-xs sm:text-sm font-heading font-bold text-zinc-200 line-clamp-1 group-hover:text-brand-400 transition" title="${title}">${title}</h3>
             <p class="text-[11px] text-zinc-500 mt-1 line-clamp-1">${anime.genres?.slice(0, 2).join(' • ') || 'Anime'}</p>
           </div>
         `;
@@ -720,7 +731,7 @@
         div.innerHTML = `
           <img src="${imgUrl}" class="w-12 h-16 object-cover rounded-xl bg-surface-950 flex-shrink-0 shadow-md group-hover:scale-105 transition">
           <div class="flex-1 min-w-0">
-            <h4 class="text-sm font-bold text-zinc-100 group-hover:text-brand-400 transition truncate">${title}</h4>
+            <h4 class="text-sm font-heading font-bold text-zinc-100 group-hover:text-brand-400 transition truncate">${title}</h4>
             ${nativeTitle ? `<p class="text-[11px] text-zinc-500 truncate">${nativeTitle}</p>` : ''}
             <div class="flex items-center gap-2 mt-1 text-[11px] text-zinc-400">
               <span class="bg-surface-800 border border-zinc-700/60 px-2 py-0.5 rounded text-[10px] font-bold text-zinc-200">${anime.format || 'TV'}</span>

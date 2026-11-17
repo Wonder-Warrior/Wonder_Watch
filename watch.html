@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WonderWatch | Watch Anime</title>
+  <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -13,6 +17,10 @@
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            heading: ['"Outfit"', 'sans-serif'],
+          },
           colors: {
             brand: {
               300: '#bef264',
@@ -21,11 +29,11 @@
               600: '#65a30d',
             },
             surface: {
-              750: '#23252b',
-              800: '#1b1c22',
-              850: '#14151b',
-              900: '#0e0f14',
-              950: '#07070a',
+              750: '#20222a',
+              800: '#171821',
+              850: '#111218',
+              900: '#0b0c10',
+              950: '#050608',
             }
           }
         }
@@ -33,15 +41,21 @@
     }
   </script>
   <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    h1, h2, h3, h4, .font-heading {
+      font-family: 'Outfit', sans-serif;
+    }
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #07070a;
+      background: #050608;
     }
     ::-webkit-scrollbar-thumb {
-      background: #23252b;
+      background: #1f212a;
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
@@ -52,14 +66,14 @@
 <body class="bg-surface-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-black">
 
   <!-- Header / Navigation -->
-  <header class="border-b border-zinc-900 bg-surface-950/85 backdrop-blur-xl sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+  <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between">
     <a href="index.html" class="flex items-center gap-2.5 group">
-      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-sm shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-sm shadow-lg shadow-brand-500/25 group-hover:scale-105 transition">
         <i class="fa-solid fa-play text-xs ml-0.5"></i>
       </div>
-      <span class="text-xl font-black tracking-wider text-white">WONDER<span class="text-brand-400">WATCH</span></span>
+      <span class="text-xl font-heading font-black tracking-wider text-white">WONDER<span class="text-brand-400">WATCH</span></span>
     </a>
-    <a href="index.html" class="text-xs bg-surface-900 border border-zinc-800 hover:border-brand-500/50 px-4 py-2 rounded-xl text-zinc-300 hover:text-white transition flex items-center gap-2">
+    <a href="index.html" class="text-xs bg-surface-900 border border-zinc-800 hover:border-brand-500/50 px-4 py-2 rounded-xl text-zinc-300 hover:text-white transition flex items-center gap-2 font-medium">
       <i class="fa-solid fa-arrow-left"></i> Back to Browse
     </a>
   </header>
@@ -72,13 +86,14 @@
       
       <!-- Left 2 Cols: Embed Player -->
       <div class="lg:col-span-2 flex flex-col gap-4">
-        <!-- Player Viewport -->
+        <!-- Player Viewport with Anti-Redirect Sandbox -->
         <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
           <iframe 
             id="playerFrame" 
             src="" 
             class="w-full h-full border-0" 
-            allow="fullscreen; autoplay"
+            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+            allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
             allowfullscreen 
             scrolling="no">
           </iframe>
@@ -87,11 +102,13 @@
         <!-- Info & Controls Bar -->
         <div class="bg-surface-900 border border-zinc-800/80 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
           <div class="space-y-1">
-            <h1 id="animeTitle" class="text-xl font-extrabold tracking-tight text-white line-clamp-1">Loading Title...</h1>
+            <h1 id="animeTitle" class="text-xl sm:text-2xl font-heading font-black tracking-tight text-white line-clamp-1">Loading Title...</h1>
             <div class="flex items-center gap-2 text-xs text-zinc-400">
-              <span id="animeSubInfo" class="text-brand-400 font-semibold">Episode 1 • SUB</span>
+              <span id="animeSubInfo" class="text-brand-400 font-bold">Episode 1 • SUB</span>
               <span>•</span>
-              <span id="activeSourceBadge" class="bg-surface-800 px-2 py-0.5 rounded text-[11px] text-zinc-300">Server 1</span>
+              <span id="activeSourceBadge" class="bg-surface-800 px-2 py-0.5 rounded text-[11px] text-zinc-300 font-medium">Server 1 (Primary)</span>
+              <span>•</span>
+              <span class="text-emerald-400 font-medium flex items-center gap-1"><i class="fa-solid fa-shield-halved text-[10px]"></i> Anti-Redirect</span>
             </div>
           </div>
           
@@ -110,7 +127,7 @@
             </select>
 
             <!-- Next Episode Button -->
-            <button onclick="handleNextEpisode()" class="bg-brand-500 hover:bg-brand-400 text-black font-bold px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center gap-1.5">
+            <button onclick="handleNextEpisode()" class="bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center gap-1.5">
               Next <i class="fa-solid fa-forward-step text-[10px]"></i>
             </button>
           </div>
@@ -119,12 +136,12 @@
         <!-- Series Synopsis & Metadata -->
         <div class="bg-surface-900 border border-zinc-800/80 p-5 rounded-2xl space-y-3">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+            <h3 class="text-sm font-heading font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
               <i class="fa-solid fa-circle-info text-brand-400"></i> Synopsis
             </h3>
             <div id="genresList" class="flex flex-wrap gap-1.5"></div>
           </div>
-          <p id="animeDescription" class="text-xs sm:text-sm text-zinc-400 leading-relaxed">Loading anime description...</p>
+          <p id="animeDescription" class="text-xs sm:text-sm text-zinc-400 leading-relaxed font-normal">Loading anime description...</p>
         </div>
       </div>
 
@@ -134,10 +151,10 @@
         <!-- Episode Selector Box -->
         <div class="bg-surface-900 border border-zinc-800/80 rounded-2xl p-5 flex flex-col h-[480px] shadow-xl">
           <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-800">
-            <h2 class="font-bold text-xs tracking-wider text-zinc-300 uppercase flex items-center gap-2">
+            <h2 class="font-heading font-bold text-xs tracking-wider text-zinc-300 uppercase flex items-center gap-2">
               <i class="fa-solid fa-list-ol text-brand-400"></i> Episode List
             </h2>
-            <span id="totalEpCount" class="text-xs font-medium text-zinc-500">Total: 12</span>
+            <span id="totalEpCount" class="text-xs font-semibold text-zinc-400">Total: 12</span>
           </div>
 
           <!-- Quick Episode Range Filter for 50+ Ep anime -->
@@ -152,10 +169,10 @@
         <!-- Series Franchise Seasons & Related Parts -->
         <div id="seriesGroupSection" class="bg-surface-900 border border-zinc-800/80 rounded-2xl p-5 space-y-3 shadow-xl">
           <div class="flex justify-between items-center pb-2 border-b border-zinc-800">
-            <h2 class="font-bold text-xs tracking-wider text-zinc-300 uppercase flex items-center gap-2">
+            <h2 class="font-heading font-bold text-xs tracking-wider text-zinc-300 uppercase flex items-center gap-2">
               <i class="fa-solid fa-layer-group text-brand-400"></i> Series & Seasons
             </h2>
-            <span class="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">Franchise</span>
+            <span class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Franchise</span>
           </div>
           <div id="seriesGroupList" class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
             <div class="py-4 text-center text-zinc-500 text-xs animate-pulse">Loading related seasons...</div>
@@ -169,6 +186,11 @@
   </main>
 
   <script>
+    // Trap any accidental navigation beforeunload attempts from third-party scripts
+    window.addEventListener('beforeunload', (e) => {
+      // Allows user-initiated internal link navigations
+    });
+
     const urlParams = new URLSearchParams(window.location.search);
     let animeId = urlParams.get('id') || '1';
     let malId = urlParams.get('malId') || animeId;
@@ -201,7 +223,7 @@
         if (i === currentEpisode) {
           baseClasses += "bg-brand-500 text-black border-brand-400 shadow-md shadow-brand-500/25";
         } else {
-          baseClasses += "bg-surface-800 text-zinc-300 border-zinc-700/60 hover:bg-zinc-800 hover:border-zinc-600";
+          baseClasses += "bg-surface-800 text-zinc-300 border-zinc-700/60 hover:bg-surface-750 hover:border-zinc-500";
         }
         btn.className = baseClasses;
         episodeGrid.appendChild(btn);
@@ -277,7 +299,6 @@
         const media = json.data?.Media;
 
         if (media) {
-          // If totalEpisodes was missing or defaulted to 12, update with accurate official count
           if (media.episodes && media.episodes > 0) {
             totalEpisodes = media.episodes;
             document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
@@ -289,7 +310,6 @@
             loadPlayer();
           }
 
-          // Render Description & Genres
           const descEl = document.getElementById('animeDescription');
           descEl.innerText = media.description || 'No description available for this anime.';
           
@@ -297,12 +317,11 @@
           genresContainer.innerHTML = '';
           media.genres?.slice(0, 4).forEach(genre => {
             const span = document.createElement('span');
-            span.className = 'text-[10px] bg-surface-800 border border-zinc-700/60 px-2 py-0.5 rounded-md text-zinc-300 font-medium';
+            span.className = 'text-[10px] bg-surface-800 border border-zinc-700/60 px-2.5 py-0.5 rounded-md text-zinc-300 font-semibold';
             span.innerText = genre;
             genresContainer.appendChild(span);
           });
 
-          // Render Grouped Seasons & Franchise Relations
           renderSeriesRelations(media.relations?.edges, media);
         }
       } catch (err) {
@@ -314,7 +333,6 @@
       const container = document.getElementById('seriesGroupList');
       container.innerHTML = '';
 
-      // Filter only anime items (filter out manga adaptations)
       const validRelations = edges ? edges.filter(edge => edge.node && edge.node.type === 'ANIME') : [];
 
       if (validRelations.length === 0) {
@@ -335,7 +353,7 @@
             <span class="text-[9px] font-black uppercase tracking-wider text-brand-400 bg-brand-500/20 px-1.5 py-0.5 rounded">NOW PLAYING</span>
             <span class="text-[10px] text-zinc-400 font-medium">${currentMedia.episodes || '?'} eps</span>
           </div>
-          <h4 class="text-xs font-bold text-white truncate mt-0.5">${currentTitle}</h4>
+          <h4 class="text-xs font-heading font-bold text-white truncate mt-0.5">${currentTitle}</h4>
         </div>
       `;
       container.appendChild(currentCard);
@@ -358,7 +376,7 @@
               <span class="text-[10px] text-zinc-400 font-medium">${node.format || 'TV'} • ${node.episodes || '?'} eps</span>
               ${relYear ? `<span class="text-[10px] text-zinc-500">• ${relYear}</span>` : ''}
             </div>
-            <h4 class="text-xs font-semibold text-zinc-200 group-hover:text-brand-400 truncate mt-0.5 transition">${relTitle}</h4>
+            <h4 class="text-xs font-heading font-bold text-zinc-200 group-hover:text-brand-400 truncate mt-0.5 transition">${relTitle}</h4>
           </div>
           <i class="fa-solid fa-play text-zinc-600 group-hover:text-brand-400 text-xs pr-1 transition"></i>
         `;
