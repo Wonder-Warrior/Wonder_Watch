@@ -15,14 +15,17 @@
         extend: {
           colors: {
             brand: {
-              400: '#2dd4bf',
-              500: '#14b8a6',
-              600: '#0d9488',
+              300: '#bef264',
+              400: '#a3e635',
+              500: '#84cc16',
+              600: '#65a30d',
             },
             surface: {
-              800: '#1e2029',
-              900: '#13141b',
-              950: '#0c0d12',
+              750: '#23252b',
+              800: '#1b1c22',
+              850: '#14151b',
+              900: '#0e0f14',
+              950: '#07070a',
             }
           }
         }
@@ -35,23 +38,23 @@
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #0c0d12;
+      background: #07070a;
     }
     ::-webkit-scrollbar-thumb {
-      background: #272733;
+      background: #23252b;
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #14b8a6;
+      background: #84cc16;
     }
   </style>
 </head>
-<body class="bg-surface-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-zinc-950">
+<body class="bg-surface-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-black">
 
   <!-- Header / Navigation -->
-  <header class="border-b border-zinc-800/80 bg-surface-950/80 backdrop-blur-xl sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-    <a href="index.html" class="flex items-center gap-2 group">
-      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-teal-300 flex items-center justify-center text-zinc-950 font-black text-sm shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
+  <header class="border-b border-zinc-900 bg-surface-950/85 backdrop-blur-xl sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+    <a href="index.html" class="flex items-center gap-2.5 group">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-sm shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
         <i class="fa-solid fa-play text-xs ml-0.5"></i>
       </div>
       <span class="text-xl font-black tracking-wider text-white">WONDER<span class="text-brand-400">WATCH</span></span>
@@ -82,22 +85,22 @@
         </div>
 
         <!-- Info & Controls Bar -->
-        <div class="bg-surface-900/90 border border-zinc-800/80 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
+        <div class="bg-surface-900 border border-zinc-800/80 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
           <div class="space-y-1">
             <h1 id="animeTitle" class="text-xl font-extrabold tracking-tight text-white line-clamp-1">Loading Title...</h1>
             <div class="flex items-center gap-2 text-xs text-zinc-400">
               <span id="animeSubInfo" class="text-brand-400 font-semibold">Episode 1 • SUB</span>
               <span>•</span>
-              <span id="activeSourceBadge" class="bg-surface-800 px-2 py-0.5 rounded text-[11px] text-zinc-300">MyAnimeList Stream</span>
+              <span id="activeSourceBadge" class="bg-surface-800 px-2 py-0.5 rounded text-[11px] text-zinc-300">Server 1</span>
             </div>
           </div>
           
           <!-- Stream Controls -->
           <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-            <!-- Source Selector (MAL fallback / AniList) -->
+            <!-- Server Selector -->
             <select id="sourceSelect" onchange="changeSource()" class="bg-surface-800 border border-zinc-700/80 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500">
-              <option value="mal">Source: MAL (Stable)</option>
-              <option value="anilist">Source: AniList</option>
+              <option value="mal">Server 1 (Primary)</option>
+              <option value="anilist">Server 2 (Backup)</option>
             </select>
 
             <!-- Sub / Dub Selector -->
@@ -107,14 +110,14 @@
             </select>
 
             <!-- Next Episode Button -->
-            <button onclick="handleNextEpisode()" class="bg-brand-500 hover:bg-brand-400 text-zinc-950 font-bold px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center gap-1.5">
+            <button onclick="handleNextEpisode()" class="bg-brand-500 hover:bg-brand-400 text-black font-bold px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center gap-1.5">
               Next <i class="fa-solid fa-forward-step text-[10px]"></i>
             </button>
           </div>
         </div>
 
         <!-- Series Synopsis & Metadata -->
-        <div class="bg-surface-900/70 border border-zinc-800/80 p-5 rounded-2xl space-y-3">
+        <div class="bg-surface-900 border border-zinc-800/80 p-5 rounded-2xl space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
               <i class="fa-solid fa-circle-info text-brand-400"></i> Synopsis
@@ -129,7 +132,7 @@
       <div class="flex flex-col gap-4">
         
         <!-- Episode Selector Box -->
-        <div class="bg-surface-900/90 border border-zinc-800/80 rounded-2xl p-5 flex flex-col h-[480px] shadow-xl">
+        <div class="bg-surface-900 border border-zinc-800/80 rounded-2xl p-5 flex flex-col h-[480px] shadow-xl">
           <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-800">
             <h2 class="font-bold text-xs tracking-wider text-zinc-300 uppercase flex items-center gap-2">
               <i class="fa-solid fa-list-ol text-brand-400"></i> Episode List
@@ -147,10 +150,10 @@
         </div>
 
         <!-- Series Franchise Seasons & Related Parts -->
-        <div id="seriesGroupSection" class="bg-surface-900/90 border border-zinc-800/80 rounded-2xl p-5 space-y-3 shadow-xl">
+        <div id="seriesGroupSection" class="bg-surface-900 border border-zinc-800/80 rounded-2xl p-5 space-y-3 shadow-xl">
           <div class="flex justify-between items-center pb-2 border-b border-zinc-800">
             <h2 class="font-bold text-xs tracking-wider text-zinc-300 uppercase flex items-center gap-2">
-              <i class="fa-solid fa-layer-group text-amber-400"></i> Series & Seasons
+              <i class="fa-solid fa-layer-group text-brand-400"></i> Series & Seasons
             </h2>
             <span class="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">Franchise</span>
           </div>
@@ -175,7 +178,7 @@
     
     let currentEpisode = 1;
     let currentType = 'sub';
-    let currentSource = 'mal'; // Default to MAL for 100% reliable stream coverage
+    let currentSource = 'mal'; // Primary high-reliability stream route
 
     const playerFrame = document.getElementById('playerFrame');
     const episodeGrid = document.getElementById('episodeGrid');
@@ -196,9 +199,9 @@
         
         let baseClasses = "h-10 rounded-xl text-xs font-bold transition flex items-center justify-center border ";
         if (i === currentEpisode) {
-          baseClasses += "bg-brand-500 text-zinc-950 border-brand-400 shadow-md shadow-brand-500/25";
+          baseClasses += "bg-brand-500 text-black border-brand-400 shadow-md shadow-brand-500/25";
         } else {
-          baseClasses += "bg-surface-800/80 text-zinc-300 border-zinc-700/60 hover:bg-zinc-800 hover:border-zinc-600";
+          baseClasses += "bg-surface-800 text-zinc-300 border-zinc-700/60 hover:bg-zinc-800 hover:border-zinc-600";
         }
         btn.className = baseClasses;
         episodeGrid.appendChild(btn);
@@ -208,10 +211,10 @@
     function loadPlayer() {
       const selectedId = currentSource === 'mal' ? malId : animeId;
       document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()}`;
-      document.getElementById('activeSourceBadge').innerText = currentSource === 'mal' ? 'MyAnimeList Stream' : 'AniList Stream';
+      document.getElementById('activeSourceBadge').innerText = currentSource === 'mal' ? 'Server 1 (Active)' : 'Server 2 (Active)';
       
-      // Load Zoko player with teal theme & autoplay enabled
-      playerFrame.src = `https://zokoanime.video/stream/${currentSource}/${selectedId}/${currentEpisode}/${currentType}?color=14b8a6&autoplay=1`;
+      // Load player with lime accent (#84cc16) & autoplay enabled
+      playerFrame.src = `https://zokoanime.video/stream/${currentSource}/${selectedId}/${currentEpisode}/${currentType}?color=84cc16&autoplay=1`;
     }
 
     function changeSource() {
@@ -324,7 +327,7 @@
       const currentCard = document.createElement('div');
       currentCard.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/40 text-left';
       currentCard.innerHTML = `
-        <div class="w-8 h-10 rounded-lg bg-brand-500 flex items-center justify-center text-zinc-950 font-black text-xs flex-shrink-0">
+        <div class="w-8 h-10 rounded-lg bg-brand-500 flex items-center justify-center text-black font-black text-xs flex-shrink-0">
           <i class="fa-solid fa-circle-play"></i>
         </div>
         <div class="flex-1 min-w-0">
@@ -346,12 +349,12 @@
         const relYear = node.startDate?.year || '';
 
         const card = document.createElement('div');
-        card.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-surface-800/70 border border-zinc-700/50 hover:border-brand-500/50 hover:bg-surface-800 cursor-pointer transition text-left group';
+        card.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-surface-800 border border-zinc-700/50 hover:border-brand-500/50 hover:bg-surface-750 cursor-pointer transition text-left group';
         card.innerHTML = `
           <img src="${relImg}" class="w-8 h-11 object-cover rounded-lg bg-surface-950 flex-shrink-0 group-hover:scale-105 transition">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1.5">
-              <span class="text-[9px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">${relType}</span>
+              <span class="text-[9px] font-bold uppercase tracking-wider text-brand-400 bg-brand-500/15 border border-brand-500/25 px-1.5 py-0.5 rounded">${relType}</span>
               <span class="text-[10px] text-zinc-400 font-medium">${node.format || 'TV'} • ${node.episodes || '?'} eps</span>
               ${relYear ? `<span class="text-[10px] text-zinc-500">• ${relYear}</span>` : ''}
             </div>
