@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wonder_Watch | Watch</title>
+  <title>WonderWatch | Watch Anime</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -13,88 +15,167 @@
         extend: {
           colors: {
             brand: {
+              400: '#2dd4bf',
               500: '#14b8a6',
               600: '#0d9488',
+            },
+            surface: {
+              800: '#1e2029',
+              900: '#13141b',
+              950: '#0c0d12',
             }
           }
         }
       }
     }
   </script>
+  <style>
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0c0d12;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #272733;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #14b8a6;
+    }
+  </style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-zinc-950">
+<body class="bg-surface-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-zinc-950">
 
   <!-- Header / Navigation -->
-  <header class="border-b border-zinc-800/80 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
-    <a href="index.html" class="text-2xl font-black tracking-wider text-brand-500 hover:opacity-90 transition">WONDER<span class="text-white">WATCH</span></a>
-    <a href="index.html" class="text-xs bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-zinc-300 hover:text-white transition">← Back to Browse</a>
+  <header class="border-b border-zinc-800/80 bg-surface-950/80 backdrop-blur-xl sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+    <a href="index.html" class="flex items-center gap-2 group">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-teal-300 flex items-center justify-center text-zinc-950 font-black text-sm shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
+        <i class="fa-solid fa-play text-xs ml-0.5"></i>
+      </div>
+      <span class="text-xl font-black tracking-wider text-white">WONDER<span class="text-brand-400">WATCH</span></span>
+    </a>
+    <a href="index.html" class="text-xs bg-surface-900 border border-zinc-800 hover:border-brand-500/50 px-4 py-2 rounded-xl text-zinc-300 hover:text-white transition flex items-center gap-2">
+      <i class="fa-solid fa-arrow-left"></i> Back to Browse
+    </a>
   </header>
 
-  <!-- Main Watch Container -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Main Watch Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
     
-    <!-- Left Column: Embed Player & Controls -->
-    <div class="lg:col-span-2 flex flex-col gap-4">
-      <div class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
-        <iframe 
-          id="playerFrame" 
-          src="" 
-          class="w-full h-full border-0" 
-          allow="fullscreen; autoplay"
-          allowfullscreen 
-          scrolling="no">
-        </iframe>
-      </div>
-
-      <div class="bg-zinc-900/60 border border-zinc-800/80 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 id="animeTitle" class="text-xl font-bold tracking-tight">Loading...</h1>
-          <p id="animeSubInfo" class="text-xs text-zinc-400 mt-1">Episode 1 • Subtitled</p>
-        </div>
-        
-        <div class="flex items-center gap-3 w-full sm:w-auto">
-          <select id="sourceSelect" onchange="changeSource()" class="bg-zinc-900 border border-zinc-800 text-xs font-medium px-3 py-2.5 rounded-xl text-zinc-300 focus:outline-none focus:border-brand-500">
-            <option value="mal">MyAnimeList (MAL)</option>
-            <option value="anilist">AniList</option>
-          </select>
-
-          <select id="streamTypeSelect" onchange="changeStreamType()" class="bg-zinc-900 border border-zinc-800 text-xs font-medium px-3 py-2.5 rounded-xl text-zinc-300 focus:outline-none focus:border-brand-500">
-            <option value="sub">Subtitled</option>
-            <option value="dub">Dubbed</option>
-          </select>
-
-          <button onclick="handleNextEpisode()" class="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-semibold px-5 py-2.5 rounded-xl text-sm transition shadow-lg shadow-brand-500/10">
-            Next
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right Column: Episode Grid -->
-    <div class="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 flex flex-col h-[550px] lg:h-auto">
-      <div class="flex justify-between items-center mb-4 pb-2 border-b border-zinc-800">
-        <h2 class="font-bold text-sm tracking-wide text-zinc-300 uppercase">Episodes</h2>
-        <span id="totalEpCount" class="text-xs text-zinc-500">Total: 12</span>
-      </div>
+    <!-- Video Player + Stream Controls Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
-      <div id="episodeGrid" class="flex-1 overflow-y-auto pr-1 grid grid-cols-5 gap-2 content-start">
-        <!-- Dynamic Episode Buttons -->
+      <!-- Left 2 Cols: Embed Player -->
+      <div class="lg:col-span-2 flex flex-col gap-4">
+        <!-- Player Viewport -->
+        <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
+          <iframe 
+            id="playerFrame" 
+            src="" 
+            class="w-full h-full border-0" 
+            allow="fullscreen; autoplay"
+            allowfullscreen 
+            scrolling="no">
+          </iframe>
+        </div>
+
+        <!-- Info & Controls Bar -->
+        <div class="bg-surface-900/90 border border-zinc-800/80 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
+          <div class="space-y-1">
+            <h1 id="animeTitle" class="text-xl font-extrabold tracking-tight text-white line-clamp-1">Loading Title...</h1>
+            <div class="flex items-center gap-2 text-xs text-zinc-400">
+              <span id="animeSubInfo" class="text-brand-400 font-semibold">Episode 1 • SUB</span>
+              <span>•</span>
+              <span id="activeSourceBadge" class="bg-surface-800 px-2 py-0.5 rounded text-[11px] text-zinc-300">MyAnimeList Stream</span>
+            </div>
+          </div>
+          
+          <!-- Stream Controls -->
+          <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            <!-- Source Selector (MAL fallback / AniList) -->
+            <select id="sourceSelect" onchange="changeSource()" class="bg-surface-800 border border-zinc-700/80 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500">
+              <option value="mal">Source: MAL (Stable)</option>
+              <option value="anilist">Source: AniList</option>
+            </select>
+
+            <!-- Sub / Dub Selector -->
+            <select id="streamTypeSelect" onchange="changeStreamType()" class="bg-surface-800 border border-zinc-700/80 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500">
+              <option value="sub">Subtitled</option>
+              <option value="dub">Dubbed</option>
+            </select>
+
+            <!-- Next Episode Button -->
+            <button onclick="handleNextEpisode()" class="bg-brand-500 hover:bg-brand-400 text-zinc-950 font-bold px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center gap-1.5">
+              Next <i class="fa-solid fa-forward-step text-[10px]"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Series Synopsis & Metadata -->
+        <div class="bg-surface-900/70 border border-zinc-800/80 p-5 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+              <i class="fa-solid fa-circle-info text-brand-400"></i> Synopsis
+            </h3>
+            <div id="genresList" class="flex flex-wrap gap-1.5"></div>
+          </div>
+          <p id="animeDescription" class="text-xs sm:text-sm text-zinc-400 leading-relaxed">Loading anime description...</p>
+        </div>
       </div>
+
+      <!-- Right 1 Col: Episodes & Series Grouping -->
+      <div class="flex flex-col gap-4">
+        
+        <!-- Episode Selector Box -->
+        <div class="bg-surface-900/90 border border-zinc-800/80 rounded-2xl p-5 flex flex-col h-[480px] shadow-xl">
+          <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-800">
+            <h2 class="font-bold text-xs tracking-wider text-zinc-300 uppercase flex items-center gap-2">
+              <i class="fa-solid fa-list-ol text-brand-400"></i> Episode List
+            </h2>
+            <span id="totalEpCount" class="text-xs font-medium text-zinc-500">Total: 12</span>
+          </div>
+
+          <!-- Quick Episode Range Filter for 50+ Ep anime -->
+          <div id="epRangeFilter" class="hidden mb-3 flex items-center gap-2 overflow-x-auto pb-1 text-[11px]"></div>
+          
+          <!-- Episode Numbers Grid -->
+          <div id="episodeGrid" class="flex-1 overflow-y-auto pr-1 grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-5 gap-2 content-start">
+            <!-- Episode Buttons rendered here -->
+          </div>
+        </div>
+
+        <!-- Series Franchise Seasons & Related Parts -->
+        <div id="seriesGroupSection" class="bg-surface-900/90 border border-zinc-800/80 rounded-2xl p-5 space-y-3 shadow-xl">
+          <div class="flex justify-between items-center pb-2 border-b border-zinc-800">
+            <h2 class="font-bold text-xs tracking-wider text-zinc-300 uppercase flex items-center gap-2">
+              <i class="fa-solid fa-layer-group text-amber-400"></i> Series & Seasons
+            </h2>
+            <span class="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">Franchise</span>
+          </div>
+          <div id="seriesGroupList" class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+            <div class="py-4 text-center text-zinc-500 text-xs animate-pulse">Loading related seasons...</div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
 
   </main>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const animeId = urlParams.get('id') || '1';
-    const malId = urlParams.get('malId') || animeId;
-    const animeTitle = urlParams.get('title') || 'Anime Stream';
+    let animeId = urlParams.get('id') || '1';
+    let malId = urlParams.get('malId') || animeId;
+    let animeTitle = urlParams.get('title') || 'Anime Stream';
     let totalEpisodes = parseInt(urlParams.get('eps')) || 12;
     if (isNaN(totalEpisodes) || totalEpisodes <= 0) totalEpisodes = 12;
     
     let currentEpisode = 1;
     let currentType = 'sub';
-    let currentSource = 'mal'; // Zoko's primary catalog is MyAnimeList (MAL)
+    let currentSource = 'mal'; // Default to MAL for 100% reliable stream coverage
 
     const playerFrame = document.getElementById('playerFrame');
     const episodeGrid = document.getElementById('episodeGrid');
@@ -113,11 +194,11 @@
           renderEpisodes();
         };
         
-        let baseClasses = "h-11 rounded-xl text-sm font-medium transition flex items-center justify-center border ";
+        let baseClasses = "h-10 rounded-xl text-xs font-bold transition flex items-center justify-center border ";
         if (i === currentEpisode) {
-          baseClasses += "bg-brand-500 text-zinc-950 border-brand-400 shadow-md shadow-brand-500/20";
+          baseClasses += "bg-brand-500 text-zinc-950 border-brand-400 shadow-md shadow-brand-500/25";
         } else {
-          baseClasses += "bg-zinc-900/80 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:border-zinc-700";
+          baseClasses += "bg-surface-800/80 text-zinc-300 border-zinc-700/60 hover:bg-zinc-800 hover:border-zinc-600";
         }
         btn.className = baseClasses;
         episodeGrid.appendChild(btn);
@@ -126,7 +207,10 @@
 
     function loadPlayer() {
       const selectedId = currentSource === 'mal' ? malId : animeId;
-      document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()} • Zoko Stream (${currentSource.toUpperCase()})`;
+      document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()}`;
+      document.getElementById('activeSourceBadge').innerText = currentSource === 'mal' ? 'MyAnimeList Stream' : 'AniList Stream';
+      
+      // Load Zoko player with teal theme & autoplay enabled
       playerFrame.src = `https://zokoanime.video/stream/${currentSource}/${selectedId}/${currentEpisode}/${currentType}?color=14b8a6&autoplay=1`;
     }
 
@@ -148,8 +232,144 @@
       }
     }
 
+    // Fetch Full Anime Info & Related Seasons (Franchise Grouping)
+    async function loadSeriesData() {
+      const query = `
+        query ($id: Int) {
+          Media(id: $id, type: ANIME) {
+            id
+            idMal
+            title { romaji english }
+            description(asHtml: false)
+            episodes
+            genres
+            averageScore
+            relations {
+              edges {
+                relationType
+                node {
+                  id
+                  idMal
+                  title { romaji english }
+                  format
+                  episodes
+                  type
+                  coverImage { medium }
+                  averageScore
+                  startDate { year }
+                }
+              }
+            }
+          }
+        }
+      `;
+
+      try {
+        const res = await fetch('https://graphql.anilist.co', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ query, variables: { id: parseInt(animeId) } })
+        });
+        const json = await res.json();
+        const media = json.data?.Media;
+
+        if (media) {
+          // If totalEpisodes was missing or defaulted to 12, update with accurate official count
+          if (media.episodes && media.episodes > 0) {
+            totalEpisodes = media.episodes;
+            document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
+            renderEpisodes();
+          }
+
+          if (media.idMal) {
+            malId = media.idMal;
+            loadPlayer();
+          }
+
+          // Render Description & Genres
+          const descEl = document.getElementById('animeDescription');
+          descEl.innerText = media.description || 'No description available for this anime.';
+          
+          const genresContainer = document.getElementById('genresList');
+          genresContainer.innerHTML = '';
+          media.genres?.slice(0, 4).forEach(genre => {
+            const span = document.createElement('span');
+            span.className = 'text-[10px] bg-surface-800 border border-zinc-700/60 px-2 py-0.5 rounded-md text-zinc-300 font-medium';
+            span.innerText = genre;
+            genresContainer.appendChild(span);
+          });
+
+          // Render Grouped Seasons & Franchise Relations
+          renderSeriesRelations(media.relations?.edges, media);
+        }
+      } catch (err) {
+        console.error('Failed to load series franchise data:', err);
+      }
+    }
+
+    function renderSeriesRelations(edges, currentMedia) {
+      const container = document.getElementById('seriesGroupList');
+      container.innerHTML = '';
+
+      // Filter only anime items (filter out manga adaptations)
+      const validRelations = edges ? edges.filter(edge => edge.node && edge.node.type === 'ANIME') : [];
+
+      if (validRelations.length === 0) {
+        container.innerHTML = `<div class="py-4 text-center text-zinc-500 text-xs">Standalone anime (No other seasons or spinoffs).</div>`;
+        return;
+      }
+
+      // Add Current Season Card First
+      const currentTitle = currentMedia.title.english || currentMedia.title.romaji;
+      const currentCard = document.createElement('div');
+      currentCard.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/40 text-left';
+      currentCard.innerHTML = `
+        <div class="w-8 h-10 rounded-lg bg-brand-500 flex items-center justify-center text-zinc-950 font-black text-xs flex-shrink-0">
+          <i class="fa-solid fa-circle-play"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[9px] font-black uppercase tracking-wider text-brand-400 bg-brand-500/20 px-1.5 py-0.5 rounded">NOW PLAYING</span>
+            <span class="text-[10px] text-zinc-400 font-medium">${currentMedia.episodes || '?'} eps</span>
+          </div>
+          <h4 class="text-xs font-bold text-white truncate mt-0.5">${currentTitle}</h4>
+        </div>
+      `;
+      container.appendChild(currentCard);
+
+      // Render Related Seasons / Sequels / Prequels / Side Stories
+      validRelations.forEach(edge => {
+        const node = edge.node;
+        const relType = edge.relationType.replace(/_/g, ' ');
+        const relTitle = node.title.english || node.title.romaji || 'Related Title';
+        const relImg = node.coverImage?.medium || '';
+        const relYear = node.startDate?.year || '';
+
+        const card = document.createElement('div');
+        card.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-surface-800/70 border border-zinc-700/50 hover:border-brand-500/50 hover:bg-surface-800 cursor-pointer transition text-left group';
+        card.innerHTML = `
+          <img src="${relImg}" class="w-8 h-11 object-cover rounded-lg bg-surface-950 flex-shrink-0 group-hover:scale-105 transition">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">${relType}</span>
+              <span class="text-[10px] text-zinc-400 font-medium">${node.format || 'TV'} • ${node.episodes || '?'} eps</span>
+              ${relYear ? `<span class="text-[10px] text-zinc-500">• ${relYear}</span>` : ''}
+            </div>
+            <h4 class="text-xs font-semibold text-zinc-200 group-hover:text-brand-400 truncate mt-0.5 transition">${relTitle}</h4>
+          </div>
+          <i class="fa-solid fa-play text-zinc-600 group-hover:text-brand-400 text-xs pr-1 transition"></i>
+        `;
+
+        card.onclick = () => {
+          window.location.href = `watch.html?id=${node.id}&malId=${node.idMal || node.id}&title=${encodeURIComponent(relTitle)}&eps=${node.episodes || 12}`;
+        };
+        container.appendChild(card);
+      });
+    }
+
     renderEpisodes();
     loadPlayer();
+    loadSeriesData();
   </script>
 </body>
 </html>
