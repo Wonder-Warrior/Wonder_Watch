@@ -47,7 +47,6 @@
     h1, h2, h3, h4, .font-heading {
       font-family: 'Outfit', sans-serif;
     }
-    /* Custom scrollbars */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -85,52 +84,64 @@
 
       <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
         <a href="#trending" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-fire text-amber-500 text-xs"></i> Trending</a>
-        <a href="#airing" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-brand-400 text-xs"></i> Top Airing</a>
-        <a href="#popular" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-star text-yellow-400 text-xs"></i> Most Popular</a>
+        <a href="#airing" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-brand-400 text-xs"></i> Airing</a>
+        <a href="#popular" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-star text-yellow-400 text-xs"></i> Popular</a>
         <a href="#movies" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-film text-brand-400 text-xs"></i> Movies</a>
-        <a href="#genresSection" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-shapes text-zinc-400 text-xs"></i> Genres</a>
+        <a href="#favoritesSection" id="navFavoritesLink" class="hidden hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-heart text-red-500 text-xs"></i> Favourites</a>
       </nav>
     </div>
 
-    <!-- Right Header Badge -->
+    <!-- Right Header Navigation: Log In / User State -->
     <div class="flex items-center gap-3">
-      <span class="inline-flex items-center gap-2 text-xs font-semibold text-zinc-300 bg-surface-900 border border-zinc-800/80 px-3.5 py-1.5 rounded-full shadow-inner">
-        <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>
-        Ad-Free Playback
-      </span>
+      <!-- Guest State: Log In Button -->
+      <div id="authGuestSection">
+        <button onclick="openAuthModal('login')" class="inline-flex items-center gap-2 text-xs sm:text-sm font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-4 sm:px-5 py-2 rounded-xl transition shadow-lg shadow-brand-500/20">
+          <i class="fa-solid fa-user text-xs"></i> Log In
+        </button>
+      </div>
+
+      <!-- Logged-In User Profile State -->
+      <div id="authUserSection" class="hidden relative">
+        <button onclick="toggleUserDropdown(event)" class="flex items-center gap-2.5 bg-surface-900 hover:bg-surface-850 border border-zinc-800/80 px-3 py-1.5 rounded-2xl transition">
+          <div class="w-7 h-7 rounded-full bg-brand-500 text-black flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden" id="userAvatarContainer">
+            <span id="userAvatarLetter">U</span>
+          </div>
+          <span id="headerUsername" class="text-xs font-semibold text-zinc-200 hidden sm:inline max-w-[100px] truncate">User</span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-zinc-500"></i>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-52 bg-surface-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/60 backdrop-blur-xl">
+          <div class="px-4 py-2.5">
+            <p class="text-xs font-bold text-white truncate" id="dropdownUserName">User</p>
+            <p class="text-[10px] text-brand-400 font-medium flex items-center gap-1.5 mt-0.5">
+              <span id="authProviderBadge" class="bg-brand-500/15 border border-brand-500/30 px-1.5 py-0.2 rounded text-[9px] uppercase tracking-wider font-bold">Standard</span>
+              <span>Free Member</span>
+            </p>
+          </div>
+          <div class="py-1">
+            <a href="#continueWatchingSection" class="px-4 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-surface-800 transition flex items-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left text-zinc-500 text-xs"></i> Watch History
+            </a>
+            <a href="#favoritesSection" class="px-4 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-surface-800 transition flex items-center gap-2">
+              <i class="fa-solid fa-heart text-red-500 text-xs"></i> My Favourites
+            </a>
+          </div>
+          <div class="py-1">
+            <button onclick="logoutUser()" class="w-full text-left px-4 py-2 text-xs font-semibold text-red-400 hover:bg-surface-800 transition flex items-center gap-2">
+              <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i> Log Out
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
-  <!-- Hero Spotlight Section with Tabs & Auto-Slider -->
-  <section id="heroSection" class="relative max-w-7xl mx-auto w-full px-4 sm:px-6 pt-5 space-y-3.5">
+  <!-- Hero Spotlight Section (Curated Top 1 of 6 Major Categories) -->
+  <section id="heroSection" class="relative max-w-7xl mx-auto w-full px-4 sm:px-6 pt-5">
     
-    <!-- Spotlight Category Navigation Tabs -->
-    <div id="spotlightTabs" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-      <button onclick="switchSpotlightTab('trending')" id="tab-trending" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition bg-brand-500 text-black shadow-lg shadow-brand-500/25">
-        <i class="fa-solid fa-fire text-xs"></i> Trending
-      </button>
-      <button onclick="switchSpotlightTab('airing')" id="tab-airing" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800/80 hover:text-white hover:border-zinc-700">
-        <i class="fa-solid fa-tower-broadcast text-xs"></i> Top Airing
-      </button>
-      <button onclick="switchSpotlightTab('popular')" id="tab-popular" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800/80 hover:text-white hover:border-zinc-700">
-        <i class="fa-solid fa-star text-xs"></i> All-Time Most Popular
-      </button>
-      <button onclick="switchSpotlightTab('movies')" id="tab-movies" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800/80 hover:text-white hover:border-zinc-700">
-        <i class="fa-solid fa-film text-xs"></i> Top Movies
-      </button>
-      <button onclick="switchSpotlightTab('action')" id="tab-action" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800/80 hover:text-white hover:border-zinc-700">
-        <i class="fa-solid fa-burst text-xs"></i> Action & Shounen
-      </button>
-      <button onclick="switchSpotlightTab('romance')" id="tab-romance" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800/80 hover:text-white hover:border-zinc-700">
-        <i class="fa-solid fa-heart text-xs"></i> Romance
-      </button>
-      <button onclick="switchSpotlightTab('scifi')" id="tab-scifi" class="spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800/80 hover:text-white hover:border-zinc-700">
-        <i class="fa-solid fa-robot text-xs"></i> Sci-Fi & Mecha
-      </button>
-    </div>
-
     <!-- Spotlight Banner Container -->
-    <div id="heroCard" class="group relative min-h-[360px] sm:min-h-[440px] rounded-3xl overflow-hidden border border-zinc-800/80 bg-surface-900 shadow-2xl flex flex-col justify-end p-6 sm:p-12 transition-all duration-700">
+    <div id="heroCard" class="group relative min-h-[380px] sm:min-h-[460px] rounded-3xl overflow-hidden border border-zinc-800/80 bg-surface-900 shadow-2xl flex flex-col justify-end p-6 sm:p-12 transition-all duration-700">
       <div id="heroBannerBg" class="absolute inset-0 bg-cover bg-center opacity-30 scale-105 transition-all duration-1000"></div>
       <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-surface-950/75 to-transparent"></div>
       <div class="absolute inset-0 bg-gradient-to-r from-surface-950 via-surface-950/50 to-transparent"></div>
@@ -140,10 +151,10 @@
         <span id="spotlightCount" class="text-xs font-bold text-zinc-400 bg-surface-950/90 px-3 py-1.5 rounded-xl border border-zinc-800 backdrop-blur-md">
           1 / 6
         </span>
-        <button onclick="prevSpotlight(); resetAutoSlide();" class="w-10 h-10 rounded-xl bg-surface-900/90 border border-zinc-800 text-zinc-300 hover:text-brand-400 hover:border-brand-500/50 flex items-center justify-center transition backdrop-blur-md shadow-lg" title="Previous Anime">
+        <button onclick="prevSpotlight(); resetAutoSlide();" class="w-10 h-10 rounded-xl bg-surface-900/90 border border-zinc-800 text-zinc-300 hover:text-brand-400 hover:border-brand-500/50 flex items-center justify-center transition backdrop-blur-md shadow-lg" title="Previous Spotlight">
           <i class="fa-solid fa-chevron-left text-xs"></i>
         </button>
-        <button onclick="nextSpotlight(); resetAutoSlide();" class="w-10 h-10 rounded-xl bg-surface-900/90 border border-zinc-800 text-zinc-300 hover:text-brand-400 hover:border-brand-500/50 flex items-center justify-center transition backdrop-blur-md shadow-lg" title="Next Anime">
+        <button onclick="nextSpotlight(); resetAutoSlide();" class="w-10 h-10 rounded-xl bg-surface-900/90 border border-zinc-800 text-zinc-300 hover:text-brand-400 hover:border-brand-500/50 flex items-center justify-center transition backdrop-blur-md shadow-lg" title="Next Spotlight">
           <i class="fa-solid fa-chevron-right text-xs"></i>
         </button>
       </div>
@@ -167,10 +178,13 @@
         <p id="heroDescription" class="text-xs sm:text-sm text-zinc-400 line-clamp-3 leading-relaxed max-w-xl">
           Loading description...
         </p>
-        <div class="pt-2">
+        <div class="pt-2 flex items-center gap-3">
           <a id="heroWatchBtn" href="#" class="inline-flex items-center gap-2.5 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-6 py-3.5 rounded-xl transition shadow-lg shadow-brand-500/25">
             <i class="fa-solid fa-play text-sm"></i> Watch Now
           </a>
+          <button id="heroFavBtn" onclick="toggleSpotlightFavorite()" class="w-12 h-12 rounded-xl bg-surface-800/90 border border-zinc-700/60 hover:border-brand-500 text-zinc-300 hover:text-red-500 flex items-center justify-center transition" title="Save to Favourites">
+            <i class="fa-regular fa-heart text-base" id="heroFavIcon"></i>
+          </button>
         </div>
       </div>
 
@@ -205,7 +219,6 @@
 
         <!-- Right Side Controls (Separated Clear Button & Live Badge) -->
         <div class="absolute right-3.5 sm:right-4 flex items-center gap-2">
-          <!-- Clear button with distinct spacing -->
           <button 
             id="searchClearBtn" 
             type="button"
@@ -215,7 +228,6 @@
             <i class="fa-solid fa-xmark"></i>
           </button>
 
-          <!-- Live Badge -->
           <div class="flex items-center gap-1.5 text-[11px] font-bold text-brand-400 bg-brand-500/15 px-3 py-1.5 rounded-xl border border-brand-500/30 select-none">
             <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>
             LIVE
@@ -240,7 +252,61 @@
     </div>
   </section>
 
-  <!-- ALL MAIN CATEGORIES AT THE BOTTOM OF THE SCREEN -->
+  <!-- PERSONALIZED USER SECTIONS (CONTINUE WATCHING & FAVOURITES) -->
+  <div class="max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-12">
+    
+    <!-- Continue Watching with Timestamps -->
+    <section id="continueWatchingSection" class="hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-2.5">
+          <div class="w-2.5 h-6 bg-brand-400 rounded-full"></div>
+          <div>
+            <h2 class="text-lg sm:text-xl font-heading font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left text-brand-400 text-sm"></i> Continue Watching
+            </h2>
+            <p class="text-xs text-zinc-500">Pick up right where you left off with saved timestamps</p>
+          </div>
+        </div>
+        <button onclick="clearHistory()" class="text-xs text-zinc-500 hover:text-red-400 transition">Clear History</button>
+      </div>
+      <div id="grid-continue" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+    </section>
+
+    <!-- Recommended Anime Based on Watch History -->
+    <section id="recommendationsSection" class="hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-2.5">
+          <div class="w-2.5 h-6 bg-brand-500 rounded-full"></div>
+          <div>
+            <h2 class="text-lg sm:text-xl font-heading font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
+              <i class="fa-solid fa-wand-magic-sparkles text-brand-400 text-sm"></i> Anime You Might Like
+            </h2>
+            <p class="text-xs text-zinc-500">Personalized recommendations based on what you've watched</p>
+          </div>
+        </div>
+      </div>
+      <div id="grid-recommended" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+    </section>
+
+    <!-- User Favourites Section -->
+    <section id="favoritesSection" class="hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-2.5">
+          <div class="w-2.5 h-6 bg-red-500 rounded-full"></div>
+          <div>
+            <h2 class="text-lg sm:text-xl font-heading font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
+              <i class="fa-solid fa-heart text-red-500 text-sm"></i> My Favourites
+            </h2>
+            <p class="text-xs text-zinc-500">Anime titles you've saved to your list</p>
+          </div>
+        </div>
+      </div>
+      <div id="grid-favorites" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+    </section>
+
+  </div>
+
+  <!-- MAIN CATALOG CATEGORIES -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-12">
     
     <!-- Category 1: Trending Now -->
@@ -334,6 +400,93 @@
 
   </main>
 
+  <!-- Auth Modal (Log In / Sign Up / Google Auth) -->
+  <div id="authModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="relative w-full max-w-md bg-surface-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5">
+      
+      <!-- Close button -->
+      <button onclick="closeAuthModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-surface-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="text-center space-y-1">
+        <div class="w-10 h-10 rounded-2xl bg-brand-500/20 border border-brand-500/40 text-brand-400 flex items-center justify-center mx-auto text-lg mb-2">
+          <i class="fa-solid fa-user-shield"></i>
+        </div>
+        <h3 id="authModalTitle" class="text-xl sm:text-2xl font-heading font-black text-white">Welcome Back</h3>
+        <p id="authModalSubtitle" class="text-xs text-zinc-400">Log in to sync timestamps, watchlists, and favourites</p>
+      </div>
+
+      <!-- One-Click Google Login Button -->
+      <div>
+        <button onclick="handleGoogleLogin()" class="w-full bg-white hover:bg-zinc-100 text-zinc-900 font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-3 text-xs shadow-md border border-zinc-200">
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+
+      <div class="relative flex py-1 items-center">
+        <div class="flex-grow border-t border-zinc-800"></div>
+        <span class="flex-shrink mx-3 text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">Or with email</span>
+        <div class="flex-grow border-t border-zinc-800"></div>
+      </div>
+
+      <!-- Form Inputs -->
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
+        <div class="space-y-1">
+          <label class="text-xs font-semibold text-zinc-300">Username or Email</label>
+          <div class="relative flex items-center">
+            <i class="fa-solid fa-envelope absolute left-3.5 text-zinc-500 text-xs"></i>
+            <input 
+              type="text" 
+              id="authUsernameInput" 
+              required
+              placeholder="e.g. otaku99 or user@gmail.com" 
+              class="w-full bg-surface-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50"
+            >
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs font-semibold text-zinc-300">Password</label>
+          <div class="relative flex items-center">
+            <i class="fa-solid fa-lock absolute left-3.5 text-zinc-500 text-xs"></i>
+            <input 
+              type="password" 
+              id="authPasswordInput" 
+              required
+              placeholder="••••••••" 
+              class="w-full bg-surface-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50"
+            >
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          id="authSubmitBtn"
+          class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-2.5 rounded-xl transition text-sm shadow-lg shadow-brand-500/25 mt-1"
+        >
+          Log In
+        </button>
+      </form>
+
+      <!-- Toggle Sign In / Sign Up -->
+      <div class="text-center pt-2 border-t border-zinc-800/80">
+        <p class="text-xs text-zinc-400" id="authSwitchPrompt">
+          Don't have an account? 
+          <button type="button" onclick="toggleAuthMode()" class="text-brand-400 hover:underline font-semibold ml-1">Sign Up</button>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="border-t border-zinc-900 bg-surface-950 py-8 px-6 text-center text-zinc-500 text-xs space-y-2">
     <div class="text-zinc-400 font-heading font-semibold tracking-wider">WONDER<span class="text-brand-400">WATCH</span></div>
@@ -345,12 +498,10 @@
     const searchResults = document.getElementById('searchResults');
     const searchClearBtn = document.getElementById('searchClearBtn');
 
-    let currentTab = 'trending';
-    let spotlightDataMap = {};
-    let currentSpotlightList = [];
+    // 6-Slide Spotlight Array (Top 1 of each major category)
+    let spotlightList = [];
     let currentSpotlightIdx = 0;
 
-    // Automatic Slide Timer Configuration (5 seconds)
     const SLIDE_DURATION = 5000;
     let autoSlideInterval = null;
     let progressInterval = null;
@@ -369,108 +520,44 @@
       return json.data;
     }
 
-    const tabQueries = {
-      trending: `
+    // Load Top 1 of each category to form the 6 spotlight slides
+    async function loadSpotlightSix() {
+      const query = `
         query {
-          Page(perPage: 6) { 
-            media(sort: TRENDING_DESC, type: ANIME) { 
-              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
-            } 
-          }
+          topTrending: Page(perPage: 1) { media(sort: TRENDING_DESC, type: ANIME) { id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year } } }
+          topAiring: Page(perPage: 1) { media(status: RELEASING, sort: POPULARITY_DESC, type: ANIME) { id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year } } }
+          topPopular: Page(perPage: 1) { media(sort: POPULARITY_DESC, type: ANIME) { id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year } } }
+          topMovie: Page(perPage: 1) { media(format: MOVIE, sort: POPULARITY_DESC, type: ANIME) { id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year } } }
+          topAction: Page(perPage: 1) { media(genre: "Action", sort: POPULARITY_DESC, type: ANIME) { id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year } } }
+          topSciFi: Page(perPage: 1) { media(genre: "Sci-Fi", sort: POPULARITY_DESC, type: ANIME) { id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year } } }
         }
-      `,
-      airing: `
-        query {
-          Page(perPage: 6) { 
-            media(status: RELEASING, sort: POPULARITY_DESC, type: ANIME) { 
-              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
-            } 
-          }
-        }
-      `,
-      popular: `
-        query {
-          Page(perPage: 6) { 
-            media(sort: POPULARITY_DESC, type: ANIME) { 
-              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
-            } 
-          }
-        }
-      `,
-      movies: `
-        query {
-          Page(perPage: 6) { 
-            media(format: MOVIE, sort: POPULARITY_DESC, type: ANIME) { 
-              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
-            } 
-          }
-        }
-      `,
-      action: `
-        query {
-          Page(perPage: 6) { 
-            media(genre: "Action", sort: POPULARITY_DESC, type: ANIME) { 
-              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
-            } 
-          }
-        }
-      `,
-      romance: `
-        query {
-          Page(perPage: 6) { 
-            media(genre: "Romance", sort: POPULARITY_DESC, type: ANIME) { 
-              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
-            } 
-          }
-        }
-      `,
-      scifi: `
-        query {
-          Page(perPage: 6) { 
-            media(genre: "Sci-Fi", sort: POPULARITY_DESC, type: ANIME) { 
-              id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
-            } 
-          }
-        }
-      `
-    };
+      `;
 
-    const tabNames = {
-      trending: "Trending",
-      airing: "Top Airing",
-      popular: "All-Time Popular",
-      movies: "Top Movies",
-      action: "Action & Shounen",
-      romance: "Romance",
-      scifi: "Sci-Fi"
-    };
+      try {
+        const data = await fetchAniList(query);
+        const tags = [
+          "🔥 #1 Trending Anime",
+          "✨ #1 Top Airing Anime",
+          "⭐ #1 All-Time Fan Favorite",
+          "🎬 #1 Cinematic Movie",
+          "⚔️ #1 Action & Shounen Hit",
+          "🚀 #1 Sci-Fi & Cyberpunk Hit"
+        ];
 
-    async function switchSpotlightTab(tabKey) {
-      currentTab = tabKey;
+        spotlightList = [
+          { ...data.topTrending.media[0], categoryTag: tags[0] },
+          { ...data.topAiring.media[0], categoryTag: tags[1] },
+          { ...data.topPopular.media[0], categoryTag: tags[2] },
+          { ...data.topMovie.media[0], categoryTag: tags[3] },
+          { ...data.topAction.media[0], categoryTag: tags[4] },
+          { ...data.topSciFi.media[0], categoryTag: tags[5] }
+        ].filter(Boolean);
 
-      // Update Tab Styles
-      document.querySelectorAll('.spotlight-tab').forEach(btn => {
-        btn.className = 'spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition bg-surface-900 text-zinc-400 border border-zinc-800/80 hover:text-white hover:border-zinc-700';
-      });
-      const activeBtn = document.getElementById(`tab-${tabKey}`);
-      if (activeBtn) {
-        activeBtn.className = 'spotlight-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition bg-brand-500 text-black shadow-lg shadow-brand-500/25';
+        setSpotlight(spotlightList[0]);
+        startAutoSlide();
+      } catch (err) {
+        console.error('Failed to load spotlight:', err);
       }
-
-      // Fetch or use cached data
-      if (!spotlightDataMap[tabKey]) {
-        try {
-          const data = await fetchAniList(tabQueries[tabKey]);
-          spotlightDataMap[tabKey] = data.Page.media;
-        } catch (err) {
-          console.error('Error loading tab:', err);
-        }
-      }
-
-      currentSpotlightList = spotlightDataMap[tabKey] || [];
-      currentSpotlightIdx = 0;
-      setSpotlight(currentSpotlightList[0]);
-      resetAutoSlide();
     }
 
     function setSpotlight(anime) {
@@ -488,28 +575,28 @@
       document.getElementById('heroEpisodes').innerText = `${eps} Episodes`;
       document.getElementById('heroScore').innerHTML = `<i class="fa-solid fa-star text-xs"></i> ${score}`;
       document.getElementById('heroGenres').innerText = anime.genres?.slice(0, 3).join(', ') || 'Action, Fantasy';
-      document.getElementById('spotlightCount').innerText = `${currentSpotlightIdx + 1} / ${Math.min(currentSpotlightList.length, 6)}`;
-      document.getElementById('heroRankTag').innerText = `#${currentSpotlightIdx + 1} Spotlight in ${tabNames[currentTab] || 'Trending'}`;
+      document.getElementById('spotlightCount').innerText = `${currentSpotlightIdx + 1} / ${spotlightList.length}`;
+      document.getElementById('heroRankTag').innerText = anime.categoryTag || `#${currentSpotlightIdx + 1} Spotlight`;
       
       const cleanDesc = (anime.description || 'Watch now in high definition with English subtitles and dubbing.').replace(/<[^>]*>/g, '');
       document.getElementById('heroDescription').innerText = cleanDesc;
 
       const watchBtn = document.getElementById('heroWatchBtn');
       watchBtn.href = `watch.html?id=${anilistId}&malId=${malId}&title=${encodeURIComponent(title)}&eps=${eps}`;
+
+      updateSpotlightFavButton(anilistId);
     }
 
     function nextSpotlight() {
-      if (currentSpotlightList.length === 0) return;
-      const maxSlides = Math.min(currentSpotlightList.length, 6);
-      currentSpotlightIdx = (currentSpotlightIdx + 1) % maxSlides;
-      setSpotlight(currentSpotlightList[currentSpotlightIdx]);
+      if (spotlightList.length === 0) return;
+      currentSpotlightIdx = (currentSpotlightIdx + 1) % spotlightList.length;
+      setSpotlight(spotlightList[currentSpotlightIdx]);
     }
 
     function prevSpotlight() {
-      if (currentSpotlightList.length === 0) return;
-      const maxSlides = Math.min(currentSpotlightList.length, 6);
-      currentSpotlightIdx = (currentSpotlightIdx - 1 + maxSlides) % maxSlides;
-      setSpotlight(currentSpotlightList[currentSpotlightIdx]);
+      if (spotlightList.length === 0) return;
+      currentSpotlightIdx = (currentSpotlightIdx - 1 + spotlightList.length) % spotlightList.length;
+      setSpotlight(spotlightList[currentSpotlightIdx]);
     }
 
     function startAutoSlide() {
@@ -545,8 +632,150 @@
     heroCard.addEventListener('mouseenter', () => stopAutoSlide());
     heroCard.addEventListener('mouseleave', () => startAutoSlide());
 
+    // --- FAVORITES & CONTINUED WATCHING (User State) ---
+    function getFavorites() {
+      return JSON.parse(localStorage.getItem('wonderwatch_favorites') || '[]');
+    }
+
+    function isAnimeFavorite(id) {
+      return getFavorites().some(item => item.id == id);
+    }
+
+    function toggleSpotlightFavorite() {
+      if (spotlightList.length === 0) return;
+      const anime = spotlightList[currentSpotlightIdx];
+      toggleFavorite(anime);
+      updateSpotlightFavButton(anime.id);
+    }
+
+    function toggleFavorite(anime) {
+      let favs = getFavorites();
+      const existingIdx = favs.findIndex(item => item.id == anime.id);
+      
+      if (existingIdx >= 0) {
+        favs.splice(existingIdx, 1);
+      } else {
+        favs.unshift({
+          id: anime.id,
+          idMal: anime.idMal || anime.id,
+          title: anime.title.english || anime.title.romaji,
+          coverImage: anime.coverImage,
+          episodes: anime.episodes,
+          averageScore: anime.averageScore,
+          format: anime.format,
+          genres: anime.genres
+        });
+      }
+      localStorage.setItem('wonderwatch_favorites', JSON.stringify(favs));
+      renderUserPersonalizedSections();
+    }
+
+    function updateSpotlightFavButton(animeId) {
+      const favIcon = document.getElementById('heroFavIcon');
+      if (!favIcon) return;
+      if (isAnimeFavorite(animeId)) {
+        favIcon.className = "fa-solid fa-heart text-red-500 text-base";
+      } else {
+        favIcon.className = "fa-regular fa-heart text-base";
+      }
+    }
+
+    function getHistory() {
+      return JSON.parse(localStorage.getItem('wonderwatch_history') || '[]');
+    }
+
+    function clearHistory() {
+      localStorage.removeItem('wonderwatch_history');
+      renderUserPersonalizedSections();
+    }
+
+    async function renderUserPersonalizedSections() {
+      const history = getHistory();
+      const favorites = getFavorites();
+
+      const continueSec = document.getElementById('continueWatchingSection');
+      const continueGrid = document.getElementById('grid-continue');
+      const favSec = document.getElementById('favoritesSection');
+      const favGrid = document.getElementById('grid-favorites');
+      const recSec = document.getElementById('recommendationsSection');
+      const recGrid = document.getElementById('grid-recommended');
+      const favNavLink = document.getElementById('navFavoritesLink');
+
+      // 1. Render Continue Watching
+      if (history.length > 0) {
+        continueSec.classList.remove('hidden');
+        continueGrid.innerHTML = '';
+        history.slice(0, 6).forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'group relative bg-surface-900 border border-zinc-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/60 transition flex flex-col shadow-lg';
+          
+          const timeSec = item.timestamp || 0;
+          const mins = Math.floor(timeSec / 60);
+          const secs = Math.floor(timeSec % 60);
+          const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+
+          card.innerHTML = `
+            <div class="relative aspect-[3/4.2] overflow-hidden bg-surface-950">
+              <img src="${item.img || ''}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+              <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-transparent to-transparent opacity-80"></div>
+              
+              <span class="absolute top-2 left-2 bg-brand-500 text-black text-[10px] font-black uppercase px-2 py-0.5 rounded-md">EP ${item.episode || 1}</span>
+              <span class="absolute bottom-2 left-2 bg-surface-950/90 text-brand-400 text-[10px] font-bold px-2 py-0.5 rounded-md border border-zinc-800">
+                <i class="fa-solid fa-clock text-[9px]"></i> ${timeStr}
+              </span>
+            </div>
+            <div class="p-3">
+              <h3 class="text-xs font-heading font-bold text-zinc-100 truncate group-hover:text-brand-400 transition">${item.title}</h3>
+              <p class="text-[10px] text-zinc-500 mt-0.5">Resume Episode ${item.episode}</p>
+            </div>
+          `;
+          card.onclick = () => {
+            window.location.href = `watch.html?id=${item.id}&malId=${item.malId}&title=${encodeURIComponent(item.title)}&eps=${item.eps || 12}&ep=${item.episode}&time=${timeSec}`;
+          };
+          continueGrid.appendChild(card);
+        });
+      } else {
+        continueSec.classList.add('hidden');
+      }
+
+      // 2. Render Favourites
+      if (favorites.length > 0) {
+        favSec.classList.remove('hidden');
+        favNavLink.classList.remove('hidden');
+        renderGrid('grid-favorites', favorites);
+      } else {
+        favSec.classList.add('hidden');
+        favNavLink.classList.add('hidden');
+      }
+
+      // 3. Render Recommendations ("Anime You Might Like")
+      if (history.length > 0 || favorites.length > 0) {
+        const topItem = history[0] || favorites[0];
+        const genre = topItem.genres?.[0] || 'Action';
+        recSec.classList.remove('hidden');
+        try {
+          const recQuery = `
+            query {
+              Page(perPage: 6) { 
+                media(genre: "${genre}", sort: POPULARITY_DESC, type: ANIME) { 
+                  id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
+                } 
+              }
+            }
+          `;
+          const data = await fetchAniList(recQuery);
+          renderGrid('grid-recommended', data.Page.media);
+        } catch (e) {
+          console.error('Error fetching recommendations:', e);
+        }
+      } else {
+        recSec.classList.add('hidden');
+      }
+    }
+
     function renderGrid(containerId, animeList) {
       const container = document.getElementById(containerId);
+      if (!container) return;
       container.innerHTML = '';
       if (!animeList || animeList.length === 0) {
         container.innerHTML = `<div class="col-span-full py-8 text-center text-zinc-500 text-sm">No items found.</div>`;
@@ -570,7 +799,6 @@
             <img src="${imgUrl}" alt="${title}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 group-hover:brightness-110 transition duration-500">
             <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition"></div>
             
-            <!-- Quality & Format Badges -->
             <div class="absolute top-2 left-2 flex items-center gap-1">
               <span class="bg-surface-950/85 backdrop-blur-md text-[10px] font-black uppercase px-2 py-0.5 rounded-md text-brand-400 border border-brand-500/30">HD</span>
               <span class="bg-surface-950/85 backdrop-blur-md text-[10px] font-bold px-1.5 py-0.5 rounded-md text-zinc-300 border border-zinc-800">${format}</span>
@@ -580,14 +808,6 @@
               <i class="fa-solid fa-star text-[10px]"></i> ${score}
             </span>
 
-            <!-- Quick Play Icon -->
-            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300">
-              <div class="w-12 h-12 rounded-full bg-brand-500 text-black flex items-center justify-center shadow-lg shadow-brand-500/40 scale-75 group-hover:scale-100 transition duration-300">
-                <i class="fa-solid fa-play text-sm ml-0.5"></i>
-              </div>
-            </div>
-
-            <!-- Bottom Ep / Year overlay -->
             <div class="absolute bottom-2 left-2 right-2 flex justify-between items-center text-[11px] text-zinc-300 font-medium">
               <span class="bg-surface-900/80 backdrop-blur-sm px-2 py-0.5 rounded-md border border-zinc-800/80">EPS ${eps}</span>
               ${year ? `<span class="text-zinc-400 font-normal">${year}</span>` : ''}
@@ -607,7 +827,6 @@
       });
     }
 
-    // Load All Primary Catalog Sections
     async function loadAllCategories() {
       const fullQuery = `
         query {
@@ -636,11 +855,6 @@
 
       try {
         const data = await fetchAniList(fullQuery);
-        spotlightDataMap.trending = data.trending.media;
-        currentSpotlightList = data.trending.media;
-        setSpotlight(currentSpotlightList[0]);
-        startAutoSlide();
-
         renderGrid('grid-trending', data.trending.media);
         renderGrid('grid-airing', data.airing.media);
         renderGrid('grid-popular', data.popular.media);
@@ -650,7 +864,7 @@
       }
     }
 
-    // Live search handling with proper clear button layout
+    // Live search handling
     let searchTimeout;
     searchInput.addEventListener('input', (e) => {
       clearTimeout(searchTimeout);
@@ -752,7 +966,6 @@
       searchResults.classList.remove('hidden');
     }
 
-    // Populate Dynamic Genre Chips
     async function loadGenres() {
       try {
         const data = await fetchAniList(`query { GenreCollection }`);
@@ -781,9 +994,132 @@
       if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
         searchResults.classList.add('hidden');
       }
+      const userSection = document.getElementById('authUserSection');
+      const dropdown = document.getElementById('userDropdownMenu');
+      if (userSection && !userSection.contains(e.target) && dropdown) {
+        dropdown.classList.add('hidden');
+      }
     });
 
+    // --- AUTHENTICATION STATE & GOOGLE LOGIN ---
+    let authMode = 'login';
+
+    function checkAuthState() {
+      const savedUser = localStorage.getItem('wonderwatch_user');
+      const guestSec = document.getElementById('authGuestSection');
+      const userSec = document.getElementById('authUserSection');
+      
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        guestSec.classList.add('hidden');
+        userSec.classList.remove('hidden');
+        
+        document.getElementById('headerUsername').innerText = user.name || 'User';
+        document.getElementById('dropdownUserName').innerText = user.name || 'User';
+        document.getElementById('authProviderBadge').innerText = user.provider || 'Standard';
+
+        const avatarContainer = document.getElementById('userAvatarContainer');
+        if (user.avatar) {
+          avatarContainer.innerHTML = `<img src="${user.avatar}" class="w-full h-full object-cover">`;
+        } else {
+          avatarContainer.innerHTML = `<span>${(user.name || 'U').charAt(0).toUpperCase()}</span>`;
+        }
+      } else {
+        guestSec.classList.remove('hidden');
+        userSec.classList.add('hidden');
+      }
+    }
+
+    function openAuthModal(mode = 'login') {
+      authMode = mode;
+      updateAuthModalUI();
+      const modal = document.getElementById('authModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeAuthModal() {
+      const modal = document.getElementById('authModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function toggleAuthMode() {
+      authMode = authMode === 'login' ? 'signup' : 'login';
+      updateAuthModalUI();
+    }
+
+    function updateAuthModalUI() {
+      const title = document.getElementById('authModalTitle');
+      const sub = document.getElementById('authModalSubtitle');
+      const submitBtn = document.getElementById('authSubmitBtn');
+      const prompt = document.getElementById('authSwitchPrompt');
+
+      if (authMode === 'login') {
+        title.innerText = "Welcome Back";
+        sub.innerText = "Log in to sync timestamps, watchlists, and favourites";
+        submitBtn.innerText = "Log In";
+        prompt.innerHTML = `Don't have an account? <button type="button" onclick="toggleAuthMode()" class="text-brand-400 hover:underline font-semibold ml-1">Sign Up</button>`;
+      } else {
+        title.innerText = "Create Your Account";
+        sub.innerText = "Join WonderWatch to save watchlists and continue watching";
+        submitBtn.innerText = "Create Account";
+        prompt.innerHTML = `Already have an account? <button type="button" onclick="toggleAuthMode()" class="text-brand-400 hover:underline font-semibold ml-1">Log In</button>`;
+      }
+    }
+
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const usernameInput = document.getElementById('authUsernameInput');
+      const username = usernameInput.value.trim() || 'Otaku';
+      
+      const userData = {
+        name: username,
+        provider: 'Standard',
+        loggedInAt: Date.now()
+      };
+      localStorage.setItem('wonderwatch_user', JSON.stringify(userData));
+      
+      closeAuthModal();
+      checkAuthState();
+      usernameInput.value = '';
+      document.getElementById('authPasswordInput').value = '';
+      renderUserPersonalizedSections();
+    }
+
+    function handleGoogleLogin() {
+      // Simulates real OAuth login flow seamlessly client-side
+      const googleUser = {
+        name: "Google User",
+        email: "user@gmail.com",
+        provider: "Google",
+        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=google_hero",
+        loggedInAt: Date.now()
+      };
+
+      localStorage.setItem('wonderwatch_user', JSON.stringify(googleUser));
+      closeAuthModal();
+      checkAuthState();
+      renderUserPersonalizedSections();
+    }
+
+    function toggleUserDropdown(e) {
+      e.stopPropagation();
+      const dropdown = document.getElementById('userDropdownMenu');
+      dropdown.classList.toggle('hidden');
+    }
+
+    function logoutUser() {
+      localStorage.removeItem('wonderwatch_user');
+      const dropdown = document.getElementById('userDropdownMenu');
+      if (dropdown) dropdown.classList.add('hidden');
+      checkAuthState();
+    }
+
     // Initial load
+    checkAuthState();
+    loadSpotlightSix();
+    renderUserPersonalizedSections();
     loadAllCategories();
     loadGenres();
   </script>
