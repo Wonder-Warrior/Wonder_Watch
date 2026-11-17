@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wonder_Watch | Browse Anime</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              500: '#14b8a6',
+              600: '#0d9488',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-zinc-950">
+
+  <!-- Header / Navigation -->
+  <header class="border-b border-zinc-800/80 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div class="flex items-center gap-6">
+      <a href="index.html" class="text-2xl font-black tracking-wider text-brand-500 hover:opacity-90 transition">WONDER<span class="text-white">WATCH</span></a>
+      <nav class="hidden sm:flex items-center gap-4 text-sm font-medium text-zinc-400">
+        <a href="index.html" class="text-zinc-100 hover:text-brand-500 transition">Explore</a>
+      </nav>
+    </div>
+    
+    <!-- Live Search Bar -->
+    <div class="w-full sm:w-96 relative">
+      <input 
+        type="text" 
+        id="searchInput" 
+        placeholder="Search any anime..." 
+        class="w-full bg-zinc-900 border border-zinc-800 px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-500 transition shadow-inner"
+        autocomplete="off"
+      >
+      <div id="searchResults" class="absolute left-0 right-0 mt-2 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl max-h-80 overflow-y-auto hidden z-50 divide-y divide-zinc-800/60"></div>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-12">
+    
+    <!-- Hero Banner -->
+    <div class="relative bg-gradient-to-r from-teal-950/40 via-zinc-900 to-zinc-900 border border-zinc-800/80 rounded-3xl p-6 sm:p-10 overflow-hidden flex flex-col justify-center gap-4 shadow-2xl">
+      <div class="absolute right-0 top-0 w-1/2 h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-brand-500/10 via-transparent to-transparent pointer-events-none"></div>
+      <span class="text-xs font-bold uppercase tracking-widest text-brand-500">Welcome to Wonder_Watch</span>
+      <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight max-w-xl">Stream Your Favorite Anime Ad-Free.</h1>
+      <p class="text-sm text-zinc-400 max-w-lg leading-relaxed">Direct proxy-free connection for instant catalog loading.</p>
+    </div>
+
+    <!-- Category 1: Trending This Week -->
+    <section class="space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-bold tracking-wide uppercase text-zinc-200">🔥 Trending This Week</h2>
+        <span class="text-xs text-zinc-500">Live Feed</span>
+      </div>
+      <div id="grid-trending" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div class="col-span-full py-8 text-center text-zinc-500 text-sm animate-pulse">Loading trending titles...</div>
+      </div>
+    </section>
+
+    <!-- Category 2: Top Airing Anime -->
+    <section class="space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-bold tracking-wide uppercase text-zinc-200">✨ Top Airing Anime</h2>
+        <span class="text-xs text-zinc-500">Currently Broadcasting</span>
+      </div>
+      <div id="grid-airing" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div class="col-span-full py-8 text-center text-zinc-500 text-sm animate-pulse">Loading airing shows...</div>
+      </div>
+    </section>
+
+    <!-- Category 3: Most Popular All-Time -->
+    <section class="space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-bold tracking-wide uppercase text-zinc-200">⭐ Most Popular All-Time</h2>
+        <span class="text-xs text-zinc-500">Fan Favorites</span>
+      </div>
+      <div id="grid-popular" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div class="col-span-full py-8 text-center text-zinc-500 text-sm animate-pulse">Loading popular titles...</div>
+      </div>
+    </section>
+
+    <!-- Category 4: Top Anime Movies -->
+    <section class="space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-bold tracking-wide uppercase text-zinc-200">🎬 Top Anime Movies</h2>
+        <span class="text-xs text-zinc-500">Cinematic Masterpieces</span>
+      </div>
+      <div id="grid-movies" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div class="col-span-full py-8 text-center text-zinc-500 text-sm animate-pulse">Loading movies...</div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+
+    function renderGrid(containerId, animeList) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      if (!animeList || animeList.length === 0) {
+        container.innerHTML = `<div class="col-span-full py-6 text-center text-zinc-500 text-sm">No items found.</div>`;
+        return;
+      }
+
+      animeList.forEach(anime => {
+        const title = anime.title.english || anime.title.romaji || 'Unknown Title';
+        const imgUrl = anime.coverImage?.large || '';
+        const eps = anime.episodes || 12;
+        const animeId = anime.id; // AniList ID
+
+        const card = document.createElement('div');
+        card.className = 'group bg-zinc-900 border border-zinc-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/50 transition flex flex-col shadow-lg';
+        card.innerHTML = `
+          <div class="relative aspect-[3/4] overflow-hidden bg-zinc-950">
+            <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+            <span class="absolute top-2 right-2 bg-zinc-950/80 backdrop-blur-md text-brand-500 text-xs font-bold px-2 py-1 rounded-lg border border-zinc-800">★ ${anime.averageScore ? (anime.averageScore / 10).toFixed(1) : 'N/A'}</span>
+          </div>
+          <div class="p-3 flex flex-col justify-between flex-1">
+            <h3 class="text-sm font-semibold text-zinc-200 line-clamp-1 group-hover:text-brand-500 transition">${title}</h3>
+            <p class="text-xs text-zinc-500 mt-1">${anime.format || 'TV'} • ${eps} eps</p>
+          </div>
+        `;
+        card.onclick = () => {
+          window.location.href = `watch.html?id=${animeId}&title=${encodeURIComponent(title)}&eps=${eps}`;
+        };
+        container.appendChild(card);
+      });
+    }
+
+    async function fetchAniList(query, variables = {}) {
+      const res = await fetch('https://graphql.anilist.co', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ query, variables })
+      });
+      const json = await res.json();
+      return json.data;
+    }
+
+    async function loadCatalogs() {
+      const query = `
+        query {
+          trending: page(perPage: 5) { media(sort: TRENDING_DESC, type: ANIME) { id title { romaji english } coverImage { large } episodes averageScore format } }
+          airing: page(perPage: 5) { media(status: RELEASING, sort: POPULARITY_DESC, type: ANIME) { id title { romaji english } coverImage { large } episodes averageScore format } }
+          popular: page(perPage: 5) { media(sort: POPULARITY_DESC, type: ANIME) { id title { romaji english } coverImage { large } episodes averageScore format } }
+          movies: page(perPage: 5) { media(format: MOVIE, sort: POPULARITY_DESC, type: ANIME) { id title { romaji english } coverImage { large } episodes averageScore format } }
+        }
+      `;
+      try {
+        const data = await fetchAniList(query);
+        renderGrid('grid-trending', data.trending.media);
+        renderGrid('grid-airing', data.airing.media);
+        renderGrid('grid-popular', data.popular.media);
+        renderGrid('grid-movies', data.movies.media);
+      } catch (err) {
+        console.error('Failed to load catalogs:', err);
+      }
+    }
+
+    // Live search
+    let searchTimeout;
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      const query = e.target.value.trim();
+      if (query.length < 2) {
+        searchResults.classList.add('hidden');
+        return;
+      }
+
+      searchTimeout = setTimeout(async () => {
+        try {
+          const searchQuery = `
+            query ($search: String) {
+              page(perPage: 6) { media(search: $search, type: ANIME) { id title { romaji english } coverImage { large } episodes averageScore format } }
+            }
+          `;
+          const data = await fetchAniList(searchQuery, { search: query });
+          renderSearchResults(data.page.media);
+        } catch (err) {
+          console.error('Search failed:', err);
+        }
+      }, 300);
+    });
+
+    function renderSearchResults(animeList) {
+      searchResults.innerHTML = '';
+      if (!animeList || animeList.length === 0) {
+        searchResults.classList.add('hidden');
+        return;
+      }
+
+      animeList.forEach(anime => {
+        const title = anime.title.english || anime.title.romaji || 'Unknown';
+        const imgUrl = anime.coverImage?.large || '';
+        const eps = anime.episodes || 12;
+        const animeId = anime.id;
+
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-3 hover:bg-zinc-800/50 cursor-pointer transition';
+        div.innerHTML = `
+          <img src="${imgUrl}" class="w-10 h-14 object-cover rounded-md bg-zinc-950">
+          <div>
+            <h4 class="text-sm font-semibold text-zinc-200 line-clamp-1">${title}</h4>
+            <p class="text-xs text-zinc-400">${anime.format || 'TV'} • ${eps} eps</p>
+          </div>
+        `;
+        div.onclick = () => {
+          window.location.href = `watch.html?id=${animeId}&title=${encodeURIComponent(title)}&eps=${eps}`;
+        };
+        searchResults.appendChild(div);
+      });
+      searchResults.classList.remove('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.classList.add('hidden');
+      }
+    });
+
+    loadCatalogs();
+  </script>
+</body>
+</html>

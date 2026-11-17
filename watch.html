@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wonder_Watch | Watch</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              500: '#14b8a6',
+              600: '#0d9488',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-zinc-950">
+
+  <!-- Header / Navigation -->
+  <header class="border-b border-zinc-800/80 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+    <a href="index.html" class="text-2xl font-black tracking-wider text-brand-500 hover:opacity-90 transition">WONDER<span class="text-white">WATCH</span></a>
+    <a href="index.html" class="text-xs bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-zinc-300 hover:text-white transition">← Back to Browse</a>
+  </header>
+
+  <!-- Main Watch Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Left Column: Embed Player & Controls -->
+    <div class="lg:col-span-2 flex flex-col gap-4">
+      <div class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+        <iframe 
+          id="playerFrame" 
+          src="" 
+          class="w-full h-full border-0" 
+          allowfullscreen 
+          scrolling="no">
+        </iframe>
+      </div>
+
+      <div class="bg-zinc-900/60 border border-zinc-800/80 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 id="animeTitle" class="text-xl font-bold tracking-tight">Loading...</h1>
+          <p id="animeSubInfo" class="text-xs text-zinc-400 mt-1">Episode 1 • Subtitled</p>
+        </div>
+        
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <select id="streamTypeSelect" onchange="changeStreamType()" class="bg-zinc-900 border border-zinc-800 text-xs font-medium px-3 py-2.5 rounded-xl text-zinc-300 focus:outline-none focus:border-brand-500">
+            <option value="sub">Subtitled</option>
+            <option value="dub">Dubbed</option>
+          </select>
+
+          <button onclick="handleNextEpisode()" class="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-semibold px-5 py-2.5 rounded-xl text-sm transition shadow-lg shadow-brand-500/10">
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Episode Grid -->
+    <div class="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 flex flex-col h-[550px] lg:h-auto">
+      <div class="flex justify-between items-center mb-4 pb-2 border-b border-zinc-800">
+        <h2 class="font-bold text-sm tracking-wide text-zinc-300 uppercase">Episodes</h2>
+        <span id="totalEpCount" class="text-xs text-zinc-500">Total: 12</span>
+      </div>
+      
+      <div id="episodeGrid" class="flex-1 overflow-y-auto pr-1 grid grid-cols-5 gap-2 content-start">
+        <!-- Dynamic Episode Buttons -->
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const animeId = urlParams.get('id') || '1';
+    const animeTitle = urlParams.get('title') || 'Anime Stream';
+    let totalEpisodes = parseInt(urlParams.get('eps')) || 12;
+    if (isNaN(totalEpisodes) || totalEpisodes <= 0) totalEpisodes = 12;
+    
+    let currentEpisode = 1;
+    let currentType = 'sub';
+
+    const playerFrame = document.getElementById('playerFrame');
+    const episodeGrid = document.getElementById('episodeGrid');
+
+    document.getElementById('animeTitle').innerText = animeTitle;
+    document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
+
+    function renderEpisodes() {
+      episodeGrid.innerHTML = '';
+      for (let i = 1; i <= totalEpisodes; i++) {
+        const btn = document.createElement('button');
+        btn.innerText = i;
+        btn.onclick = () => {
+          currentEpisode = i;
+          loadPlayer();
+          renderEpisodes();
+        };
+        
+        let baseClasses = "h-11 rounded-xl text-sm font-medium transition flex items-center justify-center border ";
+        if (i === currentEpisode) {
+          baseClasses += "bg-brand-500 text-zinc-950 border-brand-400 shadow-md shadow-brand-500/20";
+        } else {
+          baseClasses += "bg-zinc-900/80 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:border-zinc-700";
+        }
+        btn.className = baseClasses;
+        episodeGrid.appendChild(btn);
+      }
+    }
+
+    function loadPlayer() {
+      document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()} • Zoko Stream Active`;
+      // Stream embed routed via AniList ID parameter
+      playerFrame.src = `https://zokoanime.video/stream/anilist/${animeId}/${currentEpisode}/${currentType}`;
+    }
+
+    function changeStreamType() {
+      currentType = document.getElementById('streamTypeSelect').value;
+      loadPlayer();
+    }
+
+    function handleNextEpisode() {
+      if (currentEpisode < totalEpisodes) {
+        currentEpisode++;
+        loadPlayer();
+        renderEpisodes();
+      }
+    }
+
+    renderEpisodes();
+    loadPlayer();
+  </script>
+</body>
+</html>
