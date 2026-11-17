@@ -87,8 +87,8 @@
       <!-- Left 2 Cols: Embed Player -->
       <div class="lg:col-span-2 flex flex-col gap-4">
         
-        <!-- Player Viewport with Discrete Play Shield -->
-        <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl group">
+        <!-- Player Viewport -->
+        <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
           <iframe 
             id="playerFrame" 
             src="" 
@@ -97,22 +97,6 @@
             allowfullscreen 
             scrolling="no">
           </iframe>
-
-          <!-- Discrete Play Button Shield -->
-          <div 
-            id="adShield" 
-            onclick="dismissAdShield(event)" 
-            class="absolute inset-0 bg-black/40 backdrop-blur-[2px] cursor-pointer z-30 flex flex-col items-center justify-center transition duration-300 select-none"
-            title="Click to Play"
-          >
-            <!-- Native-looking HiAnime/YouTube style Play Icon -->
-            <div id="shieldPlayIcon" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-brand-500 text-black flex items-center justify-center shadow-2xl shadow-brand-500/50 group-hover:scale-110 transition duration-300">
-              <i class="fa-solid fa-play text-xl sm:text-2xl ml-1"></i>
-            </div>
-            <span id="shieldStatusText" class="mt-3 text-xs font-semibold tracking-wide text-zinc-300 bg-surface-900/80 px-3 py-1 rounded-full border border-zinc-700/60 shadow">
-              Loading stream...
-            </span>
-          </div>
         </div>
 
         <!-- Info & Controls Bar -->
@@ -128,10 +112,10 @@
           
           <!-- Stream Controls -->
           <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-            <!-- Server Selector (Server 1 is the 100% stable MAL route) -->
+            <!-- Server Selector -->
             <select id="sourceSelect" onchange="changeSource()" class="bg-surface-800 border border-zinc-700/80 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500">
-              <option value="zoko_mal">Server 1 (Primary)</option>
-              <option value="vidlink">Server 2 (Backup)</option>
+              <option value="zoko_mal">Server 1 (Primary - MAL)</option>
+              <option value="animeembed">Server 2 (AnimeEmbed)</option>
             </select>
 
             <!-- Sub / Dub Selector -->
@@ -200,11 +184,10 @@
   </main>
 
   <script>
-    // --- POPUP & REDIRECT COUNTERMEASURES ---
+    // --- NATIVE BROWSER REDIRECT INTERCEPTION & LOCKDOWN ---
     let allowInternalNavigation = false;
-    let isIframeLoaded = false;
 
-    // Detect internal clicks (links/buttons/episodes)
+    // Detect internal site navigation (links, dropdowns, episode clicks)
     document.addEventListener('click', (e) => {
       const target = e.target.closest('a, button, select');
       if (target) {
@@ -213,7 +196,28 @@
       }
     });
 
-    // 1. Trap top-level page hijacking attempts (window.top.location = ad)
+    // 1. Permanently neutralize top-level window.open on the parent page
+    // Even if an iframe script attempts window.top.open() or window.parent.open(),
+    // it will be blocked and returned null.
+    try {
+      Object.defineProperty(window, 'open', {
+        configurable: false,
+        writable: false,
+        value: function(url, target, features) {
+          if (allowInternalNavigation) {
+            // Allow intentional user navigation
+            window.location.href = url;
+            return null;
+          }
+          console.warn("🛡️ WonderWatch blocked ad popup/tab:", url);
+          return null;
+        }
+      });
+    } catch(err) {
+      window.open = () => null;
+    }
+
+    // 2. Prevent top-level page redirection attempts from third-party frames
     window.addEventListener('beforeunload', (e) => {
       if (!allowInternalNavigation) {
         e.preventDefault();
@@ -221,59 +225,6 @@
         return '';
       }
     });
-
-    // 2. Override window.open at the top-window context
-    const originalOpen = window.open;
-    window.open = function(url, target, features) {
-      if (allowInternalNavigation) {
-        return originalOpen.apply(this, arguments);
-      }
-      console.warn("Blocked unwanted window.open popup attempt:", url);
-      return null;
-    };
-
-    // 3. Smart Discrete Play Shield with Readiness Check
-    const playerFrame = document.getElementById('playerFrame');
-    const adShield = document.getElementById('adShield');
-    const shieldStatusText = document.getElementById('shieldStatusText');
-
-    playerFrame.addEventListener('load', () => {
-      isIframeLoaded = true;
-      if (shieldStatusText) {
-        shieldStatusText.innerText = "Click to Play";
-        shieldStatusText.classList.add('text-brand-400');
-      }
-    });
-
-    function dismissAdShield(event) {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      // If the iframe hasn't finished loading its scripts, wait briefly so the ad trap doesn't survive
-      if (!isIframeLoaded) {
-        if (shieldStatusText) shieldStatusText.innerText = "Buffering stream... please wait";
-        return;
-      }
-
-      if (adShield) {
-        adShield.style.opacity = '0';
-        setTimeout(() => {
-          adShield.style.display = 'none';
-        }, 200);
-      }
-    }
-
-    function resetAdShield() {
-      isIframeLoaded = false;
-      if (adShield) {
-        adShield.style.display = 'flex';
-        adShield.style.opacity = '1';
-        if (shieldStatusText) {
-          shieldStatusText.innerText = "Loading stream...";
-          shieldStatusText.classList.remove('text-brand-400');
-        }
-      }
-    }
 
     // --- APPLICATION LOGIC ---
     const urlParams = new URLSearchParams(window.location.search);
@@ -287,6 +238,7 @@
     let currentType = 'sub';
     let currentServer = 'zoko_mal'; // Primary 100% reliable stream route
 
+    const playerFrame = document.getElementById('playerFrame');
     const episodeGrid = document.getElementById('episodeGrid');
 
     document.getElementById('animeTitle').innerText = animeTitle;
@@ -302,7 +254,6 @@
           currentEpisode = i;
           loadPlayer();
           renderEpisodes();
-          resetAdShield();
           setTimeout(() => { allowInternalNavigation = false; }, 1000);
         };
         
@@ -324,9 +275,9 @@
         document.getElementById('activeSourceBadge').innerText = 'Server 1 (Primary)';
         // 100% reliable MAL stream route with lime accent & autoplay
         playerFrame.src = `https://zokoanime.video/stream/mal/${malId}/${currentEpisode}/${currentType}?color=84cc16&autoplay=1`;
-      } else if (currentServer === 'vidlink') {
-        document.getElementById('activeSourceBadge').innerText = 'Server 2 (Backup)';
-        playerFrame.src = `https://vidlink.pro/anime/${malId}/${currentEpisode}/${currentType}?primaryColor=84cc16&icons=vid&autoplay=true&fallback=true`;
+      } else if (currentServer === 'animeembed') {
+        document.getElementById('activeSourceBadge').innerText = 'Server 2 (AnimeEmbed)';
+        playerFrame.src = `https://animeembed.com/embed/mal/${malId}/${currentEpisode}?track=${currentType}&autoPlay=1`;
       }
     }
 
@@ -334,7 +285,6 @@
       allowInternalNavigation = true;
       currentServer = document.getElementById('sourceSelect').value;
       loadPlayer();
-      resetAdShield();
       setTimeout(() => { allowInternalNavigation = false; }, 1000);
     }
 
@@ -342,7 +292,6 @@
       allowInternalNavigation = true;
       currentType = document.getElementById('streamTypeSelect').value;
       loadPlayer();
-      resetAdShield();
       setTimeout(() => { allowInternalNavigation = false; }, 1000);
     }
 
@@ -352,7 +301,6 @@
         currentEpisode++;
         loadPlayer();
         renderEpisodes();
-        resetAdShield();
         setTimeout(() => { allowInternalNavigation = false; }, 1000);
       }
     }
