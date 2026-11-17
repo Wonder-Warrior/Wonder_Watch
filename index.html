@@ -12,6 +12,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Firebase SDK (compat for simplicity in single-file HTML) -->
+  <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore-compat.js"></script>
+
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -68,9 +74,48 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+    /* Toast notification */
+    .ww-toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120%);
+      background: #171821;
+      border: 1px solid #84cc16;
+      color: #e4e4e7;
+      padding: 0.75rem 1.5rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      z-index: 999;
+      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s;
+      opacity: 0;
+      pointer-events: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,.5);
+    }
+    .ww-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid #84cc16;
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body class="bg-surface-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-black">
+
+  <!-- Toast -->
+  <div id="toastNotif" class="ww-toast"></div>
 
   <!-- Header / Navigation Bar -->
   <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4">
@@ -93,6 +138,12 @@
 
     <!-- Right Header Navigation: Log In / User State -->
     <div class="flex items-center gap-3">
+      <!-- Sync indicator -->
+      <div id="syncIndicator" class="hidden items-center gap-1.5 text-[10px] text-brand-400 font-semibold">
+        <i class="fa-solid fa-cloud text-xs"></i>
+        <span id="syncLabel">Synced</span>
+      </div>
+
       <!-- Guest State: Log In Button -->
       <div id="authGuestSection">
         <button onclick="openAuthModal('login')" class="inline-flex items-center gap-2 text-xs sm:text-sm font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-4 sm:px-5 py-2 rounded-xl transition shadow-lg shadow-brand-500/20">
@@ -114,9 +165,10 @@
         <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-52 bg-surface-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/60 backdrop-blur-xl">
           <div class="px-4 py-2.5">
             <p class="text-xs font-bold text-white truncate" id="dropdownUserName">User</p>
-            <p class="text-[10px] text-brand-400 font-medium flex items-center gap-1.5 mt-0.5">
+            <p class="text-[10px] text-zinc-400 truncate mt-0.5" id="dropdownUserEmail"></p>
+            <p class="text-[10px] text-brand-400 font-medium flex items-center gap-1.5 mt-1">
               <span id="authProviderBadge" class="bg-brand-500/15 border border-brand-500/30 px-1.5 py-0.2 rounded text-[9px] uppercase tracking-wider font-bold">Standard</span>
-              <span>Free Member</span>
+              <span class="flex items-center gap-1"><i class="fa-solid fa-cloud text-[9px]"></i> Cloud Synced</span>
             </p>
           </div>
           <div class="py-1">
@@ -418,9 +470,12 @@
         <p id="authModalSubtitle" class="text-xs text-zinc-400">Log in to sync timestamps, watchlists, and favourites</p>
       </div>
 
+      <!-- Error / status message -->
+      <div id="authErrorMsg" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/30 px-4 py-2.5 rounded-xl text-center font-medium"></div>
+
       <!-- One-Click Google Login Button -->
       <div>
-        <button onclick="handleGoogleLogin()" class="w-full bg-white hover:bg-zinc-100 text-zinc-900 font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-3 text-xs shadow-md border border-zinc-200">
+        <button onclick="handleGoogleLogin()" id="googleLoginBtn" class="w-full bg-white hover:bg-zinc-100 text-zinc-900 font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-3 text-xs shadow-md border border-zinc-200">
           <svg class="w-4 h-4" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -439,15 +494,29 @@
 
       <!-- Form Inputs -->
       <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
+        <!-- Display name (only for sign up) -->
+        <div id="displayNameField" class="hidden space-y-1">
+          <label class="text-xs font-semibold text-zinc-300">Display Name</label>
+          <div class="relative flex items-center">
+            <i class="fa-solid fa-user absolute left-3.5 text-zinc-500 text-xs"></i>
+            <input 
+              type="text" 
+              id="authDisplayNameInput" 
+              placeholder="e.g. Otaku99" 
+              class="w-full bg-surface-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50"
+            >
+          </div>
+        </div>
+
         <div class="space-y-1">
-          <label class="text-xs font-semibold text-zinc-300">Username or Email</label>
+          <label class="text-xs font-semibold text-zinc-300">Email Address</label>
           <div class="relative flex items-center">
             <i class="fa-solid fa-envelope absolute left-3.5 text-zinc-500 text-xs"></i>
             <input 
-              type="text" 
-              id="authUsernameInput" 
+              type="email" 
+              id="authEmailInput" 
               required
-              placeholder="e.g. otaku99 or user@gmail.com" 
+              placeholder="you@example.com" 
               class="w-full bg-surface-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50"
             >
           </div>
@@ -461,6 +530,7 @@
               type="password" 
               id="authPasswordInput" 
               required
+              minlength="6"
               placeholder="••••••••" 
               class="w-full bg-surface-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50"
             >
@@ -470,7 +540,7 @@
         <button 
           type="submit" 
           id="authSubmitBtn"
-          class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-2.5 rounded-xl transition text-sm shadow-lg shadow-brand-500/25 mt-1"
+          class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-2.5 rounded-xl transition text-sm shadow-lg shadow-brand-500/25 mt-1 flex items-center justify-center gap-2"
         >
           Log In
         </button>
@@ -494,6 +564,480 @@
   </footer>
 
   <script>
+    // ============================================================
+    //  FIREBASE CONFIGURATION & INITIALIZATION
+    // ============================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBwMN94R6NNMJ1lk7Xi92_YmcdR3dh7s_0",
+      authDomain: "wonderwatch-3a89a.firebaseapp.com",
+      projectId: "wonderwatch-3a89a",
+      storageBucket: "wonderwatch-3a89a.firebasestorage.app",
+      messagingSenderId: "871498637498",
+      appId: "1:871498637498:web:0beaf0dc1efde3aa01ccbf"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ============================================================
+    //  TOAST NOTIFICATIONS
+    // ============================================================
+    let toastTimer = null;
+    function showToast(message, duration = 3000) {
+      const toast = document.getElementById('toastNotif');
+      toast.innerHTML = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+    }
+
+    // ============================================================
+    //  USER DATA SYNC ENGINE (Firestore <-> Local)
+    // ============================================================
+    let currentUser = null;
+    let userDataCache = { history: [], favorites: [] };
+    let firestoreUnsubHistory = null;
+    let firestoreUnsubFavorites = null;
+
+    // Get the user's Firestore document reference
+    function userDoc(collection) {
+      if (!currentUser) return null;
+      return db.collection('users').doc(currentUser.uid).collection(collection);
+    }
+
+    function userProfileDoc() {
+      if (!currentUser) return null;
+      return db.collection('users').doc(currentUser.uid);
+    }
+
+    // --- HISTORY (Watch Progress / Timestamps) ---
+    function getHistory() {
+      return userDataCache.history;
+    }
+
+    async function saveHistoryItem(item) {
+      // Always update local cache first
+      const idx = userDataCache.history.findIndex(h => h.id == item.id);
+      if (idx >= 0) {
+        userDataCache.history[idx] = { ...userDataCache.history[idx], ...item, updatedAt: Date.now() };
+      } else {
+        userDataCache.history.unshift({ ...item, updatedAt: Date.now() });
+      }
+      // Keep max 50
+      if (userDataCache.history.length > 50) userDataCache.history = userDataCache.history.slice(0, 50);
+      
+      // Save to localStorage as fallback
+      localStorage.setItem('wonderwatch_history', JSON.stringify(userDataCache.history));
+
+      // Sync to Firestore if logged in
+      if (currentUser) {
+        try {
+          await userDoc('history').doc(String(item.id)).set({
+            ...item,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        } catch (e) {
+          console.warn('Firestore history save failed:', e);
+        }
+      }
+    }
+
+    async function clearHistory() {
+      userDataCache.history = [];
+      localStorage.removeItem('wonderwatch_history');
+      
+      if (currentUser) {
+        try {
+          const batch = db.batch();
+          const snap = await userDoc('history').get();
+          snap.forEach(doc => batch.delete(doc.ref));
+          await batch.commit();
+        } catch (e) {
+          console.warn('Firestore history clear failed:', e);
+        }
+      }
+      renderUserPersonalizedSections();
+      showToast('<i class="fa-solid fa-trash-can text-red-400"></i> Watch history cleared');
+    }
+
+    // --- FAVORITES ---
+    function getFavorites() {
+      return userDataCache.favorites;
+    }
+
+    function isAnimeFavorite(id) {
+      return userDataCache.favorites.some(item => item.id == id);
+    }
+
+    async function addFavorite(anime) {
+      const favItem = {
+        id: anime.id,
+        idMal: anime.idMal || anime.id,
+        title: anime.title?.english || anime.title?.romaji || anime.title || 'Unknown',
+        coverImage: anime.coverImage,
+        episodes: anime.episodes,
+        averageScore: anime.averageScore,
+        format: anime.format,
+        genres: anime.genres,
+        addedAt: Date.now()
+      };
+      
+      userDataCache.favorites.unshift(favItem);
+      localStorage.setItem('wonderwatch_favorites', JSON.stringify(userDataCache.favorites));
+
+      if (currentUser) {
+        try {
+          await userDoc('favorites').doc(String(anime.id)).set({
+            ...favItem,
+            addedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch (e) {
+          console.warn('Firestore favorite add failed:', e);
+        }
+      }
+    }
+
+    async function removeFavorite(animeId) {
+      userDataCache.favorites = userDataCache.favorites.filter(f => f.id != animeId);
+      localStorage.setItem('wonderwatch_favorites', JSON.stringify(userDataCache.favorites));
+
+      if (currentUser) {
+        try {
+          await userDoc('favorites').doc(String(animeId)).delete();
+        } catch (e) {
+          console.warn('Firestore favorite remove failed:', e);
+        }
+      }
+    }
+
+    async function toggleFavorite(anime) {
+      const id = anime.id;
+      if (isAnimeFavorite(id)) {
+        await removeFavorite(id);
+      } else {
+        await addFavorite(anime);
+      }
+      renderUserPersonalizedSections();
+    }
+
+    // --- REALTIME SYNC LISTENERS ---
+    function startRealtimeSync() {
+      if (!currentUser) return;
+
+      // Listen to history changes
+      if (firestoreUnsubHistory) firestoreUnsubHistory();
+      firestoreUnsubHistory = userDoc('history')
+        .orderBy('updatedAt', 'desc')
+        .limit(50)
+        .onSnapshot(snapshot => {
+          const items = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            items.push({
+              ...data,
+              updatedAt: data.updatedAt?.toMillis?.() || data.updatedAt || Date.now()
+            });
+          });
+          userDataCache.history = items;
+          localStorage.setItem('wonderwatch_history', JSON.stringify(items));
+          renderUserPersonalizedSections();
+        }, err => {
+          console.warn('History sync error:', err);
+        });
+
+      // Listen to favorites changes
+      if (firestoreUnsubFavorites) firestoreUnsubFavorites();
+      firestoreUnsubFavorites = userDoc('favorites')
+        .orderBy('addedAt', 'desc')
+        .onSnapshot(snapshot => {
+          const items = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            items.push({
+              ...data,
+              addedAt: data.addedAt?.toMillis?.() || data.addedAt || Date.now()
+            });
+          });
+          userDataCache.favorites = items;
+          localStorage.setItem('wonderwatch_favorites', JSON.stringify(items));
+          renderUserPersonalizedSections();
+        }, err => {
+          console.warn('Favorites sync error:', err);
+        });
+      
+      // Show sync indicator
+      document.getElementById('syncIndicator').classList.remove('hidden');
+      document.getElementById('syncIndicator').classList.add('flex');
+    }
+
+    function stopRealtimeSync() {
+      if (firestoreUnsubHistory) { firestoreUnsubHistory(); firestoreUnsubHistory = null; }
+      if (firestoreUnsubFavorites) { firestoreUnsubFavorites(); firestoreUnsubFavorites = null; }
+      document.getElementById('syncIndicator').classList.add('hidden');
+    }
+
+    // Upload local data to Firestore on first login (merge so we don't lose cloud data)
+    async function mergeLocalDataToCloud() {
+      if (!currentUser) return;
+      
+      const localHistory = JSON.parse(localStorage.getItem('wonderwatch_history') || '[]');
+      const localFavorites = JSON.parse(localStorage.getItem('wonderwatch_favorites') || '[]');
+
+      // Merge history
+      for (const item of localHistory) {
+        try {
+          const docRef = userDoc('history').doc(String(item.id));
+          const existing = await docRef.get();
+          if (!existing.exists) {
+            await docRef.set({
+              ...item,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        } catch (e) { /* skip */ }
+      }
+
+      // Merge favorites
+      for (const item of localFavorites) {
+        try {
+          const docRef = userDoc('favorites').doc(String(item.id));
+          const existing = await docRef.get();
+          if (!existing.exists) {
+            await docRef.set({
+              ...item,
+              addedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        } catch (e) { /* skip */ }
+      }
+    }
+
+    // ============================================================
+    //  FIREBASE AUTH STATE OBSERVER
+    // ============================================================
+    auth.onAuthStateChanged(async (user) => {
+      currentUser = user;
+      
+      if (user) {
+        // User is signed in
+        updateAuthUI(user);
+        
+        // Save/update profile
+        try {
+          await userProfileDoc().set({
+            displayName: user.displayName || user.email?.split('@')[0] || 'User',
+            email: user.email,
+            photoURL: user.photoURL,
+            provider: user.providerData?.[0]?.providerId || 'email',
+            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        } catch (e) { /* non-critical */ }
+
+        // Merge any local data to cloud, then start realtime sync
+        await mergeLocalDataToCloud();
+        startRealtimeSync();
+        
+        showToast(`<i class="fa-solid fa-circle-check text-brand-400"></i> Welcome back, ${user.displayName || user.email?.split('@')[0]}!`);
+      } else {
+        // User is signed out — load from localStorage
+        updateAuthUI(null);
+        stopRealtimeSync();
+        
+        userDataCache.history = JSON.parse(localStorage.getItem('wonderwatch_history') || '[]');
+        userDataCache.favorites = JSON.parse(localStorage.getItem('wonderwatch_favorites') || '[]');
+        renderUserPersonalizedSections();
+      }
+    });
+
+    function updateAuthUI(user) {
+      const guestSec = document.getElementById('authGuestSection');
+      const userSec = document.getElementById('authUserSection');
+
+      if (user) {
+        guestSec.classList.add('hidden');
+        userSec.classList.remove('hidden');
+
+        const displayName = user.displayName || user.email?.split('@')[0] || 'User';
+        document.getElementById('headerUsername').innerText = displayName;
+        document.getElementById('dropdownUserName').innerText = displayName;
+        document.getElementById('dropdownUserEmail').innerText = user.email || '';
+
+        const provider = user.providerData?.[0]?.providerId;
+        const providerLabel = provider === 'google.com' ? 'Google' : 'Email';
+        document.getElementById('authProviderBadge').innerText = providerLabel;
+
+        const avatarContainer = document.getElementById('userAvatarContainer');
+        if (user.photoURL) {
+          avatarContainer.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover" referrerpolicy="no-referrer">`;
+        } else {
+          avatarContainer.innerHTML = `<span>${displayName.charAt(0).toUpperCase()}</span>`;
+        }
+      } else {
+        guestSec.classList.remove('hidden');
+        userSec.classList.add('hidden');
+      }
+    }
+
+    // ============================================================
+    //  AUTHENTICATION ACTIONS
+    // ============================================================
+    let authMode = 'login';
+
+    function openAuthModal(mode = 'login') {
+      authMode = mode;
+      updateAuthModalUI();
+      hideAuthError();
+      document.getElementById('authModal').classList.remove('hidden');
+      document.getElementById('authModal').classList.add('flex');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.add('hidden');
+      document.getElementById('authModal').classList.remove('flex');
+      hideAuthError();
+    }
+
+    function toggleAuthMode() {
+      authMode = authMode === 'login' ? 'signup' : 'login';
+      updateAuthModalUI();
+      hideAuthError();
+    }
+
+    function updateAuthModalUI() {
+      const title = document.getElementById('authModalTitle');
+      const sub = document.getElementById('authModalSubtitle');
+      const submitBtn = document.getElementById('authSubmitBtn');
+      const prompt = document.getElementById('authSwitchPrompt');
+      const nameField = document.getElementById('displayNameField');
+
+      if (authMode === 'login') {
+        title.innerText = "Welcome Back";
+        sub.innerText = "Log in to sync timestamps, watchlists, and favourites";
+        submitBtn.innerHTML = "Log In";
+        nameField.classList.add('hidden');
+        prompt.innerHTML = `Don't have an account? <button type="button" onclick="toggleAuthMode()" class="text-brand-400 hover:underline font-semibold ml-1">Sign Up</button>`;
+      } else {
+        title.innerText = "Create Your Account";
+        sub.innerText = "Join WonderWatch to save watchlists and continue watching";
+        submitBtn.innerHTML = "Create Account";
+        nameField.classList.remove('hidden');
+        prompt.innerHTML = `Already have an account? <button type="button" onclick="toggleAuthMode()" class="text-brand-400 hover:underline font-semibold ml-1">Log In</button>`;
+      }
+    }
+
+    function showAuthError(msg) {
+      const el = document.getElementById('authErrorMsg');
+      el.innerText = msg;
+      el.classList.remove('hidden');
+    }
+
+    function hideAuthError() {
+      document.getElementById('authErrorMsg').classList.add('hidden');
+    }
+
+    function setAuthLoading(loading) {
+      const btn = document.getElementById('authSubmitBtn');
+      const googleBtn = document.getElementById('googleLoginBtn');
+      if (loading) {
+        btn.innerHTML = `<span class="spinner"></span> Please wait...`;
+        btn.disabled = true;
+        googleBtn.disabled = true;
+        googleBtn.style.opacity = '0.5';
+      } else {
+        btn.innerHTML = authMode === 'login' ? 'Log In' : 'Create Account';
+        btn.disabled = false;
+        googleBtn.disabled = false;
+        googleBtn.style.opacity = '1';
+      }
+    }
+
+    function friendlyAuthError(code) {
+      const map = {
+        'auth/email-already-in-use': 'This email is already registered. Try logging in instead.',
+        'auth/invalid-email': 'Please enter a valid email address.',
+        'auth/user-not-found': 'No account found with this email. Sign up first!',
+        'auth/wrong-password': 'Incorrect password. Please try again.',
+        'auth/invalid-credential': 'Invalid email or password. Please check and try again.',
+        'auth/weak-password': 'Password must be at least 6 characters.',
+        'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
+        'auth/popup-closed-by-user': 'Google sign-in was cancelled.',
+        'auth/network-request-failed': 'Network error. Please check your connection.',
+      };
+      return map[code] || 'Something went wrong. Please try again.';
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      hideAuthError();
+      setAuthLoading(true);
+
+      const email = document.getElementById('authEmailInput').value.trim();
+      const password = document.getElementById('authPasswordInput').value;
+      const displayName = document.getElementById('authDisplayNameInput')?.value.trim();
+
+      try {
+        if (authMode === 'signup') {
+          // Create account
+          const cred = await auth.createUserWithEmailAndPassword(email, password);
+          // Set display name
+          if (displayName) {
+            await cred.user.updateProfile({ displayName: displayName });
+          }
+          showToast(`<i class="fa-solid fa-party-horn text-brand-400"></i> Account created! Welcome to WonderWatch.`);
+        } else {
+          // Log in
+          await auth.signInWithEmailAndPassword(email, password);
+        }
+        closeAuthModal();
+        // Clear form
+        document.getElementById('authEmailInput').value = '';
+        document.getElementById('authPasswordInput').value = '';
+        if (document.getElementById('authDisplayNameInput')) document.getElementById('authDisplayNameInput').value = '';
+      } catch (err) {
+        console.error('Auth error:', err);
+        showAuthError(friendlyAuthError(err.code));
+      } finally {
+        setAuthLoading(false);
+      }
+    }
+
+    async function handleGoogleLogin() {
+      hideAuthError();
+      setAuthLoading(true);
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithPopup(provider);
+        closeAuthModal();
+      } catch (err) {
+        console.error('Google auth error:', err);
+        if (err.code !== 'auth/popup-closed-by-user') {
+          showAuthError(friendlyAuthError(err.code));
+        }
+      } finally {
+        setAuthLoading(false);
+      }
+    }
+
+    function toggleUserDropdown(e) {
+      e.stopPropagation();
+      document.getElementById('userDropdownMenu').classList.toggle('hidden');
+    }
+
+    async function logoutUser() {
+      try {
+        stopRealtimeSync();
+        await auth.signOut();
+        document.getElementById('userDropdownMenu').classList.add('hidden');
+        showToast('<i class="fa-solid fa-arrow-right-from-bracket text-zinc-400"></i> Logged out successfully');
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
+    }
+
+    // ============================================================
+    //  ANILIST API HELPERS
+    // ============================================================
     const searchInput = document.getElementById('searchInput');
     const searchResults = document.getElementById('searchResults');
     const searchClearBtn = document.getElementById('searchClearBtn');
@@ -633,41 +1177,11 @@
     heroCard.addEventListener('mouseleave', () => startAutoSlide());
 
     // --- FAVORITES & CONTINUED WATCHING (User State) ---
-    function getFavorites() {
-      return JSON.parse(localStorage.getItem('wonderwatch_favorites') || '[]');
-    }
-
-    function isAnimeFavorite(id) {
-      return getFavorites().some(item => item.id == id);
-    }
-
     function toggleSpotlightFavorite() {
       if (spotlightList.length === 0) return;
       const anime = spotlightList[currentSpotlightIdx];
       toggleFavorite(anime);
       updateSpotlightFavButton(anime.id);
-    }
-
-    function toggleFavorite(anime) {
-      let favs = getFavorites();
-      const existingIdx = favs.findIndex(item => item.id == anime.id);
-      
-      if (existingIdx >= 0) {
-        favs.splice(existingIdx, 1);
-      } else {
-        favs.unshift({
-          id: anime.id,
-          idMal: anime.idMal || anime.id,
-          title: anime.title.english || anime.title.romaji,
-          coverImage: anime.coverImage,
-          episodes: anime.episodes,
-          averageScore: anime.averageScore,
-          format: anime.format,
-          genres: anime.genres
-        });
-      }
-      localStorage.setItem('wonderwatch_favorites', JSON.stringify(favs));
-      renderUserPersonalizedSections();
     }
 
     function updateSpotlightFavButton(animeId) {
@@ -678,15 +1192,6 @@
       } else {
         favIcon.className = "fa-regular fa-heart text-base";
       }
-    }
-
-    function getHistory() {
-      return JSON.parse(localStorage.getItem('wonderwatch_history') || '[]');
-    }
-
-    function clearHistory() {
-      localStorage.removeItem('wonderwatch_history');
-      renderUserPersonalizedSections();
     }
 
     async function renderUserPersonalizedSections() {
@@ -783,7 +1288,7 @@
       }
 
       animeList.forEach(anime => {
-        const title = anime.title.english || anime.title.romaji || 'Unknown Title';
+        const title = anime.title?.english || anime.title?.romaji || anime.title || 'Unknown Title';
         const imgUrl = anime.coverImage?.extraLarge || anime.coverImage?.large || '';
         const eps = anime.episodes || '?';
         const anilistId = anime.id;
@@ -1001,125 +1506,8 @@
       }
     });
 
-    // --- AUTHENTICATION STATE & GOOGLE LOGIN ---
-    let authMode = 'login';
-
-    function checkAuthState() {
-      const savedUser = localStorage.getItem('wonderwatch_user');
-      const guestSec = document.getElementById('authGuestSection');
-      const userSec = document.getElementById('authUserSection');
-      
-      if (savedUser) {
-        const user = JSON.parse(savedUser);
-        guestSec.classList.add('hidden');
-        userSec.classList.remove('hidden');
-        
-        document.getElementById('headerUsername').innerText = user.name || 'User';
-        document.getElementById('dropdownUserName').innerText = user.name || 'User';
-        document.getElementById('authProviderBadge').innerText = user.provider || 'Standard';
-
-        const avatarContainer = document.getElementById('userAvatarContainer');
-        if (user.avatar) {
-          avatarContainer.innerHTML = `<img src="${user.avatar}" class="w-full h-full object-cover">`;
-        } else {
-          avatarContainer.innerHTML = `<span>${(user.name || 'U').charAt(0).toUpperCase()}</span>`;
-        }
-      } else {
-        guestSec.classList.remove('hidden');
-        userSec.classList.add('hidden');
-      }
-    }
-
-    function openAuthModal(mode = 'login') {
-      authMode = mode;
-      updateAuthModalUI();
-      const modal = document.getElementById('authModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function closeAuthModal() {
-      const modal = document.getElementById('authModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
-
-    function toggleAuthMode() {
-      authMode = authMode === 'login' ? 'signup' : 'login';
-      updateAuthModalUI();
-    }
-
-    function updateAuthModalUI() {
-      const title = document.getElementById('authModalTitle');
-      const sub = document.getElementById('authModalSubtitle');
-      const submitBtn = document.getElementById('authSubmitBtn');
-      const prompt = document.getElementById('authSwitchPrompt');
-
-      if (authMode === 'login') {
-        title.innerText = "Welcome Back";
-        sub.innerText = "Log in to sync timestamps, watchlists, and favourites";
-        submitBtn.innerText = "Log In";
-        prompt.innerHTML = `Don't have an account? <button type="button" onclick="toggleAuthMode()" class="text-brand-400 hover:underline font-semibold ml-1">Sign Up</button>`;
-      } else {
-        title.innerText = "Create Your Account";
-        sub.innerText = "Join WonderWatch to save watchlists and continue watching";
-        submitBtn.innerText = "Create Account";
-        prompt.innerHTML = `Already have an account? <button type="button" onclick="toggleAuthMode()" class="text-brand-400 hover:underline font-semibold ml-1">Log In</button>`;
-      }
-    }
-
-    function handleAuthSubmit(e) {
-      e.preventDefault();
-      const usernameInput = document.getElementById('authUsernameInput');
-      const username = usernameInput.value.trim() || 'Otaku';
-      
-      const userData = {
-        name: username,
-        provider: 'Standard',
-        loggedInAt: Date.now()
-      };
-      localStorage.setItem('wonderwatch_user', JSON.stringify(userData));
-      
-      closeAuthModal();
-      checkAuthState();
-      usernameInput.value = '';
-      document.getElementById('authPasswordInput').value = '';
-      renderUserPersonalizedSections();
-    }
-
-    function handleGoogleLogin() {
-      // Simulates real OAuth login flow seamlessly client-side
-      const googleUser = {
-        name: "Google User",
-        email: "user@gmail.com",
-        provider: "Google",
-        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=google_hero",
-        loggedInAt: Date.now()
-      };
-
-      localStorage.setItem('wonderwatch_user', JSON.stringify(googleUser));
-      closeAuthModal();
-      checkAuthState();
-      renderUserPersonalizedSections();
-    }
-
-    function toggleUserDropdown(e) {
-      e.stopPropagation();
-      const dropdown = document.getElementById('userDropdownMenu');
-      dropdown.classList.toggle('hidden');
-    }
-
-    function logoutUser() {
-      localStorage.removeItem('wonderwatch_user');
-      const dropdown = document.getElementById('userDropdownMenu');
-      if (dropdown) dropdown.classList.add('hidden');
-      checkAuthState();
-    }
-
-    // Initial load
-    checkAuthState();
+    // Initial load (auth state observer handles personalized sections)
     loadSpotlightSix();
-    renderUserPersonalizedSections();
     loadAllCategories();
     loadGenres();
   </script>

@@ -12,6 +12,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore-compat.js"></script>
+
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -61,9 +67,47 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #84cc16;
     }
+    .ww-toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120%);
+      background: #171821;
+      border: 1px solid #84cc16;
+      color: #e4e4e7;
+      padding: 0.75rem 1.5rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      z-index: 999;
+      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s;
+      opacity: 0;
+      pointer-events: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,.5);
+    }
+    .ww-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid #84cc16;
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body class="bg-surface-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-black">
+
+  <!-- Toast -->
+  <div id="toastNotif" class="ww-toast"></div>
 
   <!-- Header / Navigation -->
   <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between">
@@ -79,6 +123,12 @@
         <i class="fa-solid fa-arrow-left"></i> Back to Browse
       </a>
 
+      <!-- Sync indicator -->
+      <div id="syncIndicator" class="hidden items-center gap-1.5 text-[10px] text-brand-400 font-semibold">
+        <i class="fa-solid fa-cloud text-xs"></i>
+        <span>Synced</span>
+      </div>
+
       <!-- User Profile / Log In state in Header -->
       <div id="authGuestSection">
         <button onclick="openAuthModal('login')" class="inline-flex items-center gap-2 text-xs font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-3.5 py-2 rounded-xl transition shadow-lg shadow-brand-500/20">
@@ -88,7 +138,7 @@
 
       <div id="authUserSection" class="hidden relative">
         <button onclick="toggleUserDropdown(event)" class="flex items-center gap-2 bg-surface-900 hover:bg-surface-850 border border-zinc-800/80 px-2.5 py-1.5 rounded-2xl transition">
-          <div class="w-6 h-6 rounded-full bg-brand-500 text-black flex items-center justify-center font-bold text-[11px] shadow-sm">
+          <div class="w-6 h-6 rounded-full bg-brand-500 text-black flex items-center justify-center font-bold text-[11px] shadow-sm overflow-hidden" id="userAvatarContainer">
             <span id="userAvatarLetter">U</span>
           </div>
           <span id="headerUsername" class="text-xs font-semibold text-zinc-200 hidden sm:inline max-w-[90px] truncate">User</span>
@@ -97,7 +147,10 @@
         <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-44 bg-surface-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/60 backdrop-blur-xl">
           <div class="px-3 py-1.5">
             <p class="text-xs font-bold text-white truncate" id="dropdownUserName">User</p>
-            <p class="text-[10px] text-brand-400 font-medium">Free Member</p>
+            <p class="text-[10px] text-zinc-400 truncate mt-0.5" id="dropdownUserEmail"></p>
+            <p class="text-[10px] text-brand-400 font-medium flex items-center gap-1 mt-0.5">
+              <i class="fa-solid fa-cloud text-[9px]"></i> Cloud Synced
+            </p>
           </div>
           <div class="py-1">
             <button onclick="logoutUser()" class="w-full text-left px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-surface-800 transition flex items-center gap-2">
@@ -132,12 +185,22 @@
 
         <!-- Info & Controls Bar -->
         <div class="bg-surface-900 border border-zinc-800/80 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
-          <div class="space-y-1">
-            <h1 id="animeTitle" class="text-xl sm:text-2xl font-heading font-black tracking-tight text-white line-clamp-1">Loading Title...</h1>
+          <div class="space-y-1 flex-1 min-w-0">
+            <div class="flex items-center gap-3">
+              <h1 id="animeTitle" class="text-xl sm:text-2xl font-heading font-black tracking-tight text-white line-clamp-1 flex-1">Loading Title...</h1>
+              <!-- Favourite toggle button -->
+              <button id="watchFavBtn" onclick="toggleWatchFavorite()" class="w-10 h-10 rounded-xl bg-surface-800 border border-zinc-700/60 hover:border-red-500 text-zinc-400 hover:text-red-500 flex items-center justify-center transition flex-shrink-0" title="Add to Favourites">
+                <i class="fa-regular fa-heart text-sm" id="watchFavIcon"></i>
+              </button>
+            </div>
             <div class="flex items-center gap-2 text-xs text-zinc-400">
               <span id="animeSubInfo" class="text-brand-400 font-bold">Episode 1 • SUB</span>
               <span>•</span>
               <span id="activeSourceBadge" class="bg-surface-800 px-2 py-0.5 rounded text-[11px] text-zinc-300 font-medium">Server 1 (Primary)</span>
+              <span>•</span>
+              <span id="antiRedirectBadge" class="text-brand-400 text-[11px] font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-shield-halved text-[10px]"></i> Anti-Redirect
+              </span>
             </div>
           </div>
           
@@ -216,7 +279,7 @@
 
   <!-- Auth Modal (Log In / Sign Up) -->
   <div id="authModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="relative w-full max-w-md bg-surface-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+    <div class="relative w-full max-w-md bg-surface-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5">
       <button onclick="closeAuthModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-surface-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition">
         <i class="fa-solid fa-xmark"></i>
       </button>
@@ -229,40 +292,59 @@
         <p id="authModalSubtitle" class="text-xs text-zinc-400">Log in to track your watch progress across all devices</p>
       </div>
 
-      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-        <div class="space-y-1.5">
-          <label class="text-xs font-semibold text-zinc-300">Username or Email</label>
+      <!-- Error message -->
+      <div id="authErrorMsg" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/30 px-4 py-2.5 rounded-xl text-center font-medium"></div>
+
+      <!-- Google Login -->
+      <div>
+        <button onclick="handleGoogleLogin()" id="googleLoginBtn" class="w-full bg-white hover:bg-zinc-100 text-zinc-900 font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-3 text-xs shadow-md border border-zinc-200">
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+
+      <div class="relative flex py-1 items-center">
+        <div class="flex-grow border-t border-zinc-800"></div>
+        <span class="flex-shrink mx-3 text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">Or with email</span>
+        <div class="flex-grow border-t border-zinc-800"></div>
+      </div>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
+        <!-- Display name (only for sign up) -->
+        <div id="displayNameField" class="hidden space-y-1">
+          <label class="text-xs font-semibold text-zinc-300">Display Name</label>
           <div class="relative flex items-center">
-            <i class="fa-solid fa-envelope absolute left-3.5 text-zinc-500 text-xs"></i>
-            <input 
-              type="text" 
-              id="authUsernameInput" 
-              required
-              placeholder="e.g. otaku99 or user@example.com" 
-              class="w-full bg-surface-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50"
-            >
+            <i class="fa-solid fa-user absolute left-3.5 text-zinc-500 text-xs"></i>
+            <input type="text" id="authDisplayNameInput" placeholder="e.g. Otaku99" 
+              class="w-full bg-surface-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50">
           </div>
         </div>
 
-        <div class="space-y-1.5">
+        <div class="space-y-1">
+          <label class="text-xs font-semibold text-zinc-300">Email Address</label>
+          <div class="relative flex items-center">
+            <i class="fa-solid fa-envelope absolute left-3.5 text-zinc-500 text-xs"></i>
+            <input type="email" id="authEmailInput" required placeholder="you@example.com" 
+              class="w-full bg-surface-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50">
+          </div>
+        </div>
+
+        <div class="space-y-1">
           <label class="text-xs font-semibold text-zinc-300">Password</label>
           <div class="relative flex items-center">
             <i class="fa-solid fa-lock absolute left-3.5 text-zinc-500 text-xs"></i>
-            <input 
-              type="password" 
-              id="authPasswordInput" 
-              required
-              placeholder="••••••••" 
-              class="w-full bg-surface-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50"
-            >
+            <input type="password" id="authPasswordInput" required minlength="6" placeholder="••••••••" 
+              class="w-full bg-surface-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50">
           </div>
         </div>
 
-        <button 
-          type="submit" 
-          id="authSubmitBtn"
-          class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-3 rounded-xl transition text-sm shadow-lg shadow-brand-500/25 mt-2"
-        >
+        <button type="submit" id="authSubmitBtn"
+          class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-2.5 rounded-xl transition text-sm shadow-lg shadow-brand-500/25 mt-1 flex items-center justify-center gap-2">
           Log In
         </button>
       </form>
@@ -277,10 +359,27 @@
   </div>
 
   <script>
-    // --- NATIVE BROWSER REDIRECT INTERCEPTION & LOCKDOWN ---
+    // ============================================================
+    //  FIREBASE INITIALIZATION (same config as index.html)
+    // ============================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBwMN94R6NNMJ1lk7Xi92_YmcdR3dh7s_0",
+      authDomain: "wonderwatch-3a89a.firebaseapp.com",
+      projectId: "wonderwatch-3a89a",
+      storageBucket: "wonderwatch-3a89a.firebasestorage.app",
+      messagingSenderId: "871498637498",
+      appId: "1:871498637498:web:0beaf0dc1efde3aa01ccbf"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ============================================================
+    //  REDIRECT LOCKDOWN
+    // ============================================================
     let allowInternalNavigation = false;
 
-    // Detect internal site navigation (links, dropdowns, episode clicks)
     document.addEventListener('click', (e) => {
       const target = e.target.closest('a, button, select');
       if (target) {
@@ -294,7 +393,6 @@
       }
     });
 
-    // 1. Permanently neutralize top-level window.open on the parent page
     try {
       Object.defineProperty(window, 'open', {
         configurable: false,
@@ -312,7 +410,6 @@
       window.open = () => null;
     }
 
-    // 2. Prevent top-level page redirection attempts from third-party frames
     window.addEventListener('beforeunload', (e) => {
       if (!allowInternalNavigation) {
         e.preventDefault();
@@ -321,45 +418,181 @@
       }
     });
 
-    // --- AUTHENTICATION STATE HANDLING (LocalStorage) ---
-    let authMode = 'login';
+    // ============================================================
+    //  TOAST
+    // ============================================================
+    let toastTimer = null;
+    function showToast(message, duration = 3000) {
+      const toast = document.getElementById('toastNotif');
+      toast.innerHTML = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+    }
 
-    function checkAuthState() {
-      const savedUser = localStorage.getItem('wonderwatch_user');
+    // ============================================================
+    //  USER DATA SYNC ENGINE (mirrors index.html)
+    // ============================================================
+    let currentUser = null;
+
+    function userDoc(collection) {
+      if (!currentUser) return null;
+      return db.collection('users').doc(currentUser.uid).collection(collection);
+    }
+
+    // --- HISTORY ---
+    function getLocalHistory() {
+      return JSON.parse(localStorage.getItem('wonderwatch_history') || '[]');
+    }
+
+    async function saveHistoryItem(item) {
+      // Local
+      let history = getLocalHistory();
+      const idx = history.findIndex(h => h.id == item.id);
+      if (idx >= 0) {
+        history[idx] = { ...history[idx], ...item, updatedAt: Date.now() };
+      } else {
+        history.unshift({ ...item, updatedAt: Date.now() });
+      }
+      if (history.length > 50) history = history.slice(0, 50);
+      localStorage.setItem('wonderwatch_history', JSON.stringify(history));
+
+      // Cloud
+      if (currentUser) {
+        try {
+          await userDoc('history').doc(String(item.id)).set({
+            ...item,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        } catch (e) {
+          console.warn('Firestore history save failed:', e);
+        }
+      }
+    }
+
+    // --- FAVORITES ---
+    function getLocalFavorites() {
+      return JSON.parse(localStorage.getItem('wonderwatch_favorites') || '[]');
+    }
+
+    function isAnimeFavorite(id) {
+      return getLocalFavorites().some(item => item.id == id);
+    }
+
+    async function addFavorite(item) {
+      let favs = getLocalFavorites();
+      favs.unshift({ ...item, addedAt: Date.now() });
+      localStorage.setItem('wonderwatch_favorites', JSON.stringify(favs));
+
+      if (currentUser) {
+        try {
+          await userDoc('favorites').doc(String(item.id)).set({
+            ...item,
+            addedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch (e) { console.warn('Fav add failed:', e); }
+      }
+    }
+
+    async function removeFavorite(animeId) {
+      let favs = getLocalFavorites().filter(f => f.id != animeId);
+      localStorage.setItem('wonderwatch_favorites', JSON.stringify(favs));
+
+      if (currentUser) {
+        try {
+          await userDoc('favorites').doc(String(animeId)).delete();
+        } catch (e) { console.warn('Fav remove failed:', e); }
+      }
+    }
+
+    // ============================================================
+    //  FIREBASE AUTH STATE
+    // ============================================================
+    auth.onAuthStateChanged((user) => {
+      currentUser = user;
+      updateAuthUI(user);
+      updateWatchFavButton();
+
+      if (user) {
+        document.getElementById('syncIndicator').classList.remove('hidden');
+        document.getElementById('syncIndicator').classList.add('flex');
+
+        // Load saved timestamp from cloud if available
+        loadCloudTimestamp();
+      } else {
+        document.getElementById('syncIndicator').classList.add('hidden');
+      }
+    });
+
+    async function loadCloudTimestamp() {
+      if (!currentUser) return;
+      try {
+        const doc = await userDoc('history').doc(String(animeId)).get();
+        if (doc.exists) {
+          const data = doc.data();
+          // If we have cloud data and no URL time param, use cloud timestamp
+          if (data.timestamp && !urlParams.get('time')) {
+            savedResumeTime = data.timestamp;
+          }
+          if (data.episode && !urlParams.get('ep')) {
+            currentEpisode = data.episode;
+            renderEpisodes();
+            loadPlayer();
+          }
+        }
+      } catch (e) {
+        console.warn('Cloud timestamp load failed:', e);
+      }
+    }
+
+    function updateAuthUI(user) {
       const guestSec = document.getElementById('authGuestSection');
       const userSec = document.getElementById('authUserSection');
-      
-      if (savedUser) {
-        const user = JSON.parse(savedUser);
+
+      if (user) {
         guestSec.classList.add('hidden');
         userSec.classList.remove('hidden');
-        
-        document.getElementById('headerUsername').innerText = user.name || 'User';
-        document.getElementById('dropdownUserName').innerText = user.name || 'User';
-        document.getElementById('userAvatarLetter').innerText = (user.name || 'U').charAt(0).toUpperCase();
+
+        const displayName = user.displayName || user.email?.split('@')[0] || 'User';
+        document.getElementById('headerUsername').innerText = displayName;
+        document.getElementById('dropdownUserName').innerText = displayName;
+        document.getElementById('dropdownUserEmail').innerText = user.email || '';
+
+        const avatarContainer = document.getElementById('userAvatarContainer');
+        if (user.photoURL) {
+          avatarContainer.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover" referrerpolicy="no-referrer">`;
+        } else {
+          avatarContainer.innerHTML = `<span>${displayName.charAt(0).toUpperCase()}</span>`;
+        }
       } else {
         guestSec.classList.remove('hidden');
         userSec.classList.add('hidden');
       }
     }
 
+    // ============================================================
+    //  AUTH MODAL ACTIONS
+    // ============================================================
+    let authMode = 'login';
+
     function openAuthModal(mode = 'login') {
       authMode = mode;
       updateAuthModalUI();
-      const modal = document.getElementById('authModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+      hideAuthError();
+      document.getElementById('authModal').classList.remove('hidden');
+      document.getElementById('authModal').classList.add('flex');
     }
 
     function closeAuthModal() {
-      const modal = document.getElementById('authModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
+      document.getElementById('authModal').classList.add('hidden');
+      document.getElementById('authModal').classList.remove('flex');
+      hideAuthError();
     }
 
     function toggleAuthMode() {
       authMode = authMode === 'login' ? 'signup' : 'login';
       updateAuthModalUI();
+      hideAuthError();
     }
 
     function updateAuthModalUI() {
@@ -367,51 +600,130 @@
       const sub = document.getElementById('authModalSubtitle');
       const submitBtn = document.getElementById('authSubmitBtn');
       const prompt = document.getElementById('authSwitchPrompt');
+      const nameField = document.getElementById('displayNameField');
 
       if (authMode === 'login') {
         title.innerText = "Welcome Back";
         sub.innerText = "Log in to track your watch progress across all devices";
-        submitBtn.innerText = "Log In";
+        submitBtn.innerHTML = "Log In";
+        nameField.classList.add('hidden');
         prompt.innerHTML = `Don't have an account? <button type="button" onclick="toggleAuthMode()" class="text-brand-400 hover:underline font-semibold ml-1">Sign Up</button>`;
       } else {
         title.innerText = "Create Your Account";
         sub.innerText = "Join WonderWatch to save watchlists and continue watching";
-        submitBtn.innerText = "Create Account";
+        submitBtn.innerHTML = "Create Account";
+        nameField.classList.remove('hidden');
         prompt.innerHTML = `Already have an account? <button type="button" onclick="toggleAuthMode()" class="text-brand-400 hover:underline font-semibold ml-1">Log In</button>`;
       }
     }
 
-    function handleAuthSubmit(e) {
-      e.preventDefault();
-      const usernameInput = document.getElementById('authUsernameInput');
-      const username = usernameInput.value.trim() || 'Otaku';
-      
-      const userData = {
-        name: username,
-        loggedInAt: Date.now()
+    function showAuthError(msg) {
+      const el = document.getElementById('authErrorMsg');
+      el.innerText = msg;
+      el.classList.remove('hidden');
+    }
+
+    function hideAuthError() {
+      document.getElementById('authErrorMsg').classList.add('hidden');
+    }
+
+    function setAuthLoading(loading) {
+      const btn = document.getElementById('authSubmitBtn');
+      const googleBtn = document.getElementById('googleLoginBtn');
+      if (loading) {
+        btn.innerHTML = `<span class="spinner"></span> Please wait...`;
+        btn.disabled = true;
+        googleBtn.disabled = true;
+        googleBtn.style.opacity = '0.5';
+      } else {
+        btn.innerHTML = authMode === 'login' ? 'Log In' : 'Create Account';
+        btn.disabled = false;
+        googleBtn.disabled = false;
+        googleBtn.style.opacity = '1';
+      }
+    }
+
+    function friendlyAuthError(code) {
+      const map = {
+        'auth/email-already-in-use': 'This email is already registered. Try logging in instead.',
+        'auth/invalid-email': 'Please enter a valid email address.',
+        'auth/user-not-found': 'No account found with this email. Sign up first!',
+        'auth/wrong-password': 'Incorrect password. Please try again.',
+        'auth/invalid-credential': 'Invalid email or password. Please check and try again.',
+        'auth/weak-password': 'Password must be at least 6 characters.',
+        'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
+        'auth/popup-closed-by-user': 'Google sign-in was cancelled.',
+        'auth/network-request-failed': 'Network error. Please check your connection.',
       };
-      localStorage.setItem('wonderwatch_user', JSON.stringify(userData));
-      
-      closeAuthModal();
-      checkAuthState();
-      usernameInput.value = '';
-      document.getElementById('authPasswordInput').value = '';
+      return map[code] || 'Something went wrong. Please try again.';
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      hideAuthError();
+      setAuthLoading(true);
+
+      const email = document.getElementById('authEmailInput').value.trim();
+      const password = document.getElementById('authPasswordInput').value;
+      const displayName = document.getElementById('authDisplayNameInput')?.value.trim();
+
+      try {
+        if (authMode === 'signup') {
+          const cred = await auth.createUserWithEmailAndPassword(email, password);
+          if (displayName) {
+            await cred.user.updateProfile({ displayName });
+          }
+          showToast('<i class="fa-solid fa-circle-check text-brand-400"></i> Account created!');
+        } else {
+          await auth.signInWithEmailAndPassword(email, password);
+          showToast('<i class="fa-solid fa-circle-check text-brand-400"></i> Logged in!');
+        }
+        closeAuthModal();
+        document.getElementById('authEmailInput').value = '';
+        document.getElementById('authPasswordInput').value = '';
+        if (document.getElementById('authDisplayNameInput')) document.getElementById('authDisplayNameInput').value = '';
+      } catch (err) {
+        showAuthError(friendlyAuthError(err.code));
+      } finally {
+        setAuthLoading(false);
+      }
+    }
+
+    async function handleGoogleLogin() {
+      hideAuthError();
+      setAuthLoading(true);
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithPopup(provider);
+        closeAuthModal();
+        showToast('<i class="fa-solid fa-circle-check text-brand-400"></i> Signed in with Google!');
+      } catch (err) {
+        if (err.code !== 'auth/popup-closed-by-user') {
+          showAuthError(friendlyAuthError(err.code));
+        }
+      } finally {
+        setAuthLoading(false);
+      }
     }
 
     function toggleUserDropdown(e) {
       e.stopPropagation();
-      const dropdown = document.getElementById('userDropdownMenu');
-      dropdown.classList.toggle('hidden');
+      document.getElementById('userDropdownMenu').classList.toggle('hidden');
     }
 
-    function logoutUser() {
-      localStorage.removeItem('wonderwatch_user');
-      const dropdown = document.getElementById('userDropdownMenu');
-      if (dropdown) dropdown.classList.add('hidden');
-      checkAuthState();
+    async function logoutUser() {
+      try {
+        await auth.signOut();
+        document.getElementById('userDropdownMenu').classList.add('hidden');
+        showToast('<i class="fa-solid fa-arrow-right-from-bracket text-zinc-400"></i> Logged out');
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
     }
 
-    // --- APPLICATION LOGIC ---
+    // ============================================================
+    //  APPLICATION LOGIC
+    // ============================================================
     const urlParams = new URLSearchParams(window.location.search);
     let animeId = urlParams.get('id') || '1';
     let malId = urlParams.get('malId') || animeId;
@@ -419,9 +731,13 @@
     let totalEpisodes = parseInt(urlParams.get('eps')) || 12;
     if (isNaN(totalEpisodes) || totalEpisodes <= 0) totalEpisodes = 12;
     
-    let currentEpisode = 1;
+    let currentEpisode = parseInt(urlParams.get('ep')) || 1;
     let currentType = 'sub';
     let currentServer = 'zoko_mal';
+    let savedResumeTime = parseInt(urlParams.get('time')) || 0;
+
+    // Anime metadata for favorites/history
+    let animeMetadata = null;
 
     const playerFrame = document.getElementById('playerFrame');
     const episodeGrid = document.getElementById('episodeGrid');
@@ -437,8 +753,10 @@
         btn.onclick = () => {
           allowInternalNavigation = true;
           currentEpisode = i;
+          savedResumeTime = 0;
           loadPlayer();
           renderEpisodes();
+          autoSaveProgress();
           setTimeout(() => { allowInternalNavigation = false; }, 1000);
         };
         
@@ -456,13 +774,20 @@
     function loadPlayer() {
       document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()}`;
       
+      let src = '';
       if (currentServer === 'zoko_mal') {
         document.getElementById('activeSourceBadge').innerText = 'Server 1 (Primary)';
-        playerFrame.src = `https://zokoanime.video/stream/mal/${malId}/${currentEpisode}/${currentType}?color=84cc16&autoplay=1`;
+        src = `https://zokoanime.video/stream/mal/${malId}/${currentEpisode}/${currentType}?color=84cc16&autoplay=1`;
       } else if (currentServer === 'animeembed') {
         document.getElementById('activeSourceBadge').innerText = 'Server 2 (AnimeEmbed)';
-        playerFrame.src = `https://animeembed.com/embed/mal/${malId}/${currentEpisode}?track=${currentType}&autoPlay=1`;
+        src = `https://animeembed.com/embed/mal/${malId}/${currentEpisode}?track=${currentType}&autoPlay=1`;
       }
+
+      if (savedResumeTime > 0) {
+        src += `&time=${savedResumeTime}`;
+      }
+
+      playerFrame.src = src;
     }
 
     function changeSource() {
@@ -483,13 +808,97 @@
       if (currentEpisode < totalEpisodes) {
         allowInternalNavigation = true;
         currentEpisode++;
+        savedResumeTime = 0;
         loadPlayer();
         renderEpisodes();
+        autoSaveProgress();
         setTimeout(() => { allowInternalNavigation = false; }, 1000);
       }
     }
 
-    // Fetch Full Anime Info & Related Seasons (Franchise Grouping)
+    // ============================================================
+    //  WATCH PROGRESS TRACKING
+    // ============================================================
+    let lastSavedTime = 0;
+
+    // Listen for postMessage from the player iframe
+    window.addEventListener('message', (event) => {
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        
+        if (data.type === 'progress' || data.type === 'timeupdate') {
+          const currentTime = data.data?.currentTime || data.currentTime || 0;
+          const duration = data.data?.duration || data.duration || 0;
+          
+          // Throttle saves: save every 15 seconds of watch time change
+          if (Math.abs(currentTime - lastSavedTime) >= 15) {
+            lastSavedTime = currentTime;
+            autoSaveProgress(currentTime);
+          }
+        }
+      } catch (e) {
+        // Not a JSON message, ignore
+      }
+    });
+
+    // Auto-save every 30 seconds as a fallback
+    setInterval(() => {
+      autoSaveProgress();
+    }, 30000);
+
+    function autoSaveProgress(timestamp) {
+      const imgUrl = animeMetadata?.coverImage?.extraLarge || animeMetadata?.coverImage?.large || '';
+      const genres = animeMetadata?.genres || [];
+      
+      saveHistoryItem({
+        id: parseInt(animeId),
+        malId: parseInt(malId),
+        title: animeTitle,
+        img: imgUrl,
+        episode: currentEpisode,
+        eps: totalEpisodes,
+        timestamp: timestamp || savedResumeTime || 0,
+        genres: genres
+      });
+    }
+
+    // ============================================================
+    //  FAVOURITE TOGGLE ON WATCH PAGE
+    // ============================================================
+    function updateWatchFavButton() {
+      const icon = document.getElementById('watchFavIcon');
+      if (!icon) return;
+      if (isAnimeFavorite(parseInt(animeId))) {
+        icon.className = "fa-solid fa-heart text-red-500 text-sm";
+      } else {
+        icon.className = "fa-regular fa-heart text-sm";
+      }
+    }
+
+    async function toggleWatchFavorite() {
+      const id = parseInt(animeId);
+      if (isAnimeFavorite(id)) {
+        await removeFavorite(id);
+        showToast('<i class="fa-regular fa-heart text-zinc-400"></i> Removed from favourites');
+      } else {
+        await addFavorite({
+          id: id,
+          idMal: parseInt(malId),
+          title: animeTitle,
+          coverImage: animeMetadata?.coverImage || {},
+          episodes: totalEpisodes,
+          averageScore: animeMetadata?.averageScore,
+          format: animeMetadata?.format,
+          genres: animeMetadata?.genres || []
+        });
+        showToast('<i class="fa-solid fa-heart text-red-500"></i> Added to favourites!');
+      }
+      updateWatchFavButton();
+    }
+
+    // ============================================================
+    //  SERIES DATA & FRANCHISE GROUPING
+    // ============================================================
     async function loadSeriesData() {
       const query = `
         query ($id: Int) {
@@ -501,6 +910,8 @@
             episodes
             genres
             averageScore
+            format
+            coverImage { extraLarge large medium }
             relations {
               edges {
                 relationType
@@ -531,6 +942,8 @@
         const media = json.data?.Media;
 
         if (media) {
+          animeMetadata = media;
+
           if (media.episodes && media.episodes > 0) {
             totalEpisodes = media.episodes;
             document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
@@ -555,6 +968,10 @@
           });
 
           renderSeriesRelations(media.relations?.edges, media);
+          updateWatchFavButton();
+
+          // Save initial progress
+          autoSaveProgress(savedResumeTime);
         }
       } catch (err) {
         console.error('Failed to load series franchise data:', err);
@@ -619,7 +1036,9 @@
       });
     }
 
-    checkAuthState();
+    // ============================================================
+    //  INIT
+    // ============================================================
     renderEpisodes();
     loadPlayer();
     loadSeriesData();
