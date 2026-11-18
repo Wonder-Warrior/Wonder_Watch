@@ -60,8 +60,6 @@ public final class MainActivity extends Activity {
         // Start loading shield rules immediately in parallel with WebView init
         shieldEngine.startPreload(this);
 
-        configureSystemBars();
-
         rootContainer = new FrameLayout(this);
         rootContainer.setBackgroundColor(BG_DARK);
 
@@ -106,6 +104,7 @@ public final class MainActivity extends Activity {
 
         applySafeSystemInsets(webView);
         setContentView(rootContainer);
+        configureSystemBars();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
@@ -167,6 +166,7 @@ public final class MainActivity extends Activity {
         window.setNavigationBarColor(BG_DARK);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.setDecorFitsSystemWindows(false);
+            window.getDecorView();
             WindowInsetsController controller = window.getInsetsController();
             if (controller != null) {
                 controller.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
