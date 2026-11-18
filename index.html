@@ -195,7 +195,7 @@
           </button>
 
           <!-- Dropdown Menu -->
-          <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-52 bg-surface-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/60 backdrop-blur-xl">
+          <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-surface-900/95 border border-zinc-700/80 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/80 backdrop-blur-2xl ring-1 ring-black/40 transition-all">
             <div class="px-4 py-2.5">
               <p class="text-xs font-bold text-white truncate" id="dropdownUserName">User</p>
               <p class="text-[10px] text-zinc-400 truncate mt-0.5" id="dropdownUserEmail"></p>
@@ -206,14 +206,14 @@
             </div>
             <div class="py-1">
               <button type="button" onclick="goToSection('continueWatchingSection', 'No watch history yet. Start watching something!')" class="w-full text-left px-4 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-surface-800 transition flex items-center gap-2">
-                <i class="fa-solid fa-clock-rotate-left text-zinc-500 text-xs"></i> Watch History
+                <i class="fa-solid fa-clock-rotate-left text-zinc-400 text-xs"></i> Watch History
               </button>
               <button type="button" onclick="goToSection('favoritesSection', 'No favourites yet. Tap the heart on an anime to save it.')" class="w-full text-left px-4 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-surface-800 transition flex items-center gap-2">
                 <i class="fa-solid fa-heart text-red-500 text-xs"></i> My Favourites
               </button>
             </div>
             <div class="py-1">
-              <button onclick="logoutUser()" class="w-full text-left px-4 py-2 text-xs font-semibold text-red-400 hover:bg-surface-800 transition flex items-center gap-2">
+              <button onclick="logoutUser()" class="w-full text-left px-4 py-2 text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-surface-800 transition flex items-center gap-2">
                 <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i> Log Out
               </button>
             </div>
@@ -264,10 +264,10 @@
         <span id="spotlightCount" class="text-xs font-bold text-zinc-400 bg-surface-950/90 px-3 py-1.5 rounded-xl border border-zinc-800 backdrop-blur-md">
           1 / 6
         </span>
-        <button onclick="prevSpotlight(); resetAutoSlide();" class="w-10 h-10 rounded-xl bg-surface-900/90 border border-zinc-800 text-zinc-300 hover:text-brand-400 hover:border-brand-500/50 flex items-center justify-center transition backdrop-blur-md shadow-lg" title="Previous Spotlight">
+        <button onclick="playSoundCue('click'); prevSpotlight(); resetAutoSlide();" class="w-10 h-10 rounded-xl bg-surface-900/90 border border-zinc-800 text-zinc-300 hover:text-brand-400 hover:border-brand-500/50 flex items-center justify-center transition backdrop-blur-md shadow-lg" title="Previous Spotlight">
           <i class="fa-solid fa-chevron-left text-xs"></i>
         </button>
-        <button onclick="nextSpotlight(); resetAutoSlide();" class="w-10 h-10 rounded-xl bg-surface-900/90 border border-zinc-800 text-zinc-300 hover:text-brand-400 hover:border-brand-500/50 flex items-center justify-center transition backdrop-blur-md shadow-lg" title="Next Spotlight">
+        <button onclick="playSoundCue('click'); nextSpotlight(); resetAutoSlide();" class="w-10 h-10 rounded-xl bg-surface-900/90 border border-zinc-800 text-zinc-300 hover:text-brand-400 hover:border-brand-500/50 flex items-center justify-center transition backdrop-blur-md shadow-lg" title="Next Spotlight">
           <i class="fa-solid fa-chevron-right text-xs"></i>
         </button>
       </div>
@@ -292,7 +292,7 @@
           Loading description...
         </p>
         <div class="pt-2 flex items-center gap-3">
-          <a id="heroWatchBtn" href="#" class="inline-flex items-center gap-2.5 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-6 py-3.5 rounded-xl transition shadow-lg shadow-brand-500/25">
+          <a id="heroWatchBtn" href="#" onclick="playSoundCue('nav')" class="inline-flex items-center gap-2.5 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-6 py-3.5 rounded-xl transition shadow-lg shadow-brand-500/25">
             <i class="fa-solid fa-play text-sm"></i> Watch Now
           </a>
           <button id="heroFavBtn" onclick="toggleSpotlightFavorite()" class="w-12 h-12 rounded-xl bg-surface-800/90 border border-zinc-700/60 hover:border-brand-500 text-zinc-300 hover:text-red-500 flex items-center justify-center transition" title="Save to Favourites">
@@ -375,11 +375,11 @@
         <span class="text-zinc-500 font-semibold flex items-center gap-1 pl-1 flex-shrink-0">
           <i class="fa-solid fa-tag text-[10px]"></i> Quick:
         </span>
-        <button onclick="triggerQuickSearch('Demon Slayer')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">Demon Slayer</button>
-        <button onclick="triggerQuickSearch('Attack on Titan')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">Attack on Titan</button>
-        <button onclick="triggerQuickSearch('Jujutsu Kaisen')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">Jujutsu Kaisen</button>
-        <button onclick="triggerQuickSearch('One Piece')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">One Piece</button>
-        <button onclick="triggerQuickSearch('Solo Leveling')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">Solo Leveling</button>
+        <button onclick="playSoundCue('click'); triggerQuickSearch('Demon Slayer')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">Demon Slayer</button>
+        <button onclick="playSoundCue('click'); triggerQuickSearch('Attack on Titan')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">Attack on Titan</button>
+        <button onclick="playSoundCue('click'); triggerQuickSearch('Jujutsu Kaisen')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">Jujutsu Kaisen</button>
+        <button onclick="playSoundCue('click'); triggerQuickSearch('One Piece')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">One Piece</button>
+        <button onclick="playSoundCue('click'); triggerQuickSearch('Solo Leveling')" class="bg-surface-900 hover:bg-brand-500 hover:text-black border border-zinc-800/80 px-3.5 py-1.5 rounded-xl text-zinc-400 hover:border-brand-500 transition whitespace-nowrap font-medium">Solo Leveling</button>
       </div>
 
       <!-- Live Search Results Dropdown -->
@@ -1827,6 +1827,7 @@
 
     // Dropdown shortcuts: scroll to a section, or explain why it's empty
     function goToSection(id, emptyMessage) {
+      playSoundCue('nav');
       document.getElementById('userDropdownMenu').classList.add('hidden');
       const el = document.getElementById(id);
       if (!el || el.classList.contains('hidden')) {
@@ -1846,13 +1847,28 @@
     function getAudioCtx() {
       if (!audioCtx) {
         const Ctx = window.AudioContext || window.webkitAudioContext;
-        if (Ctx) audioCtx = new Ctx();
+        if (Ctx) {
+          audioCtx = new Ctx();
+        }
       }
       if (audioCtx && audioCtx.state === 'suspended') {
         audioCtx.resume().catch(() => {});
       }
       return audioCtx;
     }
+
+    // Pre-warm the AudioContext on first user interaction so sounds are instantaneous
+    const primeAudio = () => {
+      try {
+        const ctx = getAudioCtx();
+        if (ctx && ctx.state === 'suspended') {
+          ctx.resume().catch(() => {});
+        }
+      } catch (_) {}
+    };
+    ['pointerdown', 'touchstart', 'mousedown', 'keydown'].forEach(evt => {
+      window.addEventListener(evt, primeAudio, { once: true, passive: true });
+    });
 
     function playSoundCue(type = 'click') {
       if (!soundEnabled) return;
@@ -1968,7 +1984,10 @@
           btn.className = 'genre-btn text-xs bg-surface-800 hover:bg-brand-500 hover:text-black border border-zinc-800 hover:border-brand-500 px-4 py-2 rounded-xl text-zinc-300 font-semibold transition shadow-sm';
           btn.innerText = genre;
           btn.dataset.genre = genre;
-          btn.onclick = () => filterByGenre(genre);
+          btn.onclick = () => {
+            playSoundCue('click');
+            filterByGenre(genre);
+          };
           container.appendChild(btn);
         });
       } catch (err) {

@@ -180,16 +180,17 @@
             <i class="fa-solid fa-chevron-down text-[10px] text-zinc-500 hidden sm:inline"></i>
           </button>
 
-          <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-surface-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/60 backdrop-blur-xl">
-            <div class="px-3.5 py-2">
+          <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-52 bg-surface-900/95 border border-zinc-700/80 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/80 backdrop-blur-2xl ring-1 ring-black/40 transition-all">
+            <div class="px-4 py-2.5">
               <p class="text-xs font-bold text-white truncate" id="dropdownUserName">User</p>
               <p class="text-[10px] text-zinc-400 truncate mt-0.5" id="dropdownUserEmail"></p>
-              <p class="text-[10px] text-brand-400 font-medium flex items-center gap-1 mt-0.5">
+              <p class="text-[10px] text-brand-400 font-medium flex items-center gap-1.5 mt-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span>
                 <i class="fa-solid fa-cloud text-[9px]"></i> Cloud Synced
               </p>
             </div>
             <div class="py-1">
-              <button onclick="logoutUser()" class="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-surface-800 transition flex items-center gap-2">
+              <button onclick="logoutUser()" class="w-full text-left px-4 py-2 text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-surface-800 transition flex items-center gap-2">
                 <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i> Log Out
               </button>
             </div>
@@ -245,16 +246,22 @@
             </button>
 
             <!-- Stream Selector -->
-            <select id="sourceSelect" onchange="changeSource()" class="bg-surface-800 border border-zinc-700/80 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500">
-              <option value="aniembed_se">Stream 1</option>
-              <option value="zoko_mal">Stream 2</option>
-            </select>
+            <div class="relative inline-block">
+              <select id="sourceSelect" onchange="changeSource()" class="appearance-none bg-surface-800 hover:bg-surface-750 border border-zinc-700/80 hover:border-brand-500/50 text-xs font-semibold pl-3 pr-8 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500 transition cursor-pointer shadow-sm">
+                <option value="aniembed_se" class="bg-surface-900 text-zinc-100 py-1">Stream 1</option>
+                <option value="zoko_mal" class="bg-surface-900 text-zinc-100 py-1">Stream 2</option>
+              </select>
+              <i class="fa-solid fa-chevron-down text-[10px] text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none transition"></i>
+            </div>
 
             <!-- Sub / Dub Selector -->
-            <select id="streamTypeSelect" onchange="changeStreamType()" class="bg-surface-800 border border-zinc-700/80 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500">
-              <option value="sub">Subtitled</option>
-              <option value="dub">Dubbed</option>
-            </select>
+            <div class="relative inline-block">
+              <select id="streamTypeSelect" onchange="changeStreamType()" class="appearance-none bg-surface-800 hover:bg-surface-750 border border-zinc-700/80 hover:border-brand-500/50 text-xs font-semibold pl-3 pr-8 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500 transition cursor-pointer shadow-sm">
+                <option value="sub" class="bg-surface-900 text-zinc-100 py-1">Subtitled</option>
+                <option value="dub" class="bg-surface-900 text-zinc-100 py-1">Dubbed</option>
+              </select>
+              <i class="fa-solid fa-chevron-down text-[10px] text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none transition"></i>
+            </div>
 
             <!-- Next Episode Button -->
             <button onclick="handleNextEpisode()" class="bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-3.5 sm:px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center gap-1.5 flex-shrink-0">
@@ -468,13 +475,28 @@
     function getAudioCtx() {
       if (!audioCtx) {
         const Ctx = window.AudioContext || window.webkitAudioContext;
-        if (Ctx) audioCtx = new Ctx();
+        if (Ctx) {
+          audioCtx = new Ctx();
+        }
       }
       if (audioCtx && audioCtx.state === 'suspended') {
         audioCtx.resume().catch(() => {});
       }
       return audioCtx;
     }
+
+    // Pre-warm the AudioContext on first user interaction so sounds are instantaneous
+    const primeAudio = () => {
+      try {
+        const ctx = getAudioCtx();
+        if (ctx && ctx.state === 'suspended') {
+          ctx.resume().catch(() => {});
+        }
+      } catch (_) {}
+    };
+    ['pointerdown', 'touchstart', 'mousedown', 'keydown'].forEach(evt => {
+      window.addEventListener(evt, primeAudio, { once: true, passive: true });
+    });
 
     function playSoundCue(type = 'click') {
       if (!soundEnabled) return;
@@ -1112,7 +1134,7 @@
           if (parts.length > 0) {
             summaryText = parts.join(' • ');
           } else if (rawTitle) {
-            summaryText = `Watch "${rawTitle}"`;
+            summaryText = rawTitle;
           } else {
             summaryText = `${animeTitle} — Episode ${i}`;
           }
@@ -1635,19 +1657,41 @@
       const container = document.getElementById('seriesGroupList');
       container.innerHTML = '';
 
-      // Only include genuine franchise story relations; exclude CHARACTER/OTHER/CONTAINS which pull in unrelated crossovers (e.g. Dragon Ball Z / Toriko)
-      const FRANCHISE_RELATIONS = new Set(['PREQUEL', 'SEQUEL', 'PARENT', 'SIDE_STORY', 'SPIN_OFF', 'ALTERNATIVE', 'SUMMARY', 'COMPILATION']);
+      // Priority ordering requested: SEQUEL, PREQUAL, CHARACTER, SIDE_STORY, SUMMARY, then remaining
+      const RELATION_PRIORITY = {
+        'SEQUEL': 1,
+        'PREQUEL': 2,
+        'CHARACTER': 3,
+        'SIDE_STORY': 4,
+        'SUMMARY': 5,
+        'PARENT': 6,
+        'SPIN_OFF': 7,
+        'ALTERNATIVE': 8,
+        'COMPILATION': 9,
+        'OTHER': 10
+      };
+
+      const ALLOWED_RELATIONS = new Set(Object.keys(RELATION_PRIORITY));
       const currentTitleLower = (currentMedia.title.english || currentMedia.title.romaji || '').toLowerCase();
 
       const validRelations = edges ? edges.filter(edge => {
         if (!edge?.node || edge.node.type !== 'ANIME') return false;
-        if (!FRANCHISE_RELATIONS.has(edge.relationType)) return false;
+        if (!ALLOWED_RELATIONS.has(edge.relationType)) return false;
         const relTitleLower = ((edge.node.title?.english || '') + ' ' + (edge.node.title?.romaji || '')).toLowerCase();
-        // Guard against crossover specials linking another major franchise (e.g., Dragon Ball Z / Toriko collaboration)
+        // Guard against crossover specials linking another completely separate franchise (e.g. Toriko / DBZ)
         if (!currentTitleLower.includes('dragon ball') && relTitleLower.includes('dragon ball')) return false;
         if (!currentTitleLower.includes('toriko') && relTitleLower.includes('toriko')) return false;
         return true;
       }) : [];
+
+      validRelations.sort((a, b) => {
+        const pA = RELATION_PRIORITY[a.relationType] || 99;
+        const pB = RELATION_PRIORITY[b.relationType] || 99;
+        if (pA !== pB) return pA - pB;
+        const yearA = a.node.startDate?.year || 0;
+        const yearB = b.node.startDate?.year || 0;
+        return yearA - yearB;
+      });
 
       if (validRelations.length === 0) {
         container.innerHTML = `<div class="py-4 text-center text-zinc-500 text-xs">Standalone anime (No other seasons or spinoffs).</div>`;
