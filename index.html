@@ -120,107 +120,111 @@
   <div id="toastNotif" class="ww-toast"></div>
 
   <!-- Header / Navigation Bar -->
-  <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-3 sm:px-8 py-3 flex items-center justify-between gap-3">
-    <div class="flex items-center gap-4 lg:gap-8 min-w-0">
-      <a href="index.html" class="flex items-center gap-2.5 group flex-shrink-0">
-        <img src="favicon.png" alt="WonderWatch" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
-        <span class="text-lg sm:text-xl font-heading font-black tracking-wider text-white">WONDER<span class="text-brand-400">WATCH</span></span>
-      </a>
+  <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full">
+      <div class="flex items-center gap-4 lg:gap-8 min-w-0 flex-shrink">
+        <a href="index.html" class="flex items-center gap-2 group flex-shrink-0">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-xs shadow-lg shadow-brand-500/25 group-hover:scale-105 transition">
+            <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
+          </div>
+          <span class="text-base sm:text-xl font-heading font-black tracking-wider text-white truncate">WONDER<span class="text-brand-400">WATCH</span></span>
+        </a>
 
-      <!-- Desktop Nav -->
-      <nav class="hidden md:flex items-center gap-5 lg:gap-6 text-sm font-medium text-zinc-400">
-        <a href="#trending" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-fire text-amber-500 text-xs"></i> Trending</a>
-        <a href="#airing" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-tower-broadcast text-brand-400 text-xs"></i> Airing</a>
-        <a href="#popular" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-star text-yellow-400 text-xs"></i> Popular</a>
-        <a href="#movies" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-film text-brand-400 text-xs"></i> Movies</a>
-        <a href="#genresSection" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-shapes text-zinc-400 text-xs"></i> Genres</a>
-        <a href="#favoritesSection" id="navFavoritesLink" class="hidden hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-heart text-red-500 text-xs"></i> Favourites</a>
-      </nav>
-    </div>
-
-    <!-- Right Header Navigation: Search Shortcut, Log In / User State, Mobile Toggle -->
-    <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-      <!-- Quick Focus Search Button -->
-      <button onclick="focusMainSearch()" class="w-9 h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-brand-500/50 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition" title="Search anime">
-        <i class="fa-solid fa-magnifying-glass"></i>
-      </button>
-
-      <!-- Sync indicator -->
-      <div id="syncIndicator" class="hidden items-center gap-1.5 text-[10px] text-brand-400 font-semibold">
-        <i class="fa-solid fa-cloud text-xs"></i>
-        <span id="syncLabel" class="hidden sm:inline">Synced</span>
+        <!-- Desktop Nav -->
+        <nav class="hidden md:flex items-center gap-4 lg:gap-6 text-sm font-medium text-zinc-400">
+          <button type="button" onclick="smoothScrollToCategory('trending')" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-fire text-amber-500 text-xs"></i> Trending</button>
+          <button type="button" onclick="smoothScrollToCategory('airing')" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-tower-broadcast text-brand-400 text-xs"></i> Airing</button>
+          <button type="button" onclick="smoothScrollToCategory('popular')" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-star text-yellow-400 text-xs"></i> Popular</button>
+          <button type="button" onclick="smoothScrollToCategory('movies')" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-film text-brand-400 text-xs"></i> Movies</button>
+          <button type="button" onclick="smoothScrollToCategory('genresSection')" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-shapes text-zinc-400 text-xs"></i> Genres</button>
+          <button type="button" onclick="smoothScrollToCategory('favoritesSection')" id="navFavoritesLink" class="hidden hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-heart text-red-500 text-xs"></i> Favourites</button>
+        </nav>
       </div>
 
-      <!-- Guest State: Log In Button -->
-      <div id="authGuestSection">
-        <button onclick="openAuthModal('login')" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-3.5 sm:px-4 py-2 rounded-xl transition shadow-lg shadow-brand-500/20">
-          <i class="fa-solid fa-user text-xs"></i> <span>Log In</span>
-        </button>
-      </div>
-
-      <!-- Logged-In User Profile State -->
-      <div id="authUserSection" class="hidden relative">
-        <button onclick="toggleUserDropdown(event)" class="flex items-center gap-2 bg-surface-900 hover:bg-surface-850 border border-zinc-800/80 px-2.5 sm:px-3 py-1.5 rounded-2xl transition">
-          <div class="w-7 h-7 rounded-full bg-brand-500 text-black flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden" id="userAvatarContainer">
-            <span id="userAvatarLetter">U</span>
-          </div>
-          <span id="headerUsername" class="text-xs font-semibold text-zinc-200 hidden sm:inline max-w-[90px] truncate">User</span>
-          <i class="fa-solid fa-chevron-down text-[10px] text-zinc-500"></i>
+      <!-- Right Header Navigation: Search Shortcut, Log In / User State, Mobile Toggle -->
+      <div class="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+        <!-- Quick Focus Search Button -->
+        <button onclick="focusMainSearch()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-brand-500/50 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition" title="Search anime">
+          <i class="fa-solid fa-magnifying-glass"></i>
         </button>
 
-        <!-- Dropdown Menu -->
-        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-52 bg-surface-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/60 backdrop-blur-xl">
-          <div class="px-4 py-2.5">
-            <p class="text-xs font-bold text-white truncate" id="dropdownUserName">User</p>
-            <p class="text-[10px] text-zinc-400 truncate mt-0.5" id="dropdownUserEmail"></p>
-            <p class="text-[10px] text-brand-400 font-medium flex items-center gap-1.5 mt-1">
-              <span id="authProviderBadge" class="bg-brand-500/15 border border-brand-500/30 px-1.5 py-0.2 rounded text-[9px] uppercase tracking-wider font-bold">Standard</span>
-              <span class="flex items-center gap-1"><i class="fa-solid fa-cloud text-[9px]"></i> Cloud Synced</span>
-            </p>
-          </div>
-          <div class="py-1">
-            <button type="button" onclick="goToSection('continueWatchingSection', 'No watch history yet. Start watching something!')" class="w-full text-left px-4 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-surface-800 transition flex items-center gap-2">
-              <i class="fa-solid fa-clock-rotate-left text-zinc-500 text-xs"></i> Watch History
-            </button>
-            <button type="button" onclick="goToSection('favoritesSection', 'No favourites yet. Tap the heart on an anime to save it.')" class="w-full text-left px-4 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-surface-800 transition flex items-center gap-2">
-              <i class="fa-solid fa-heart text-red-500 text-xs"></i> My Favourites
-            </button>
-          </div>
-          <div class="py-1">
-            <button onclick="logoutUser()" class="w-full text-left px-4 py-2 text-xs font-semibold text-red-400 hover:bg-surface-800 transition flex items-center gap-2">
-              <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i> Log Out
-            </button>
+        <!-- Sync indicator -->
+        <div id="syncIndicator" class="hidden items-center gap-1.5 text-[10px] text-brand-400 font-semibold">
+          <i class="fa-solid fa-cloud text-xs"></i>
+          <span id="syncLabel" class="hidden sm:inline">Synced</span>
+        </div>
+
+        <!-- Guest State: Log In Button -->
+        <div id="authGuestSection">
+          <button onclick="openAuthModal('login')" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl transition shadow-lg shadow-brand-500/20 whitespace-nowrap">
+            <i class="fa-solid fa-user text-xs"></i> <span>Log In</span>
+          </button>
+        </div>
+
+        <!-- Logged-In User Profile State -->
+        <div id="authUserSection" class="hidden relative">
+          <button onclick="toggleUserDropdown(event)" class="flex items-center gap-1.5 sm:gap-2 bg-surface-900 hover:bg-surface-850 border border-zinc-800/80 px-2 sm:px-3 py-1.5 rounded-2xl transition">
+            <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-brand-500 text-black flex items-center justify-center font-bold text-[11px] sm:text-xs shadow-sm overflow-hidden" id="userAvatarContainer">
+              <span id="userAvatarLetter">U</span>
+            </div>
+            <span id="headerUsername" class="text-xs font-semibold text-zinc-200 hidden sm:inline max-w-[90px] truncate">User</span>
+            <i class="fa-solid fa-chevron-down text-[10px] text-zinc-500 hidden sm:inline"></i>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-52 bg-surface-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/60 backdrop-blur-xl">
+            <div class="px-4 py-2.5">
+              <p class="text-xs font-bold text-white truncate" id="dropdownUserName">User</p>
+              <p class="text-[10px] text-zinc-400 truncate mt-0.5" id="dropdownUserEmail"></p>
+              <p class="text-[10px] text-brand-400 font-medium flex items-center gap-1.5 mt-1">
+                <span id="authProviderBadge" class="bg-brand-500/15 border border-brand-500/30 px-1.5 py-0.2 rounded text-[9px] uppercase tracking-wider font-bold">Standard</span>
+                <span class="flex items-center gap-1"><i class="fa-solid fa-cloud text-[9px]"></i> Cloud Synced</span>
+              </p>
+            </div>
+            <div class="py-1">
+              <button type="button" onclick="goToSection('continueWatchingSection', 'No watch history yet. Start watching something!')" class="w-full text-left px-4 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-surface-800 transition flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-zinc-500 text-xs"></i> Watch History
+              </button>
+              <button type="button" onclick="goToSection('favoritesSection', 'No favourites yet. Tap the heart on an anime to save it.')" class="w-full text-left px-4 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-surface-800 transition flex items-center gap-2">
+                <i class="fa-solid fa-heart text-red-500 text-xs"></i> My Favourites
+              </button>
+            </div>
+            <div class="py-1">
+              <button onclick="logoutUser()" class="w-full text-left px-4 py-2 text-xs font-semibold text-red-400 hover:bg-surface-800 transition flex items-center gap-2">
+                <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i> Log Out
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Mobile Menu Toggle Button -->
-      <button onclick="toggleMobileNav(event)" class="md:hidden w-9 h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center text-sm transition" title="Menu">
-        <i class="fa-solid fa-bars" id="mobileMenuIcon"></i>
-      </button>
+        <!-- Mobile Menu Toggle Button -->
+        <button onclick="toggleMobileNav(event)" class="md:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center text-xs sm:text-sm transition flex-shrink-0" title="Menu">
+          <i class="fa-solid fa-bars" id="mobileMenuIcon"></i>
+        </button>
+      </div>
     </div>
   </header>
 
   <!-- Mobile Collapsible Navigation Drawer -->
-  <div id="mobileNavDrawer" class="hidden md:hidden bg-surface-950/98 border-b border-zinc-900 px-4 py-3 space-y-1 backdrop-blur-2xl sticky top-[57px] z-40">
-    <a href="#trending" onclick="closeMobileNav()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition">
+  <div id="mobileNavDrawer" class="hidden md:hidden bg-surface-950/98 border-b border-zinc-900 px-4 py-3 space-y-1 backdrop-blur-2xl sticky top-[53px] z-40 w-full">
+    <button type="button" onclick="smoothScrollToCategory('trending'); closeMobileNav();" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
       <i class="fa-solid fa-fire text-amber-500 text-xs w-4"></i> Trending
-    </a>
-    <a href="#airing" onclick="closeMobileNav()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition">
+    </button>
+    <button type="button" onclick="smoothScrollToCategory('airing'); closeMobileNav();" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
       <i class="fa-solid fa-tower-broadcast text-brand-400 text-xs w-4"></i> Airing
-    </a>
-    <a href="#popular" onclick="closeMobileNav()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition">
+    </button>
+    <button type="button" onclick="smoothScrollToCategory('popular'); closeMobileNav();" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
       <i class="fa-solid fa-star text-yellow-400 text-xs w-4"></i> Popular
-    </a>
-    <a href="#movies" onclick="closeMobileNav()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition">
+    </button>
+    <button type="button" onclick="smoothScrollToCategory('movies'); closeMobileNav();" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
       <i class="fa-solid fa-film text-brand-400 text-xs w-4"></i> Movies
-    </a>
-    <a href="#genresSection" onclick="closeMobileNav()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition">
+    </button>
+    <button type="button" onclick="smoothScrollToCategory('genresSection'); closeMobileNav();" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
       <i class="fa-solid fa-shapes text-zinc-400 text-xs w-4"></i> Browse Genres
-    </a>
-    <a href="#favoritesSection" id="mobileNavFavoritesLink" onclick="closeMobileNav()" class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition">
+    </button>
+    <button type="button" onclick="smoothScrollToCategory('favoritesSection'); closeMobileNav();" id="mobileNavFavoritesLink" class="hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
       <i class="fa-solid fa-heart text-red-500 text-xs w-4"></i> My Favourites
-    </a>
+    </button>
   </div>
 
   <!-- Hero Spotlight Section (Curated Top 1 of 6 Major Categories) -->
@@ -1736,7 +1740,20 @@
         showToast(`<i class="fa-solid fa-circle-info text-brand-400"></i> ${emptyMessage}`, 3500);
         return;
       }
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Header & Mobile Nav category shortcuts: smooth scroll directly into the middle of the viewport
+    function smoothScrollToCategory(sectionId) {
+      const el = document.getElementById(sectionId);
+      if (!el) return;
+      if (el.classList.contains('hidden')) {
+        if (sectionId === 'favoritesSection') {
+          showToast('<i class="fa-solid fa-heart text-red-500"></i> No favourites yet. Tap the heart on an anime to save it.');
+        }
+        return;
+      }
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     async function loadGenres() {

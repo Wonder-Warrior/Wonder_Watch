@@ -112,50 +112,54 @@
   <div id="toastNotif" class="ww-toast"></div>
 
   <!-- Header / Navigation -->
-  <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-3 sm:px-8 py-3 flex items-center justify-between gap-3">
-    <a href="index.html" class="flex items-center gap-2 group flex-shrink-0">
-      <img src="favicon.png" alt="WonderWatch" class="w-8 h-8 rounded-xl object-contain shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
-      <span class="text-lg sm:text-xl font-heading font-black tracking-wider text-white">WONDER<span class="text-brand-400">WATCH</span></span>
-    </a>
-    
-    <div class="flex items-center gap-2 sm:gap-4">
-      <a href="index.html" class="text-xs bg-surface-900 border border-zinc-800 hover:border-brand-500/50 px-3 sm:px-4 py-2 rounded-xl text-zinc-300 hover:text-white transition flex items-center gap-1.5 font-medium">
-        <i class="fa-solid fa-arrow-left text-[11px]"></i> <span class="hidden sm:inline">Back to Browse</span><span class="sm:hidden">Browse</span>
+  <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full">
+      <a href="index.html" class="flex items-center gap-2 group flex-shrink-0 min-w-0">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-xs shadow-lg shadow-brand-500/25 group-hover:scale-105 transition flex-shrink-0">
+          <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
+        </div>
+        <span class="text-base sm:text-xl font-heading font-black tracking-wider text-white truncate">WONDER<span class="text-brand-400">WATCH</span></span>
       </a>
+      
+      <div class="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
+        <a href="index.html" class="text-xs bg-surface-900 border border-zinc-800 hover:border-brand-500/50 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-zinc-300 hover:text-white transition flex items-center gap-1 font-medium whitespace-nowrap" title="Back to Browse">
+          <i class="fa-solid fa-arrow-left text-[10px]"></i> <span class="hidden sm:inline">Back to Browse</span><span class="sm:hidden text-[11px]">Browse</span>
+        </a>
 
-      <!-- Sync indicator -->
-      <div id="syncIndicator" class="hidden items-center gap-1.5 text-[10px] text-brand-400 font-semibold">
-        <i class="fa-solid fa-cloud text-xs"></i>
-        <span class="hidden sm:inline">Synced</span>
-      </div>
+        <!-- Sync indicator -->
+        <div id="syncIndicator" class="hidden items-center gap-1.5 text-[10px] text-brand-400 font-semibold">
+          <i class="fa-solid fa-cloud text-xs"></i>
+          <span class="hidden sm:inline">Synced</span>
+        </div>
 
-      <!-- User Profile / Log In state in Header -->
-      <div id="authGuestSection">
-        <button onclick="openAuthModal('login')" class="inline-flex items-center gap-1.5 text-xs font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-3 sm:px-3.5 py-2 rounded-xl transition shadow-lg shadow-brand-500/20">
-          <i class="fa-solid fa-user text-xs"></i> <span>Log In</span>
-        </button>
-      </div>
+        <!-- User Profile / Log In state in Header -->
+        <div id="authGuestSection">
+          <button onclick="openAuthModal('login')" class="inline-flex items-center gap-1.5 text-xs font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition shadow-lg shadow-brand-500/20 whitespace-nowrap">
+            <i class="fa-solid fa-user text-xs"></i> <span>Log In</span>
+          </button>
+        </div>
 
-      <div id="authUserSection" class="hidden relative">
-        <button onclick="toggleUserDropdown(event)" class="flex items-center gap-2 bg-surface-900 hover:bg-surface-850 border border-zinc-800/80 px-2.5 py-1.5 rounded-2xl transition">
-          <div class="w-6 h-6 rounded-full bg-brand-500 text-black flex items-center justify-center font-bold text-[11px] shadow-sm overflow-hidden" id="userAvatarContainer">
-            <span id="userAvatarLetter">U</span>
-          </div>
-          <span id="headerUsername" class="text-xs font-semibold text-zinc-200 hidden sm:inline max-w-[90px] truncate">User</span>
-        </button>
+        <div id="authUserSection" class="hidden relative">
+          <button onclick="toggleUserDropdown(event)" class="flex items-center gap-1.5 bg-surface-900 hover:bg-surface-850 border border-zinc-800/80 px-2 sm:px-2.5 py-1.5 rounded-2xl transition">
+            <div class="w-6 h-6 rounded-full bg-brand-500 text-black flex items-center justify-center font-bold text-[11px] shadow-sm overflow-hidden" id="userAvatarContainer">
+              <span id="userAvatarLetter">U</span>
+            </div>
+            <span id="headerUsername" class="text-xs font-semibold text-zinc-200 hidden sm:inline max-w-[90px] truncate">User</span>
+          </button>
 
-        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-surface-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/60 backdrop-blur-xl">
-          <div class="px-3.5 py-2">
-            <p class="text-xs font-bold text-white truncate" id="dropdownUserName">User</p>
-            <p class="text-[10px] text-zinc-400 truncate mt-0.5" id="dropdownUserEmail"></p>
-            <p class="text-[10px] text-brand-400 font-medium flex items-center gap-1 mt-0.5">
-              <i class="fa-solid fa-cloud text-[9px]"></i> Cloud Synced
-            </p>
-          </div>
-          <div class="py-1">
-            <button onclick="logoutUser()" class="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-surface-800 transition flex items-center gap-2">
-              <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i> Log Out
-            </button>
+          <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-surface-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/60 backdrop-blur-xl">
+            <div class="px-3.5 py-2">
+              <p class="text-xs font-bold text-white truncate" id="dropdownUserName">User</p>
+              <p class="text-[10px] text-zinc-400 truncate mt-0.5" id="dropdownUserEmail"></p>
+              <p class="text-[10px] text-brand-400 font-medium flex items-center gap-1 mt-0.5">
+                <i class="fa-solid fa-cloud text-[9px]"></i> Cloud Synced
+              </p>
+            </div>
+            <div class="py-1">
+              <button onclick="logoutUser()" class="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-surface-800 transition flex items-center gap-2">
+                <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i> Log Out
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -221,15 +225,15 @@
           </div>
         </div>
 
-        <!-- Series Synopsis & Metadata -->
+        <!-- Series Overview & Metadata -->
         <div class="bg-surface-900 border border-zinc-800/80 p-5 rounded-2xl space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-heading font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
-              <i class="fa-solid fa-circle-info text-brand-400"></i> Synopsis
+              <i class="fa-solid fa-circle-info text-brand-400"></i> Overview
             </h3>
             <div id="genresList" class="flex flex-wrap gap-1.5"></div>
           </div>
-          <p id="animeDescription" class="text-xs sm:text-sm text-zinc-400 leading-relaxed font-normal">Loading anime description...</p>
+          <p id="animeDescription" class="text-xs sm:text-sm text-zinc-400 leading-relaxed font-normal">Loading anime overview...</p>
         </div>
       </div>
 
@@ -292,8 +296,8 @@
       </div>
 
       <div class="pt-2 flex flex-col sm:flex-row items-center gap-2.5">
-        <a href="https://chromewebstore.google.com/detail/ublock-origin-lite/ddkjiahejlhfcafbddmgiahcphecmpfh?hl=en" target="_blank" rel="noopener noreferrer" onclick="dismissUBlockModal()" class="w-full sm:flex-1 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2">
-          <i class="fa-brands fa-chrome text-sm"></i> Get uBlock Origin Lite
+        <a id="uBlockInstallLink" href="https://chromewebstore.google.com/detail/ublock-origin-lite/ddkjiahejlhfcafbddmgiahcphecmpfh?hl=en" target="_blank" rel="noopener noreferrer" onclick="dismissUBlockModal()" class="w-full sm:flex-1 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2">
+          <i id="uBlockBrowserIcon" class="fa-brands fa-chrome text-sm"></i> <span id="uBlockInstallText">Get uBlock Origin Lite</span>
         </a>
         <button type="button" onclick="dismissUBlockModal()" class="w-full sm:w-auto bg-surface-800 hover:bg-surface-750 text-zinc-300 hover:text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition border border-zinc-700/60">
           Got It
@@ -1033,11 +1037,68 @@
     // ============================================================
     const UBLOCK_DISMISSED_KEY = 'uBlockPromptDismissed';
 
+    function isMobileDevice() {
+      return (
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        (window.innerWidth <= 768 && ('ontouchstart' in window || navigator.maxTouchPoints > 0))
+      );
+    }
+
+    function detectBrowserUBlockInfo() {
+      const ua = navigator.userAgent;
+      // Firefox
+      if (/Firefox\/([0-9.]+)/i.test(ua)) {
+        return {
+          name: 'Firefox',
+          icon: 'fa-brands fa-firefox-browser',
+          url: 'https://addons.mozilla.org/en-US/firefox/addon/ublock-origin/',
+          label: 'Get uBlock for Firefox'
+        };
+      }
+      // Edge (Edg/)
+      if (/Edg\/([0-9.]+)/i.test(ua)) {
+        return {
+          name: 'Edge',
+          icon: 'fa-brands fa-edge',
+          url: 'https://microsoftedge.microsoft.com/addons/detail/ublock-origin-lite/hkgchocpkephkdpffpcilbcmoabjigkm',
+          label: 'Get uBlock for Edge'
+        };
+      }
+      // Opera
+      if (/OPR\/([0-9.]+)/i.test(ua)) {
+        return {
+          name: 'Opera',
+          icon: 'fa-brands fa-opera',
+          url: 'https://addons.opera.com/en/extensions/details/ublock/',
+          label: 'Get uBlock for Opera'
+        };
+      }
+      // Chrome / Default Chromium
+      return {
+        name: 'Chrome',
+        icon: 'fa-brands fa-chrome',
+        url: 'https://chromewebstore.google.com/detail/ublock-origin-lite/ddkjiahejlhfcafbddmgiahcphecmpfh?hl=en',
+        label: 'Get uBlock Origin Lite'
+      };
+    }
+
     function checkUBlockPrompt() {
+      // Do not display to mobile users (browser extensions are largely desktop-only)
+      if (isMobileDevice()) return;
+
       const modal = document.getElementById('uBlockModal');
       if (!modal) return;
-      // Show once for all servers (all may have redirects) — persisted in localStorage
+      // Show once on desktop across streaming servers — persisted in localStorage
       if (!localStorage.getItem(UBLOCK_DISMISSED_KEY)) {
+        // Dynamically tailor recommendation to user's browser (Firefox, Edge, Chrome)
+        const info = detectBrowserUBlockInfo();
+        const linkEl = document.getElementById('uBlockInstallLink');
+        const iconEl = document.getElementById('uBlockBrowserIcon');
+        const textEl = document.getElementById('uBlockInstallText');
+        if (linkEl) linkEl.href = info.url;
+        if (iconEl) iconEl.className = `${info.icon} text-sm`;
+        if (textEl) textEl.innerText = info.label;
+
         modal.classList.remove('hidden');
         modal.classList.add('flex');
       } else {
@@ -1261,7 +1322,12 @@
           }
 
           const descEl = document.getElementById('animeDescription');
-          descEl.innerText = media.description || 'No description available for this anime.';
+          if (descEl) {
+            let cleanDesc = media.description || 'No overview available for this anime.';
+            // Clean up basic HTML tags if any returned by API
+            cleanDesc = cleanDesc.replace(/<br\s*[\/]?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
+            descEl.innerText = cleanDesc || 'No overview available for this anime.';
+          }
           
           // Real stream quality: Movies or anime from 2000+ are 1080p HD, vintage pre-2000 are 480p SD
           const year = media.startDate?.year || 0;
