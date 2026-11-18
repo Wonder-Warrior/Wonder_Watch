@@ -120,46 +120,51 @@
   <div id="toastNotif" class="ww-toast"></div>
 
   <!-- Header / Navigation Bar -->
-  <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4">
-    <div class="flex items-center gap-8">
-      <a href="index.html" class="flex items-center gap-2.5 group">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-lg shadow-lg shadow-brand-500/25 group-hover:scale-105 transition">
-          <i class="fa-solid fa-play text-xs ml-0.5"></i>
-        </div>
-        <span class="text-xl font-heading font-black tracking-wider text-white">WONDER<span class="text-brand-400">WATCH</span></span>
+  <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-3 sm:px-8 py-3 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-4 lg:gap-8 min-w-0">
+      <a href="index.html" class="flex items-center gap-2.5 group flex-shrink-0">
+        <img src="favicon.png" alt="WonderWatch" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
+        <span class="text-lg sm:text-xl font-heading font-black tracking-wider text-white">WONDER<span class="text-brand-400">WATCH</span></span>
       </a>
 
-      <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
-        <a href="#trending" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-fire text-amber-500 text-xs"></i> Trending</a>
-        <a href="#airing" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-brand-400 text-xs"></i> Airing</a>
-        <a href="#popular" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-star text-yellow-400 text-xs"></i> Popular</a>
-        <a href="#movies" class="hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-film text-brand-400 text-xs"></i> Movies</a>
-        <a href="#favoritesSection" id="navFavoritesLink" class="hidden hover:text-brand-400 transition flex items-center gap-2"><i class="fa-solid fa-heart text-red-500 text-xs"></i> Favourites</a>
+      <!-- Desktop Nav -->
+      <nav class="hidden md:flex items-center gap-5 lg:gap-6 text-sm font-medium text-zinc-400">
+        <a href="#trending" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-fire text-amber-500 text-xs"></i> Trending</a>
+        <a href="#airing" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-tower-broadcast text-brand-400 text-xs"></i> Airing</a>
+        <a href="#popular" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-star text-yellow-400 text-xs"></i> Popular</a>
+        <a href="#movies" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-film text-brand-400 text-xs"></i> Movies</a>
+        <a href="#genresSection" class="hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-shapes text-zinc-400 text-xs"></i> Genres</a>
+        <a href="#favoritesSection" id="navFavoritesLink" class="hidden hover:text-brand-400 transition flex items-center gap-1.5"><i class="fa-solid fa-heart text-red-500 text-xs"></i> Favourites</a>
       </nav>
     </div>
 
-    <!-- Right Header Navigation: Log In / User State -->
-    <div class="flex items-center gap-3">
+    <!-- Right Header Navigation: Search Shortcut, Log In / User State, Mobile Toggle -->
+    <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+      <!-- Quick Focus Search Button -->
+      <button onclick="focusMainSearch()" class="w-9 h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-brand-500/50 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition" title="Search anime">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+
       <!-- Sync indicator -->
       <div id="syncIndicator" class="hidden items-center gap-1.5 text-[10px] text-brand-400 font-semibold">
         <i class="fa-solid fa-cloud text-xs"></i>
-        <span id="syncLabel">Synced</span>
+        <span id="syncLabel" class="hidden sm:inline">Synced</span>
       </div>
 
       <!-- Guest State: Log In Button -->
       <div id="authGuestSection">
-        <button onclick="openAuthModal('login')" class="inline-flex items-center gap-2 text-xs sm:text-sm font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-4 sm:px-5 py-2 rounded-xl transition shadow-lg shadow-brand-500/20">
-          <i class="fa-solid fa-user text-xs"></i> Log In
+        <button onclick="openAuthModal('login')" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-3.5 sm:px-4 py-2 rounded-xl transition shadow-lg shadow-brand-500/20">
+          <i class="fa-solid fa-user text-xs"></i> <span>Log In</span>
         </button>
       </div>
 
       <!-- Logged-In User Profile State -->
       <div id="authUserSection" class="hidden relative">
-        <button onclick="toggleUserDropdown(event)" class="flex items-center gap-2.5 bg-surface-900 hover:bg-surface-850 border border-zinc-800/80 px-3 py-1.5 rounded-2xl transition">
+        <button onclick="toggleUserDropdown(event)" class="flex items-center gap-2 bg-surface-900 hover:bg-surface-850 border border-zinc-800/80 px-2.5 sm:px-3 py-1.5 rounded-2xl transition">
           <div class="w-7 h-7 rounded-full bg-brand-500 text-black flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden" id="userAvatarContainer">
             <span id="userAvatarLetter">U</span>
           </div>
-          <span id="headerUsername" class="text-xs font-semibold text-zinc-200 hidden sm:inline max-w-[100px] truncate">User</span>
+          <span id="headerUsername" class="text-xs font-semibold text-zinc-200 hidden sm:inline max-w-[90px] truncate">User</span>
           <i class="fa-solid fa-chevron-down text-[10px] text-zinc-500"></i>
         </button>
 
@@ -188,8 +193,35 @@
           </div>
         </div>
       </div>
+
+      <!-- Mobile Menu Toggle Button -->
+      <button onclick="toggleMobileNav(event)" class="md:hidden w-9 h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center text-sm transition" title="Menu">
+        <i class="fa-solid fa-bars" id="mobileMenuIcon"></i>
+      </button>
     </div>
   </header>
+
+  <!-- Mobile Collapsible Navigation Drawer -->
+  <div id="mobileNavDrawer" class="hidden md:hidden bg-surface-950/98 border-b border-zinc-900 px-4 py-3 space-y-1 backdrop-blur-2xl sticky top-[57px] z-40">
+    <a href="#trending" onclick="closeMobileNav()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition">
+      <i class="fa-solid fa-fire text-amber-500 text-xs w-4"></i> Trending
+    </a>
+    <a href="#airing" onclick="closeMobileNav()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition">
+      <i class="fa-solid fa-tower-broadcast text-brand-400 text-xs w-4"></i> Airing
+    </a>
+    <a href="#popular" onclick="closeMobileNav()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition">
+      <i class="fa-solid fa-star text-yellow-400 text-xs w-4"></i> Popular
+    </a>
+    <a href="#movies" onclick="closeMobileNav()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition">
+      <i class="fa-solid fa-film text-brand-400 text-xs w-4"></i> Movies
+    </a>
+    <a href="#genresSection" onclick="closeMobileNav()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition">
+      <i class="fa-solid fa-shapes text-zinc-400 text-xs w-4"></i> Browse Genres
+    </a>
+    <a href="#favoritesSection" id="mobileNavFavoritesLink" onclick="closeMobileNav()" class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition">
+      <i class="fa-solid fa-heart text-red-500 text-xs w-4"></i> My Favourites
+    </a>
+  </div>
 
   <!-- Hero Spotlight Section (Curated Top 1 of 6 Major Categories) -->
   <section id="heroSection" class="relative max-w-7xl mx-auto w-full px-4 sm:px-6 pt-5">
@@ -1174,6 +1206,32 @@
       document.getElementById('userDropdownMenu').classList.toggle('hidden');
     }
 
+    function toggleMobileNav(e) {
+      if (e) e.stopPropagation();
+      const drawer = document.getElementById('mobileNavDrawer');
+      const icon = document.getElementById('mobileMenuIcon');
+      if (!drawer) return;
+      const isHidden = drawer.classList.toggle('hidden');
+      if (icon) {
+        icon.className = isHidden ? 'fa-solid fa-bars' : 'fa-solid fa-xmark text-brand-400';
+      }
+    }
+
+    function closeMobileNav() {
+      const drawer = document.getElementById('mobileNavDrawer');
+      const icon = document.getElementById('mobileMenuIcon');
+      if (drawer) drawer.classList.add('hidden');
+      if (icon) icon.className = 'fa-solid fa-bars';
+    }
+
+    function focusMainSearch() {
+      const input = document.getElementById('searchInput');
+      if (input) {
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => input.focus(), 300);
+      }
+    }
+
     async function logoutUser() {
       try {
         document.getElementById('userDropdownMenu').classList.add('hidden');
@@ -1400,13 +1458,16 @@
       }
 
       // 2. Render Favourites
+      const mobileFavNavLink = document.getElementById('mobileNavFavoritesLink');
       if (favorites.length > 0) {
         favSec.classList.remove('hidden');
         favNavLink.classList.remove('hidden');
+        if (mobileFavNavLink) mobileFavNavLink.classList.remove('hidden');
         renderGrid('grid-favorites', favorites);
       } else {
         favSec.classList.add('hidden');
         favNavLink.classList.add('hidden');
+        if (mobileFavNavLink) mobileFavNavLink.classList.add('hidden');
       }
 
       // 3. Render Recommendations ("Anime You Might Like")
@@ -1453,6 +1514,12 @@
         const score = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : 'N/A';
         const format = anime.format || 'TV';
         const year = anime.startDate?.year || '';
+        // Real stream quality check: Modern TV anime/movies from 2000+ or high-res formats stream in 1080p HD; classic pre-2000 TV is Standard Definition (SD)
+        const isHD = format === 'MOVIE' || (year ? year >= 2000 : true);
+        const qualityTag = isHD ? 'HD' : 'SD';
+        const qualityBadgeClass = isHD 
+          ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30' 
+          : 'bg-zinc-800 text-zinc-400 border border-zinc-700/60';
 
         const card = document.createElement('div');
         card.className = 'group relative bg-surface-900 border border-zinc-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/60 hover:shadow-xl hover:shadow-brand-500/10 transition-all duration-300 flex flex-col';
@@ -1462,7 +1529,7 @@
             <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition"></div>
             
             <div class="absolute top-2 left-2 flex items-center gap-1">
-              <span class="bg-surface-950/85 backdrop-blur-md text-[10px] font-black uppercase px-2 py-0.5 rounded-md text-brand-400 border border-brand-500/30">HD</span>
+              <span class="backdrop-blur-md text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${qualityBadgeClass}">${qualityTag}</span>
               <span class="bg-surface-950/85 backdrop-blur-md text-[10px] font-bold px-1.5 py-0.5 rounded-md text-zinc-300 border border-zinc-800">${escapeHtml(format)}</span>
             </div>
 
@@ -1703,6 +1770,11 @@
       const dropdown = document.getElementById('userDropdownMenu');
       if (userSection && !userSection.contains(e.target) && dropdown) {
         dropdown.classList.add('hidden');
+      }
+      const mobileNav = document.getElementById('mobileNavDrawer');
+      const mobileBtn = e.target.closest('button[onclick*="toggleMobileNav"]');
+      if (mobileNav && !mobileNav.contains(e.target) && !mobileBtn) {
+        closeMobileNav();
       }
     });
 

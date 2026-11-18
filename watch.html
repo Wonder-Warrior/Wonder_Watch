@@ -112,29 +112,27 @@
   <div id="toastNotif" class="ww-toast"></div>
 
   <!-- Header / Navigation -->
-  <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-    <a href="index.html" class="flex items-center gap-2.5 group">
-      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-sm shadow-lg shadow-brand-500/25 group-hover:scale-105 transition">
-        <i class="fa-solid fa-play text-xs ml-0.5"></i>
-      </div>
-      <span class="text-xl font-heading font-black tracking-wider text-white">WONDER<span class="text-brand-400">WATCH</span></span>
+  <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-3 sm:px-8 py-3 flex items-center justify-between gap-3">
+    <a href="index.html" class="flex items-center gap-2 group flex-shrink-0">
+      <img src="favicon.png" alt="WonderWatch" class="w-8 h-8 rounded-xl object-contain shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
+      <span class="text-lg sm:text-xl font-heading font-black tracking-wider text-white">WONDER<span class="text-brand-400">WATCH</span></span>
     </a>
     
-    <div class="flex items-center gap-4">
-      <a href="index.html" class="text-xs bg-surface-900 border border-zinc-800 hover:border-brand-500/50 px-4 py-2 rounded-xl text-zinc-300 hover:text-white transition flex items-center gap-2 font-medium">
-        <i class="fa-solid fa-arrow-left"></i> Back to Browse
+    <div class="flex items-center gap-2 sm:gap-4">
+      <a href="index.html" class="text-xs bg-surface-900 border border-zinc-800 hover:border-brand-500/50 px-3 sm:px-4 py-2 rounded-xl text-zinc-300 hover:text-white transition flex items-center gap-1.5 font-medium">
+        <i class="fa-solid fa-arrow-left text-[11px]"></i> <span class="hidden sm:inline">Back to Browse</span><span class="sm:hidden">Browse</span>
       </a>
 
       <!-- Sync indicator -->
       <div id="syncIndicator" class="hidden items-center gap-1.5 text-[10px] text-brand-400 font-semibold">
         <i class="fa-solid fa-cloud text-xs"></i>
-        <span>Synced</span>
+        <span class="hidden sm:inline">Synced</span>
       </div>
 
       <!-- User Profile / Log In state in Header -->
       <div id="authGuestSection">
-        <button onclick="openAuthModal('login')" class="inline-flex items-center gap-2 text-xs font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-3.5 py-2 rounded-xl transition shadow-lg shadow-brand-500/20">
-          <i class="fa-solid fa-user text-xs"></i> Log In
+        <button onclick="openAuthModal('login')" class="inline-flex items-center gap-1.5 text-xs font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-3 sm:px-3.5 py-2 rounded-xl transition shadow-lg shadow-brand-500/20">
+          <i class="fa-solid fa-user text-xs"></i> <span>Log In</span>
         </button>
       </div>
 
@@ -146,8 +144,8 @@
           <span id="headerUsername" class="text-xs font-semibold text-zinc-200 hidden sm:inline max-w-[90px] truncate">User</span>
         </button>
 
-        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-44 bg-surface-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/60 backdrop-blur-xl">
-          <div class="px-3 py-1.5">
+        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-surface-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/60 backdrop-blur-xl">
+          <div class="px-3.5 py-2">
             <p class="text-xs font-bold text-white truncate" id="dropdownUserName">User</p>
             <p class="text-[10px] text-zinc-400 truncate mt-0.5" id="dropdownUserEmail"></p>
             <p class="text-[10px] text-brand-400 font-medium flex items-center gap-1 mt-0.5">
@@ -155,7 +153,7 @@
             </p>
           </div>
           <div class="py-1">
-            <button onclick="logoutUser()" class="w-full text-left px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-surface-800 transition flex items-center gap-2">
+            <button onclick="logoutUser()" class="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-surface-800 transition flex items-center gap-2">
               <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i> Log Out
             </button>
           </div>
@@ -198,11 +196,7 @@
             <div class="flex items-center gap-2 text-xs text-zinc-400">
               <span id="animeSubInfo" class="text-brand-400 font-bold">Episode 1 • SUB</span>
               <span>•</span>
-              <span id="activeSourceBadge" class="bg-surface-800 px-2 py-0.5 rounded text-[11px] text-zinc-300 font-medium">Server 1 (Primary)</span>
-              <span>•</span>
-              <span id="antiRedirectBadge" class="text-brand-400 text-[11px] font-semibold flex items-center gap-1">
-                <i class="fa-solid fa-shield-halved text-[10px]"></i> Anti-Redirect
-              </span>
+              <span id="qualityIndicatorBadge" class="bg-brand-500/15 border border-brand-500/30 text-brand-400 text-[10px] font-black uppercase px-2 py-0.5 rounded">1080p HD</span>
             </div>
           </div>
           
@@ -210,9 +204,8 @@
           <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
             <!-- Server Selector -->
             <select id="sourceSelect" onchange="changeSource()" class="bg-surface-800 border border-zinc-700/80 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500">
-              <option value="animeembed_se">Server 1 (Aniembed.se)</option>
-              <option value="animeembed_com">Server 2 (AnimeEmbed.com)</option>
-              <option value="zoko_mal">Server 3 (Backup - Zoko)</option>
+              <option value="aniembed_se">Server 1</option>
+              <option value="zoko_mal">Server 2</option>
             </select>
 
             <!-- Sub / Dub Selector -->
@@ -978,6 +971,13 @@
     document.getElementById('authModal').addEventListener('mousedown', (e) => {
       if (e.target.id === 'authModal') closeAuthModal();
     });
+    document.addEventListener('click', (e) => {
+      const userSection = document.getElementById('authUserSection');
+      const dropdown = document.getElementById('userDropdownMenu');
+      if (userSection && !userSection.contains(e.target) && dropdown) {
+        dropdown.classList.add('hidden');
+      }
+    });
 
     // ============================================================
     //  APPLICATION LOGIC
@@ -991,7 +991,7 @@
     
     let currentEpisode = parseInt(urlParams.get('ep')) || 1;
     let currentType = 'sub';
-    let currentServer = 'animeembed_se';
+    let currentServer = 'aniembed_se';
     let savedResumeTime = parseInt(urlParams.get('time')) || 0;
 
     let animeMetadata = null;
@@ -1059,16 +1059,10 @@
       document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()}`;
       
       let src = '';
-      if (currentServer === 'animeembed_se') {
-        document.getElementById('activeSourceBadge').innerText = 'Server 1 (Aniembed.se)';
+      if (currentServer === 'aniembed_se') {
         src = `https://aniembed.se/e/${animeId}/${currentEpisode}?lang=${currentType}&autoplay=1`;
         if (savedResumeTime > 0) src += `&t=${savedResumeTime}`;
-      } else if (currentServer === 'animeembed_com') {
-        document.getElementById('activeSourceBadge').innerText = 'Server 2 (AnimeEmbed.com)';
-        src = `https://animeembed.com/embed/ani/${animeId}/${currentEpisode}?track=${currentType}&autoPlay=1`;
-        if (savedResumeTime > 0) src += `&start=${savedResumeTime}`;
       } else if (currentServer === 'zoko_mal') {
-        document.getElementById('activeSourceBadge').innerText = 'Server 3 (Backup - Zoko)';
         src = `https://zokoanime.video/stream/mal/${malId}/${currentEpisode}/${currentType}?color=3BFF53&autoplay=1`;
         if (savedResumeTime > 0) src += `&time=${savedResumeTime}`;
       }
@@ -1116,25 +1110,34 @@
     window.addEventListener('message', (event) => {
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (!data) return;
         
         // Handle various postMessage formats from different embed providers
-        // Generic: { type: 'progress'|'timeupdate', currentTime: N }
-        // Aniembed: { type: 'aniembed:play', data: { currentTime: N } }
-        // Aniembed: { type: 'aniembed:ended' }
-        const eventType = data.type || '';
+        // Zoko / Standard: { type: 'progress', currentTime: N } or { type: 'timeupdate', currentTime: N }
+        // Aniembed: { type: 'aniembed:play', data: { currentTime: N } } or { event: 'timeupdate', currentTime: N }
+        const eventType = data.type || data.event || '';
         
-        if (eventType === 'progress' || eventType === 'timeupdate' || eventType === 'aniembed:play') {
-          const currentTime = data.data?.currentTime || data.currentTime || 0;
-          
-          if (currentTime > 0 && Math.abs(currentTime - lastSavedTime) >= 15) {
+        let currentTime = null;
+        if (typeof data.currentTime === 'number') {
+          currentTime = data.currentTime;
+        } else if (data.data && typeof data.data.currentTime === 'number') {
+          currentTime = data.data.currentTime;
+        } else if (typeof data.time === 'number') {
+          currentTime = data.time;
+        } else if (typeof data.seconds === 'number') {
+          currentTime = data.seconds;
+        }
+
+        if (currentTime !== null && currentTime > 0) {
+          savedResumeTime = Math.floor(currentTime);
+          if (Math.abs(currentTime - lastSavedTime) >= 5) {
             lastSavedTime = currentTime;
-            savedResumeTime = Math.floor(currentTime);
-            autoSaveProgress(Math.floor(currentTime));
+            autoSaveProgress(savedResumeTime);
           }
         }
         
         // Auto-advance on episode end
-        if (eventType === 'aniembed:ended' || eventType === 'ended') {
+        if (eventType === 'aniembed:ended' || eventType === 'ended' || eventType === 'complete') {
           handleNextEpisode();
         }
       } catch (e) {
@@ -1211,6 +1214,7 @@
             genres
             averageScore
             format
+            startDate { year }
             coverImage { extraLarge large medium }
             relations {
               edges {
@@ -1258,6 +1262,17 @@
 
           const descEl = document.getElementById('animeDescription');
           descEl.innerText = media.description || 'No description available for this anime.';
+          
+          // Real stream quality: Movies or anime from 2000+ are 1080p HD, vintage pre-2000 are 480p SD
+          const year = media.startDate?.year || 0;
+          const isHD = media.format === 'MOVIE' || (year ? year >= 2000 : true);
+          const badgeEl = document.getElementById('qualityIndicatorBadge');
+          if (badgeEl) {
+            badgeEl.innerText = isHD ? '1080p HD' : '480p SD';
+            badgeEl.className = isHD 
+              ? 'bg-brand-500/15 border border-brand-500/30 text-brand-400 text-[10px] font-black uppercase px-2 py-0.5 rounded'
+              : 'bg-zinc-800 border border-zinc-700/60 text-zinc-400 text-[10px] font-black uppercase px-2 py-0.5 rounded';
+          }
           
           const genresContainer = document.getElementById('genresList');
           genresContainer.innerHTML = '';
