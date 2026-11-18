@@ -987,6 +987,41 @@
       }
     }
 
+    // ============================================================
+    //  BLOB-SANDBOXED PLAYER ISOLATION ENGINE
+    // ============================================================
+    let currentBlobUrl = null;
+
+    function buildSandboxedBlobHtml(targetEmbedUrl) {
+      return `<!DOCTYPE html>
+<html lang="en" style="width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#000;">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background: #000; }
+    iframe { width: 100%; height: 100%; border: 0; display: block; }
+  </style>
+</head>
+<body>
+  <iframe 
+    src="${targetEmbedUrl.replace(/"/g, '&quot;')}" 
+    sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+    allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
+    allowfullscreen
+    scrolling="no">
+  </iframe>
+  <script>
+    // Relay postMessage events up to WonderWatch parent window
+    window.addEventListener('message', function(e) {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage(e.data, '*');
+      }
+    });
+  <\/script>
+</body>
+</html>`;
+    }
+
     function loadPlayer() {
       document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()}`;
       
@@ -1003,7 +1038,18 @@
         src += `&time=${savedResumeTime}`;
       }
 
-      playerFrame.src = src;
+      // Revoke prior blob URL to avoid memory leakage
+      if (currentBlobUrl) {
+        URL.revokeObjectURL(currentBlobUrl);
+        currentBlobUrl = null;
+      }
+
+      // Generate sandboxed Blob HTML wrapper
+      const blobContent = buildSandboxedBlobHtml(src);
+      const blob = new Blob([blobContent], { type: 'text/html' });
+      currentBlobUrl = URL.createObjectURL(blob);
+
+      playerFrame.src = currentBlobUrl;
     }
 
     function changeSource() {
