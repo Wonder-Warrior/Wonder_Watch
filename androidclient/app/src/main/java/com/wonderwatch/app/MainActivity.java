@@ -165,13 +165,13 @@ public final class MainActivity extends Activity {
         settings.setOffscreenPreRaster(true);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
 
-        // Strip '; wv' token so OAuth sign-in flows work cleanly, and mark WonderWatchApp client
+        // Use modern clean Chrome User-Agent without Mobile Safari WebView indicators
+        // Google OAuth blocks WebViews that match "Version/4.0" or "; wv"
         String ua = settings.getUserAgentString();
         if (ua != null) {
-            String cleanUa = ua.replace("; wv)", ")").replace("; wv", "");
-            if (!cleanUa.contains("WonderWatchApp")) {
-                cleanUa = cleanUa + " WonderWatchApp/2.4";
-            }
+            String cleanUa = ua.replace("; wv)", ")")
+                               .replace("; wv", "")
+                               .replaceAll("Version/\\d+\\.\\d+\\s*", "");
             settings.setUserAgentString(cleanUa);
         }
     }
@@ -530,15 +530,12 @@ public final class MainActivity extends Activity {
             final WebView popupView = new WebView(MainActivity.this);
             popupView.setBackgroundColor(BG_DARK);
             configureWebSettings(popupView.getSettings());
-
-            if (extra != null && !AdShieldEngine.isTrustedAuthOrAppUri(extra)) {
-                popupView.destroy();
-                return false;
-            }
+            CookieManager.getInstance().setAcceptThirdPartyCookies(popupView, true);
 
             final Dialog pendingDialog = new Dialog(MainActivity.this, android.R.style.Theme_DeviceDefault_NoActionBar);
             pendingDialog.setContentView(popupView);
             authPopupDialog = pendingDialog;
+            pendingDialog.show();
 
             popupView.setWebChromeClient(new WebChromeClient() {
                 @Override
@@ -552,13 +549,11 @@ public final class MainActivity extends Activity {
 
             popupView.setWebViewClient(new WebViewClient() {
                 private void checkOrReject(String u) {
-                    if (!AdShieldEngine.isTrustedAuthOrAppUri(u)) {
+                    if (u != null && !u.isEmpty() && !"about:blank".equalsIgnoreCase(u) && !AdShieldEngine.isTrustedAuthOrAppUri(u)) {
                         if (pendingDialog.isShowing()) {
                             pendingDialog.dismiss();
                         }
                         popupView.destroy();
-                    } else if (!pendingDialog.isShowing() && !isFinishing()) {
-                        pendingDialog.show();
                     }
                 }
 
@@ -572,9 +567,6 @@ public final class MainActivity extends Activity {
                         }
                         popupView.destroy();
                         return true;
-                    }
-                    if (!pendingDialog.isShowing() && !isFinishing()) {
-                        pendingDialog.show();
                     }
                     return false;
                 }
