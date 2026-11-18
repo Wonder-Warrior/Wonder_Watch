@@ -219,7 +219,14 @@ public final class AdShieldEngine {
     public static String getAppIntegrationScript() {
         return "(function(){" +
             "window.__WONDERWATCH_APP__=true;" +
-            "try{if(location.hostname.indexOf('github.io')!==-1){localStorage.setItem('uBlockPromptDismissed','true');}}catch(e){}" +
+            "try{if(location.hostname.indexOf('github.io')!==-1){" +
+            "localStorage.setItem('uBlockPromptDismissed','true');" +
+            "if(!document.getElementById('__ww_app_css')){" +
+            "var ac=document.createElement('style');ac.id='__ww_app_css';" +
+            "ac.textContent='*,*::before,*::after{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;}input,textarea,[contenteditable=\"true\"]{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important;}#navAppsLink,#mobileNavAppsLink,a[href=\"downloads.html\"]{display:none!important;}';" +
+            "(document.head||document.documentElement).appendChild(ac);" +
+            "}" +
+            "}}catch(e){}" +
             "try{" +
             "if(location.hostname.indexOf('github.io')===-1){" +
             "var origOpen=window.open;" +

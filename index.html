@@ -51,11 +51,35 @@
     }
   </script>
   <style>
+    *, *::before, *::after {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    input, textarea, [contenteditable="true"] {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
     h1, h2, h3, h4, .font-heading {
       font-family: 'Outfit', sans-serif;
+    }
+    @keyframes wwFadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .ww-fade-in {
+      animation: wwFadeUp 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .cat-pill:active, button:active {
+      transform: scale(0.97);
     }
     ::-webkit-scrollbar {
       width: 6px;
@@ -162,7 +186,7 @@
           <button type="button" data-cat="movies" onclick="smoothScrollToCategory('movies', this)" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-film text-sky-400 text-[11px]"></i> Movies</button>
           <button type="button" data-cat="genresSection" onclick="smoothScrollToCategory('genresSection', this)" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-shapes text-purple-400 text-[11px]"></i> Genres</button>
           <button type="button" data-cat="favoritesSection" onclick="smoothScrollToCategory('favoritesSection', this)" id="navFavoritesLink" class="cat-pill hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-heart text-red-500 text-[11px]"></i> Favourites</button>
-          <a href="downloads.html" onclick="playSoundCue('nav')" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-brand-400 hover:text-brand-300 hover:bg-brand-500/10 transition flex items-center gap-1.5 whitespace-nowrap border border-brand-500/20" title="Download Desktop & Android Apps">
+          <a id="navAppsLink" href="downloads.html" onclick="playSoundCue('nav')" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-brand-400 hover:text-brand-300 hover:bg-brand-500/10 transition flex items-center gap-1.5 whitespace-nowrap border border-brand-500/20" title="Download Desktop & Android Apps">
             <i class="fa-solid fa-download text-[11px]"></i> Apps
           </a>
         </nav>
@@ -257,13 +281,30 @@
     <button type="button" onclick="smoothScrollToCategory('favoritesSection'); closeMobileNav();" id="mobileNavFavoritesLink" class="hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
       <i class="fa-solid fa-heart text-red-500 text-xs w-4"></i> My Favourites
     </button>
-    <a href="downloads.html" onclick="playSoundCue('nav')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-brand-400 hover:text-brand-300 hover:bg-surface-900 text-xs font-semibold transition text-left">
+    <a id="mobileNavAppsLink" href="downloads.html" onclick="playSoundCue('nav')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-brand-400 hover:text-brand-300 hover:bg-surface-900 text-xs font-semibold transition text-left">
       <i class="fa-solid fa-download text-brand-400 text-xs w-4"></i> Download Apps
     </a>
   </div>
+  <script>
+    (function() {
+      var isClient = Boolean(
+        window.__WONDERWATCH_DESKTOP__ ||
+        window.__WONDERWATCH_APP__ ||
+        /WonderWatchDesktop|WonderWatchApp/i.test(navigator.userAgent || '') ||
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true
+      );
+      if (isClient) {
+        var navApps = document.getElementById('navAppsLink');
+        var mobApps = document.getElementById('mobileNavAppsLink');
+        if (navApps) navApps.style.display = 'none';
+        if (mobApps) mobApps.style.display = 'none';
+      }
+    })();
+  </script>
 
   <!-- Hero Spotlight Section (Curated Top 1 of 6 Major Categories) -->
-  <section id="heroSection" class="relative max-w-7xl mx-auto w-full px-4 sm:px-6 pt-5">
+  <section id="heroSection" class="relative max-w-7xl mx-auto w-full px-4 sm:px-6 pt-5 ww-fade-in">
     
     <!-- Spotlight Banner Container -->
     <div id="heroCard" class="group relative min-h-[380px] sm:min-h-[460px] rounded-3xl overflow-hidden border border-zinc-800/80 bg-surface-900 shadow-2xl flex flex-col justify-end p-6 sm:p-12 transition-all duration-700">
@@ -697,7 +738,7 @@
   <!-- Footer -->
   <footer class="border-t border-zinc-900 bg-surface-950 py-8 px-6 text-center text-zinc-500 text-xs space-y-2">
     <div class="text-zinc-400 font-heading font-semibold tracking-wider">WONDER<span class="text-brand-400">WATCH</span></div>
-    <p>WonderWatch does not host any media files on its servers. All content is provided by non-affiliated third parties.</p>
+    <p>Fast, uninterrupted HD anime streaming.</p>
   </footer>
 
   <script>

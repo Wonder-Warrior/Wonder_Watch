@@ -285,12 +285,16 @@ namespace WonderWatchDesktop
 
                 await EnsureUBlockOriginActivatedAsync();
 
-                // Identify Desktop Client to WonderWatch frontend & suppress web extension prompts
+                // Identify Desktop Client to WonderWatch frontend, enforce app-like selection, & hide Apps links
                 await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(
                     "(function(){" +
                     "window.__WONDERWATCH_DESKTOP__=true;" +
                     "try{if(location.hostname.indexOf('github.io')!==-1||location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.protocol==='file:'){" +
-                    "localStorage.setItem('wonderwatch_ublock_dismissed','true');}}catch(e){}" +
+                    "localStorage.setItem('wonderwatch_ublock_dismissed','true');localStorage.setItem('uBlockPromptDismissed','true');" +
+                    "var s=document.createElement('style');" +
+                    "s.textContent='*,*::before,*::after{-webkit-user-select:none!important;user-select:none!important;}input,textarea,[contenteditable=\"true\"]{-webkit-user-select:text!important;user-select:text!important;}#navAppsLink,#mobileNavAppsLink,a[href=\"downloads.html\"]{display:none!important;}';" +
+                    "(document.head||document.documentElement).appendChild(s);" +
+                    "}}catch(e){}" +
                     "})();"
                 );
 
@@ -341,6 +345,14 @@ namespace WonderWatchDesktop
             settings.AreDevToolsEnabled = true;
             settings.IsZoomControlEnabled = true;
             settings.IsBuiltInErrorPageEnabled = true;
+            try
+            {
+                if (!string.IsNullOrEmpty(settings.UserAgent) && settings.UserAgent.IndexOf("WonderWatchDesktop", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    settings.UserAgent = settings.UserAgent + " WonderWatchDesktop/2.4";
+                }
+            }
+            catch { }
         }
 
         private void WireWebViewEvents()

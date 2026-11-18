@@ -165,10 +165,14 @@ public final class MainActivity extends Activity {
         settings.setOffscreenPreRaster(true);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
 
-        // Strip '; wv' token so OAuth sign-in flows work cleanly inside WebView
+        // Strip '; wv' token so OAuth sign-in flows work cleanly, and mark WonderWatchApp client
         String ua = settings.getUserAgentString();
         if (ua != null) {
-            settings.setUserAgentString(ua.replace("; wv)", ")").replace("; wv", ""));
+            String cleanUa = ua.replace("; wv)", ")").replace("; wv", "");
+            if (!cleanUa.contains("WonderWatchApp")) {
+                cleanUa = cleanUa + " WonderWatchApp/2.4";
+            }
+            settings.setUserAgentString(cleanUa);
         }
     }
 
