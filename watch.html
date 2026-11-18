@@ -988,11 +988,11 @@
     }
 
     // ============================================================
-    //  BLOB-SANDBOXED PLAYER ISOLATION ENGINE
+    //  BLOB-WRAPPED PLAYER ISOLATION ENGINE
     // ============================================================
     let currentBlobUrl = null;
 
-    function buildSandboxedBlobHtml(targetEmbedUrl) {
+    function buildPlayerBlobHtml(targetEmbedUrl) {
       return `<!DOCTYPE html>
 <html lang="en" style="width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#000;">
 <head>
@@ -1005,8 +1005,7 @@
 <body>
   <iframe 
     src="${targetEmbedUrl.replace(/"/g, '&quot;')}" 
-    sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
-    allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
+    allow="autoplay; encrypted-media; fullscreen"
     allowfullscreen
     scrolling="no">
   </iframe>
@@ -1044,9 +1043,9 @@
         currentBlobUrl = null;
       }
 
-      // Generate sandboxed Blob HTML wrapper
-      const blobContent = buildSandboxedBlobHtml(src);
-      const blob = new Blob([blobContent], { type: 'text/html' });
+      // Generate Blob HTML wrapper without sandbox attributes to pass Zokoplayer environment checks
+      const wrapperHtml = buildPlayerBlobHtml(src);
+      const blob = new Blob([wrapperHtml], { type: 'text/html' });
       currentBlobUrl = URL.createObjectURL(blob);
 
       playerFrame.src = currentBlobUrl;
