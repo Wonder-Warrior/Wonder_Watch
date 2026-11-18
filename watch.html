@@ -189,14 +189,8 @@
 
         <!-- Info & Controls Bar -->
         <div class="bg-surface-900 border border-zinc-800/80 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
-          <div class="space-y-1 flex-1 min-w-0">
-            <div class="flex items-center gap-3">
-              <h1 id="animeTitle" class="text-xl sm:text-2xl font-heading font-black tracking-tight text-white line-clamp-1 flex-1">Loading Title...</h1>
-              <!-- Favourite toggle button -->
-              <button id="watchFavBtn" onclick="toggleWatchFavorite()" class="w-10 h-10 rounded-xl bg-surface-800 border border-zinc-700/60 hover:border-red-500 text-zinc-400 hover:text-red-500 flex items-center justify-center transition flex-shrink-0" title="Add to Favourites">
-                <i class="fa-regular fa-heart text-sm" id="watchFavIcon"></i>
-              </button>
-            </div>
+          <div class="space-y-1.5 flex-1 min-w-0">
+            <h1 id="animeTitle" class="text-xl sm:text-2xl font-heading font-black tracking-tight text-white line-clamp-1">Loading Title...</h1>
             <div class="flex items-center gap-2 text-xs text-zinc-400">
               <span id="animeSubInfo" class="text-brand-400 font-bold">Episode 1 • SUB</span>
               <span>•</span>
@@ -204,8 +198,13 @@
             </div>
           </div>
           
-          <!-- Stream Controls -->
-          <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          <!-- Stream Controls & Actions -->
+          <div class="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+            <!-- Favourite toggle button -->
+            <button id="watchFavBtn" onclick="toggleWatchFavorite()" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-surface-800 border border-zinc-700/60 hover:border-red-500 text-zinc-400 hover:text-red-500 flex items-center justify-center transition flex-shrink-0" title="Add to Favourites">
+              <i class="fa-regular fa-heart text-sm" id="watchFavIcon"></i>
+            </button>
+
             <!-- Server Selector -->
             <select id="sourceSelect" onchange="changeSource()" class="bg-surface-800 border border-zinc-700/80 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500">
               <option value="aniembed_se">Server 1</option>
@@ -219,7 +218,7 @@
             </select>
 
             <!-- Next Episode Button -->
-            <button onclick="handleNextEpisode()" class="bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center gap-1.5">
+            <button onclick="handleNextEpisode()" class="bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-3.5 sm:px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center gap-1.5 flex-shrink-0">
               Next <i class="fa-solid fa-forward-step text-[10px]"></i>
             </button>
           </div>
@@ -241,20 +240,17 @@
       <div class="flex flex-col gap-4">
         
         <!-- Episode Selector Box -->
-        <div class="bg-surface-900 border border-zinc-800/80 rounded-2xl p-5 flex flex-col h-[480px] shadow-xl">
+        <div class="bg-surface-900 border border-zinc-800/80 rounded-2xl p-5 flex flex-col h-[520px] shadow-xl">
           <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-800">
             <h2 class="font-heading font-bold text-xs tracking-wider text-zinc-300 uppercase flex items-center gap-2">
-              <i class="fa-solid fa-list-ol text-brand-400"></i> Episode List
+              <i class="fa-solid fa-list-ol text-brand-400"></i> Episodes
             </h2>
             <span id="totalEpCount" class="text-xs font-semibold text-zinc-400">Total: 12</span>
           </div>
 
-          <!-- Quick Episode Range Filter for 50+ Ep anime -->
-          <div id="epRangeFilter" class="hidden mb-3 flex items-center gap-2 overflow-x-auto pb-1 text-[11px]"></div>
-          
-          <!-- Episode Numbers Grid -->
-          <div id="episodeGrid" class="flex-1 overflow-y-auto pr-1 grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-5 gap-2 content-start">
-            <!-- Episode Buttons rendered here -->
+          <!-- Episode Cards List with Thumbnail and One-Liner -->
+          <div id="episodeGrid" class="flex-1 overflow-y-auto pr-1 space-y-2">
+            <!-- Episode Cards rendered here -->
           </div>
         </div>
 
@@ -1006,12 +1002,56 @@
     document.getElementById('animeTitle').innerText = animeTitle;
     document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
 
+    let episodeMetadataMap = {};
+
     function renderEpisodes() {
       episodeGrid.innerHTML = '';
+      const defaultImg = animeMetadata?.coverImage?.large || animeMetadata?.coverImage?.medium || '';
+      const streamingList = animeMetadata?.streamingEpisodes || [];
+
       for (let i = 1; i <= totalEpisodes; i++) {
-        const btn = document.createElement('button');
-        btn.innerText = i;
-        btn.onclick = () => {
+        const epData = episodeMetadataMap[i] || {};
+        const streamingItem = streamingList[i - 1] || null;
+
+        // Thumbnail: episode-specific thumbnail from metadata or streamingEpisodes, fallback to anime cover
+        const thumbUrl = epData.thumbnail || streamingItem?.thumbnail || defaultImg;
+        
+        // One-liner / Title: specific episode title, summary, or meaningful one-liner
+        let titleText = epData.title || streamingItem?.title || '';
+        if (titleText && !titleText.toLowerCase().startsWith('episode')) {
+          titleText = `Ep ${i}: ${titleText}`;
+        } else if (!titleText) {
+          titleText = `Episode ${i}`;
+        }
+
+        const summaryText = epData.synopsis || epData.summary || `Episode ${i} of ${animeTitle}`;
+
+        const isCurrent = i === currentEpisode;
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `w-full text-left p-2 rounded-xl transition flex items-center gap-3 border ${
+          isCurrent 
+            ? 'bg-brand-500/15 border-brand-500/60 shadow-lg shadow-brand-500/10' 
+            : 'bg-surface-800/80 hover:bg-surface-750 border-zinc-800/80 hover:border-zinc-700'
+        }`;
+
+        card.innerHTML = `
+          <div class="relative w-20 h-12 rounded-lg overflow-hidden bg-surface-950 flex-shrink-0 border border-zinc-800/80">
+            ${thumbUrl ? `<img src="${escapeHtml(thumbUrl)}" alt="Episode ${i}" class="w-full h-full object-cover" loading="lazy">` : `<div class="w-full h-full bg-surface-900 flex items-center justify-center text-zinc-600"><i class="fa-solid fa-play text-xs"></i></div>`}
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+            <span class="absolute bottom-1 left-1 text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
+              isCurrent ? 'bg-brand-500 text-black' : 'bg-surface-900/90 text-zinc-200'
+            }">EP ${i}</span>
+            ${isCurrent ? `<span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>` : ''}
+          </div>
+          <div class="flex-1 min-w-0 pr-1">
+            <h4 class="text-xs font-heading font-bold truncate ${isCurrent ? 'text-brand-400' : 'text-zinc-200'}">${escapeHtml(titleText)}</h4>
+            <p class="text-[10px] text-zinc-400 line-clamp-1 mt-0.5">${escapeHtml(summaryText)}</p>
+          </div>
+          <i class="fa-solid fa-play text-[10px] ${isCurrent ? 'text-brand-400' : 'text-zinc-600'} pr-1"></i>
+        `;
+
+        card.onclick = () => {
           allowInternalNavigation = true;
           currentEpisode = i;
           savedResumeTime = 0;
@@ -1020,15 +1060,30 @@
           autoSaveProgress();
           setTimeout(() => { allowInternalNavigation = false; }, 1000);
         };
-        
-        let baseClasses = "h-10 rounded-xl text-xs font-bold transition flex items-center justify-center border ";
-        if (i === currentEpisode) {
-          baseClasses += "bg-brand-500 text-black border-brand-400 shadow-md shadow-brand-500/25";
-        } else {
-          baseClasses += "bg-surface-800 text-zinc-300 border-zinc-700/60 hover:bg-surface-750 hover:border-zinc-500";
-        }
-        btn.className = baseClasses;
-        episodeGrid.appendChild(btn);
+
+        episodeGrid.appendChild(card);
+      }
+    }
+
+    async function fetchEpisodeDetails(malAnimeId) {
+      if (!malAnimeId) return;
+      try {
+        const res = await fetch(`https://api.jikan.moe/v4/anime/${malAnimeId}/episodes`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const eps = json.data || [];
+        eps.forEach(ep => {
+          const num = ep.mal_id;
+          if (num) {
+            episodeMetadataMap[num] = {
+              title: ep.title || ep.title_romanji || '',
+              synopsis: ep.synopsis ? ep.synopsis.split('\n')[0] : ''
+            };
+          }
+        });
+        renderEpisodes();
+      } catch (e) {
+        // Non-critical: renderEpisodes already shows default thumbnails and labels
       }
     }
 
@@ -1277,6 +1332,10 @@
             format
             startDate { year }
             coverImage { extraLarge large medium }
+            streamingEpisodes {
+              title
+              thumbnail
+            }
             relations {
               edges {
                 relationType
@@ -1351,6 +1410,9 @@
 
           renderSeriesRelations(media.relations?.edges, media);
           updateWatchFavButton();
+
+          // Fetch rich episode data (thumbnails, titles, one-liners) from Jikan/MAL
+          fetchEpisodeDetails(media.idMal || malId);
 
           autoSaveProgress(savedResumeTime);
         }
