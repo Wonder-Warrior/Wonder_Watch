@@ -71,26 +71,33 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #3BFF53;
     }
+    /* Toast notification / Flyout */
     .ww-toast {
       position: fixed;
       bottom: 2rem;
       left: 50%;
-      transform: translateX(-50%) translateY(120%);
-      background: #171821;
-      border: 1px solid #3BFF53;
-      color: #e4e4e7;
-      padding: 0.75rem 1.5rem;
-      border-radius: 1rem;
-      font-size: 0.8rem;
+      transform: translateX(-50%) translateY(120%) scale(0.96);
+      background: rgba(23, 24, 33, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(59, 255, 83, 0.35);
+      color: #f4f4f5;
+      padding: 0.75rem 1.4rem;
+      border-radius: 1.25rem;
+      font-size: 0.825rem;
       font-weight: 600;
       z-index: 999;
-      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease, border-color 0.3s;
       opacity: 0;
       pointer-events: none;
-      box-shadow: 0 10px 40px rgba(0,0,0,.5);
+      box-shadow: 0 14px 40px -8px rgba(0, 0, 0, 0.8), 0 0 25px -5px rgba(59, 255, 83, 0.25);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      max-width: 90vw;
     }
     .ww-toast.show {
-      transform: translateX(-50%) translateY(0);
+      transform: translateX(-50%) translateY(0) scale(1);
       opacity: 1;
     }
     .spinner {

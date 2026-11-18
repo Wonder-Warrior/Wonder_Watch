@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <link rel="icon" type="image/x-icon" href="./favicon.ico">
+  <link rel="icon" type="image/png" sizes="128x128" href="./favicon.png">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='100%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%2322cc37'/%3E%3Cstop offset='55%25' stop-color='%233BFF53'/%3E%3Cstop offset='100%25' stop-color='%239effab'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='2' y='2' width='96' height='96' rx='26' fill='url(%23g)'/%3E%3Cpath d='M38 30 L72 50 L38 70 Z' fill='%23080a0c' stroke='%23080a0c' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="./favicon.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>WonderWatch | Download Clients for Desktop & Android</title>
+  <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            heading: ['"Outfit"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              300: '#9effab',
+              400: '#6aff7f',
+              500: '#3BFF53',
+              600: '#22cc37',
+            },
+            surface: {
+              750: '#20222a',
+              800: '#171821',
+              850: '#111218',
+              900: '#0b0c10',
+              950: '#050608',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    h1, h2, h3, h4, .font-heading { font-family: 'Outfit', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #050608; }
+    ::-webkit-scrollbar-thumb { background: #1f212a; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3BFF53; }
+    .ww-toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120%) scale(0.96);
+      background: rgba(23, 24, 33, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(59, 255, 83, 0.35);
+      color: #f4f4f5;
+      padding: 0.75rem 1.4rem;
+      border-radius: 1.25rem;
+      font-size: 0.825rem;
+      font-weight: 600;
+      z-index: 999;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+      box-shadow: 0 14px 40px -8px rgba(0, 0, 0, 0.8), 0 0 25px -5px rgba(59, 255, 83, 0.25);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      max-width: 90vw;
+    }
+    .ww-toast.show {
+      transform: translateX(-50%) translateY(0) scale(1);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-black">
+
+  <!-- Flyout Toast Notification -->
+  <div id="toastNotif" class="ww-toast"></div>
+
+  <!-- Header / Navigation Bar -->
+  <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full">
+      <div class="flex items-center gap-4 lg:gap-8 min-w-0 flex-shrink">
+        <a href="index.html" onclick="playSoundCue('logo')" class="flex items-center gap-2 group flex-shrink-0">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-xs shadow-lg shadow-brand-500/25 group-hover:scale-105 transition">
+            <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
+          </div>
+          <span class="text-base sm:text-xl font-heading font-black tracking-wider text-white truncate">WONDER<span class="text-brand-400">WATCH</span></span>
+        </a>
+
+        <!-- Desktop Nav -->
+        <nav class="hidden md:flex items-center gap-1 bg-surface-900/90 border border-zinc-800/80 p-1 rounded-2xl backdrop-blur-md shadow-inner">
+          <a href="index.html" onclick="playSoundCue('nav')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-arrow-left text-[11px]"></i> Browse Anime</a>
+          <span class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-brand-500/15 text-brand-400 border border-brand-500/30 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-download text-[11px]"></i> App Clients</span>
+        </nav>
+      </div>
+
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <!-- Sound Cues Toggle -->
+        <button id="soundToggleBtn" onclick="toggleSoundCues()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-brand-500/50 text-brand-400 hover:text-brand-300 flex items-center justify-center text-xs transition" title="Toggle Sound Cues">
+          <i id="soundToggleIcon" class="fa-solid fa-volume-high"></i>
+        </button>
+
+        <a href="index.html" onclick="playSoundCue('nav')" class="w-8 h-8 sm:w-auto p-0 sm:px-4 sm:py-2 text-xs bg-surface-900 border border-zinc-800 hover:border-brand-500/50 rounded-xl text-zinc-300 hover:text-white transition flex items-center justify-center sm:justify-start gap-1.5 font-medium whitespace-nowrap">
+          <i class="fa-solid fa-arrow-left text-xs"></i> <span class="hidden sm:inline">Back to Web</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Presentation Section -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-8 space-y-12">
+
+    <!-- Header Hero Banner -->
+    <section class="relative text-center py-10 sm:py-16 space-y-4 max-w-3xl mx-auto">
+      <div class="inline-flex items-center gap-2 bg-brand-500/15 border border-brand-500/30 text-brand-400 text-xs font-bold px-3.5 py-1.5 rounded-full uppercase tracking-wider backdrop-blur-md">
+        <i class="fa-solid fa-cube text-brand-400"></i> Standalone WonderWatch Clients
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-heading font-black text-white tracking-tight leading-tight">
+        Experience WonderWatch on Any Device
+      </h1>
+      <p class="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-xl mx-auto">
+        Install the official dedicated clients for seamless hardware-accelerated playback, automatic timestamp synchronization, and uninterrupted full-screen immersion.
+      </p>
+    </section>
+
+    <!-- Download Platforms Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+
+      <!-- Desktop Client Card (Windows / macOS / Linux) -->
+      <div class="relative bg-surface-900/90 border border-zinc-800/90 hover:border-brand-500/50 rounded-3xl p-6 sm:p-8 space-y-6 transition-all duration-300 shadow-2xl flex flex-col justify-between group">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black text-2xl shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
+              <i class="fa-solid fa-desktop"></i>
+            </div>
+            <span class="text-[10px] uppercase font-black px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30">v2.4.0 • Latest</span>
+          </div>
+
+          <div class="space-y-1.5">
+            <h2 class="text-xl sm:text-2xl font-heading font-black text-white">Desktop Client</h2>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+              Native desktop experience for Windows, macOS, and Linux. Built-in ad shielding, keyboard shortcut control, picture-in-picture mode, and Discord rich presence.
+            </p>
+          </div>
+
+          <!-- Feature badges -->
+          <div class="space-y-2 pt-2">
+            <div class="flex items-center gap-2 text-xs text-zinc-300">
+              <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
+              <span>Hardware-accelerated 1080p 60fps video engine</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-zinc-300">
+              <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
+              <span>Discord Rich Presence & auto-sync across sessions</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-zinc-300">
+              <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
+              <span>Multi-platform executable (Windows x64 installer & portable)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3 pt-4 border-t border-zinc-800/80">
+          <button onclick="handleDownload('desktop', 'windows')" class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 group-hover:shadow-brand-500/40">
+            <i class="fa-brands fa-windows text-base"></i>
+            <span>Download for Windows (x64)</span>
+          </button>
+          <div class="flex items-center justify-center gap-4 text-[11px] text-zinc-500">
+            <button onclick="handleDownload('desktop', 'mac')" class="hover:text-brand-400 transition flex items-center gap-1"><i class="fa-brands fa-apple"></i> macOS (DMG)</button>
+            <span>•</span>
+            <button onclick="handleDownload('desktop', 'linux')" class="hover:text-brand-400 transition flex items-center gap-1"><i class="fa-brands fa-linux"></i> Linux (AppImage)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Android Client Card (APK / Mobile) -->
+      <div class="relative bg-surface-900/90 border border-zinc-800/90 hover:border-brand-500/50 rounded-3xl p-6 sm:p-8 space-y-6 transition-all duration-300 shadow-2xl flex flex-col justify-between group">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black text-2xl shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
+              <i class="fa-brands fa-android"></i>
+            </div>
+            <span class="text-[10px] uppercase font-black px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30">v2.4.0 • APK</span>
+          </div>
+
+          <div class="space-y-1.5">
+            <h2 class="text-xl sm:text-2xl font-heading font-black text-white">Android Application</h2>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+              Optimized for Android smartphones, tablets, and Android TV / Google TV. Gesture brightness & volume controls, background audio playback, and Chromecast support.
+            </p>
+          </div>
+
+          <!-- Feature badges -->
+          <div class="space-y-2 pt-2">
+            <div class="flex items-center gap-2 text-xs text-zinc-300">
+              <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
+              <span>Touch gesture scrubbing (volume, brightness & seek)</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-zinc-300">
+              <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
+              <span>Full Chromecast & Android TV compatibility</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-zinc-300">
+              <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
+              <span>Zero background telemetry, pure playback performance</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3 pt-4 border-t border-zinc-800/80">
+          <button onclick="handleDownload('android', 'apk')" class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 group-hover:shadow-brand-500/40">
+            <i class="fa-brands fa-android text-base"></i>
+            <span>Download Android Package (.APK)</span>
+          </button>
+          <div class="flex items-center justify-center gap-4 text-[11px] text-zinc-500">
+            <span>Requires Android 8.0 or newer</span>
+            <span>•</span>
+            <span class="text-zinc-400">~24 MB</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PWA / Web App Quick Install Tip -->
+    <section class="bg-surface-900 border border-zinc-800/80 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-brand-500/15 border border-brand-500/30 text-brand-400 flex items-center justify-center text-xl flex-shrink-0">
+          <i class="fa-solid fa-mobile-screen-button"></i>
+        </div>
+        <div class="space-y-0.5">
+          <h3 class="text-base sm:text-lg font-heading font-bold text-white">Prefer to install directly from your browser?</h3>
+          <p class="text-xs text-zinc-400">WonderWatch works as a Progressive Web App (PWA). Tap your browser's install option to add it to your home screen.</p>
+        </div>
+      </div>
+      <a href="index.html" onclick="playSoundCue('nav')" class="px-5 py-2.5 rounded-xl bg-surface-800 hover:bg-surface-750 text-zinc-200 hover:text-white border border-zinc-700/60 text-xs font-semibold whitespace-nowrap transition">
+        Open Web App
+      </a>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-zinc-900 bg-surface-950 py-8 px-6 text-center text-zinc-500 text-xs space-y-2 mt-auto">
+    <div class="text-zinc-400 font-heading font-semibold tracking-wider">WONDER<span class="text-brand-400">WATCH</span></div>
+    <p>WonderWatch does not host any media files on its servers. All content is provided by non-affiliated third parties.</p>
+  </footer>
+
+  <script>
+    // ============================================================
+    //  UI SOUND CUES ENGINE (Web Audio API)
+    // ============================================================
+    const SOUND_KEY = 'wonderwatch_sound';
+    let soundEnabled = localStorage.getItem(SOUND_KEY) !== 'off';
+    let audioCtx = null;
+
+    function getAudioCtx() {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) audioCtx = new Ctx();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+
+    const primeAudio = () => {
+      try {
+        const ctx = getAudioCtx();
+        if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+      } catch (_) {}
+    };
+    ['pointerdown', 'touchstart', 'mousedown', 'keydown'].forEach(evt => {
+      window.addEventListener(evt, primeAudio, { once: true, passive: true });
+    });
+
+    function playSoundCue(type = 'click') {
+      if (!soundEnabled) return;
+      try {
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'logo') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+          osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.16);
+          gain.gain.setValueAtTime(0.045, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else if (type === 'download') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(680, now + 0.12);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        } else if (type === 'nav') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(420, now);
+          osc.frequency.exponentialRampToValueAtTime(560, now + 0.06);
+          gain.gain.setValueAtTime(0.045, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(640, now);
+          osc.frequency.exponentialRampToValueAtTime(480, now + 0.045);
+          gain.gain.setValueAtTime(0.035, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          osc.start(now);
+          osc.stop(now + 0.05);
+        }
+      } catch (_) {}
+    }
+
+    function updateSoundToggleUI() {
+      const btn = document.getElementById('soundToggleBtn');
+      const icon = document.getElementById('soundToggleIcon');
+      if (!btn || !icon) return;
+      if (soundEnabled) {
+        icon.className = 'fa-solid fa-volume-high';
+        btn.classList.add('text-brand-400', 'hover:text-brand-300');
+        btn.classList.remove('text-zinc-500', 'hover:text-zinc-300');
+        btn.title = 'Sound Cues: On';
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark';
+        btn.classList.remove('text-brand-400', 'hover:text-brand-300');
+        btn.classList.add('text-zinc-500', 'hover:text-zinc-300');
+        btn.title = 'Sound Cues: Off';
+      }
+    }
+
+    function toggleSoundCues() {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem(SOUND_KEY, soundEnabled ? 'on' : 'off');
+      updateSoundToggleUI();
+      if (soundEnabled) playSoundCue('download');
+      showToast(soundEnabled
+        ? '<i class="fa-solid fa-volume-high text-brand-400"></i> Sound cues enabled'
+        : '<i class="fa-solid fa-volume-xmark text-zinc-400"></i> Sound cues muted', 2000);
+    }
+    updateSoundToggleUI();
+
+    let toastTimer = null;
+    function showToast(message, duration = 3000) {
+      const toast = document.getElementById('toastNotif');
+      toast.innerHTML = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+    }
+
+    function handleDownload(platform, flavor) {
+      playSoundCue('download');
+      if (platform === 'android') {
+        showToast('<i class="fa-brands fa-android text-brand-400"></i> Starting WonderWatch Android APK download...');
+      } else {
+        showToast(`<i class="fa-solid fa-download text-brand-400"></i> Starting WonderWatch Desktop (${flavor.toUpperCase()}) download...`);
+      }
+    }
+  </script>
+</body>
+</html>
