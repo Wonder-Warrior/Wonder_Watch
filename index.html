@@ -141,7 +141,7 @@
   <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full">
       <div class="flex items-center gap-4 lg:gap-8 min-w-0 flex-shrink">
-        <a href="index.html" class="flex items-center gap-2 group flex-shrink-0">
+        <a href="index.html" onclick="playSoundCue('logo')" class="flex items-center gap-2 group flex-shrink-0">
           <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-xs shadow-lg shadow-brand-500/25 group-hover:scale-105 transition">
             <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
           </div>
@@ -292,7 +292,7 @@
           Loading description...
         </p>
         <div class="pt-2 flex items-center gap-3">
-          <a id="heroWatchBtn" href="#" onclick="playSoundCue('nav')" class="inline-flex items-center gap-2.5 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-6 py-3.5 rounded-xl transition shadow-lg shadow-brand-500/25">
+          <a id="heroWatchBtn" href="#" onclick="playSoundCue('watch')" class="inline-flex items-center gap-2.5 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-6 py-3.5 rounded-xl transition shadow-lg shadow-brand-500/25">
             <i class="fa-solid fa-play text-sm"></i> Watch Now
           </a>
           <button id="heroFavBtn" onclick="toggleSpotlightFavorite()" class="w-12 h-12 rounded-xl bg-surface-800/90 border border-zinc-700/60 hover:border-brand-500 text-zinc-300 hover:text-red-500 flex items-center justify-center transition" title="Save to Favourites">
@@ -1528,6 +1528,7 @@
             </div>
           `;
           card.onclick = () => {
+            playSoundCue('open');
             window.location.href = `watch.html?id=${item.id}&malId=${item.malId}&title=${encodeURIComponent(item.title)}&eps=${item.eps || 12}&ep=${item.episode}&time=${timeSec}`;
           };
           continueGrid.appendChild(card);
@@ -1629,6 +1630,7 @@
         `;
 
         card.onclick = () => {
+          playSoundCue('open');
           window.location.href = `watch.html?id=${anilistId}&malId=${malId}&title=${encodeURIComponent(title)}&eps=${eps}`;
         };
         container.appendChild(card);
@@ -1786,6 +1788,7 @@
           <i class="fa-solid fa-chevron-right text-zinc-600 group-hover:text-brand-400 group-hover:translate-x-1 transition text-sm pr-3"></i>
         `;
         div.onclick = () => {
+          playSoundCue('open');
           window.location.href = `watch.html?id=${anilistId}&malId=${malId}&title=${encodeURIComponent(title)}&eps=${eps}`;
         };
         searchResults.appendChild(div);
@@ -1881,7 +1884,45 @@
         osc.connect(gain);
         gain.connect(ctx.destination);
 
-        if (type === 'fav') {
+        if (type === 'type') {
+          // Subtle, tactile mechanical key tap with random micro-pitch variation
+          const pitch = 1800 + Math.random() * 450;
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(pitch, now);
+          osc.frequency.exponentialRampToValueAtTime(320, now + 0.022);
+          gain.gain.setValueAtTime(0.015, now);
+          gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.025);
+          osc.start(now);
+          osc.stop(now + 0.025);
+        } else if (type === 'logo') {
+          // Playful ascending lime spark chord
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now); // D5
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08); // A5
+          osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.16); // D6
+          gain.gain.setValueAtTime(0.045, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else if (type === 'watch') {
+          // Cinematic energetic launch swell
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(660, now + 0.11);
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+          osc.start(now);
+          osc.stop(now + 0.16);
+        } else if (type === 'open') {
+          // Smooth warm bubble pop when selecting an anime card
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(380, now);
+          osc.frequency.exponentialRampToValueAtTime(740, now + 0.07);
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.10);
+          osc.start(now);
+          osc.stop(now + 0.10);
+        } else if (type === 'fav') {
           osc.type = 'sine';
           osc.frequency.setValueAtTime(520, now);
           osc.frequency.exponentialRampToValueAtTime(780, now + 0.09);
@@ -2008,6 +2049,16 @@
       const mobileBtn = e.target.closest('button[onclick*="toggleMobileNav"]');
       if (mobileNav && !mobileNav.contains(e.target) && !mobileBtn) {
         closeMobileNav();
+      }
+    });
+
+    // Typing sound feedback on all text inputs
+    document.addEventListener('keydown', (e) => {
+      const activeTag = document.activeElement?.tagName;
+      if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
+        if (!['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)) {
+          playSoundCue('type');
+        }
       }
     });
 
