@@ -164,6 +164,7 @@ public final class AdShieldEngine {
 
     public static boolean isTrustedAuthOrAppUri(String url) {
         if (url == null || url.isEmpty()) return false;
+        if ("about:blank".equalsIgnoreCase(url)) return true;
         try {
             Uri uri = Uri.parse(url);
             String host = uri.getHost();
@@ -174,9 +175,19 @@ public final class AdShieldEngine {
                     return true;
                 }
             }
-            if (lower.endsWith(".google.com") && uri.getPath() != null &&
-                uri.getPath().toLowerCase(Locale.US).contains("oauth")) {
+            if (lower.startsWith("accounts.google.") ||
+                lower.equals("accounts.youtube.com") ||
+                lower.startsWith("myaccount.google.") ||
+                lower.equals("gds.google.com") ||
+                lower.endsWith(".googleapis.com") ||
+                lower.endsWith(".gstatic.com")) {
                 return true;
+            }
+            if (lower.endsWith(".google.com") && uri.getPath() != null) {
+                String path = uri.getPath().toLowerCase(Locale.US);
+                if (path.contains("oauth") || path.contains("signin") || path.contains("servicelogin") || path.contains("account")) {
+                    return true;
+                }
             }
         } catch (Exception ignored) {
         }

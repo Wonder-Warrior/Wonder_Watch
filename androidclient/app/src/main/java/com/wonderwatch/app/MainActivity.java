@@ -3,11 +3,13 @@ package com.wonderwatch.app;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.graphics.Insets;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -525,16 +527,95 @@ public final class MainActivity extends Activity {
                 return false;
             }
 
-            // Route window.open (used by Google/Firebase account sign-in) into a dialog window
+            // Route window.open (used by Google/Firebase account sign-in) into a full-screen dialog window
             final WebView popupView = new WebView(MainActivity.this);
             popupView.setBackgroundColor(BG_DARK);
+            popupView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
             configureWebSettings(popupView.getSettings());
+            CookieManager.getInstance().setAcceptCookie(true);
             CookieManager.getInstance().setAcceptThirdPartyCookies(popupView, true);
 
+            LinearLayout dialogRoot = new LinearLayout(MainActivity.this);
+            dialogRoot.setOrientation(LinearLayout.VERTICAL);
+            dialogRoot.setBackgroundColor(BG_DARK);
+            applySafeSystemInsets(dialogRoot);
+
+            LinearLayout header = new LinearLayout(MainActivity.this);
+            header.setOrientation(LinearLayout.HORIZONTAL);
+            header.setGravity(Gravity.CENTER_VERTICAL);
+            header.setBackgroundColor(Color.parseColor("#0D0F14"));
+            header.setPadding(dp(16), dp(12), dp(12), dp(12));
+
+            TextView titleView = new TextView(MainActivity.this);
+            titleView.setText("Account Sign In");
+            titleView.setTextColor(Color.WHITE);
+            titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
+            titleView.setTypeface(Typeface.DEFAULT_BOLD);
+            LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+            );
+            header.addView(titleView, titleParams);
+
+            Button closeBtn = new Button(MainActivity.this);
+            closeBtn.setText("Close");
+            closeBtn.setTextColor(Color.parseColor("#A1A1AA"));
+            closeBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
+            closeBtn.setAllCaps(false);
+            closeBtn.setBackgroundColor(Color.TRANSPARENT);
+            closeBtn.setPadding(dp(12), dp(4), dp(12), dp(4));
+            header.addView(closeBtn);
+
+            dialogRoot.addView(header, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ));
+            dialogRoot.addView(popupView, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            ));
+
             final Dialog pendingDialog = new Dialog(MainActivity.this, android.R.style.Theme_DeviceDefault_NoActionBar);
-            pendingDialog.setContentView(popupView);
+            pendingDialog.setContentView(dialogRoot, new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            ));
             authPopupDialog = pendingDialog;
-            pendingDialog.show();
+
+            closeBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (pendingDialog.isShowing()) {
+                        pendingDialog.dismiss();
+                    }
+                }
+            });
+
+            pendingDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialog) {
+                    if (authPopupDialog == pendingDialog) {
+                        authPopupDialog = null;
+                    }
+                    try {
+                        popupView.destroy();
+                    } catch (Exception ignored) {
+                    }
+                }
+            });
+
+            if (pendingDialog.getWindow() != null) {
+                pendingDialog.getWindow().setBackgroundDrawable(new ColorDrawable(BG_DARK));
+                pendingDialog.getWindow().setLayout(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                );
+            }
+            if (!isFinishing()) {
+                pendingDialog.show();
+            }
 
             popupView.setWebChromeClient(new WebChromeClient() {
                 @Override
@@ -542,7 +623,6 @@ public final class MainActivity extends Activity {
                     if (pendingDialog.isShowing()) {
                         pendingDialog.dismiss();
                     }
-                    popupView.destroy();
                 }
             });
 
@@ -552,7 +632,6 @@ public final class MainActivity extends Activity {
                         if (pendingDialog.isShowing()) {
                             pendingDialog.dismiss();
                         }
-                        popupView.destroy();
                     }
                 }
 
@@ -564,7 +643,6 @@ public final class MainActivity extends Activity {
                         if (pendingDialog.isShowing()) {
                             pendingDialog.dismiss();
                         }
-                        popupView.destroy();
                         return true;
                     }
                     return false;
