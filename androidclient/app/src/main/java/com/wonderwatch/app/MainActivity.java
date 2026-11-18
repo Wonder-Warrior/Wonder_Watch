@@ -52,6 +52,8 @@ public final class MainActivity extends Activity {
     private Dialog authPopupDialog;
     private final AdShieldEngine shieldEngine = new AdShieldEngine();
     private boolean initialPageRevealed = false;
+    private boolean mainPageFinished = false;
+    private int lastLoadProgress = 0;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -135,6 +137,15 @@ public final class MainActivity extends Activity {
             // Load immediately at t=0; AdShieldEngine preloads concurrently and gates third-party resources
             splashOverlay.setStatusText("Loading WonderWatch...");
             webView.loadUrl(HOME_URL);
+            rootContainer.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (!initialPageRevealed && !isFinishing()) {
+                        initialPageRevealed = true;
+                        splashOverlay.dismissAnimated();
+                    }
+                }
+            }, 9000);
         }
     }
 
@@ -342,6 +353,28 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private void tryRevealWhenReady(final WebView view) {
+        if (initialPageRevealed || !mainPageFinished || lastLoadProgress < 100) return;
+        view.evaluateJavascript(
+            "(function(){return document.readyState==='complete' && !!document.body && document.body.children.length>0;})()",
+            new android.webkit.ValueCallback<String>() {
+                @Override
+                public void onReceiveValue(String value) {
+                    if (initialPageRevealed) return;
+                    if ("true".equals(value)) {
+                        initialPageRevealed = true;
+                        view.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                splashOverlay.dismissAnimated();
+                            }
+                        }, 150);
+                    }
+                }
+            }
+        );
+    }
+
     private int dp(int value) {
         return Math.round(TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
@@ -405,20 +438,14 @@ public final class MainActivity extends Activity {
         public void onPageCommitVisible(WebView view, String url) {
             super.onPageCommitVisible(view, url);
             view.evaluateJavascript(AdShieldEngine.getAppIntegrationScript(), null);
-            if (!initialPageRevealed) {
-                initialPageRevealed = true;
-                splashOverlay.dismissAnimated();
-            }
         }
 
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
             view.evaluateJavascript(AdShieldEngine.getAppIntegrationScript(), null);
-            if (!initialPageRevealed) {
-                initialPageRevealed = true;
-                splashOverlay.dismissAnimated();
-            }
+            mainPageFinished = true;
+            tryRevealWhenReady(view);
         }
 
         @Override
@@ -436,9 +463,9 @@ public final class MainActivity extends Activity {
         @Override
         public void onProgressChanged(WebView view, int newProgress) {
             super.onProgressChanged(view, newProgress);
-            if (newProgress >= 65 && !initialPageRevealed) {
-                initialPageRevealed = true;
-                splashOverlay.dismissAnimated();
+            lastLoadProgress = newProgress;
+            if (newProgress >= 100 && mainPageFinished) {
+                tryRevealWhenReady(view);
             }
         }
 

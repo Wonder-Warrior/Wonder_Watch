@@ -283,11 +283,11 @@
 
             <!-- Sub / Dub Control (Static pill when single option, Custom Dropdown when both exist) -->
             <div class="relative inline-block" id="audioDropdownWrap">
-              <div id="audioStaticBadge" class="bg-surface-800/90 border border-zinc-700/60 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 inline-flex items-center gap-1.5 whitespace-nowrap">
+              <div id="audioStaticBadge" class="hidden bg-surface-800/90 border border-zinc-700/60 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 inline-flex items-center gap-1.5 whitespace-nowrap">
                 <i class="fa-solid fa-closed-captioning text-[11px] text-brand-400"></i>
                 <span id="audioStaticLabel">Subtitled</span>
               </div>
-              <div id="audioDropdownContainer" class="hidden relative">
+              <div id="audioDropdownContainer" class="relative">
                 <button id="audioDropdownBtn" type="button" onclick="toggleCustomDropdown('audioDropdownMenu', 'audioDropdownChevron', event)" class="bg-surface-800 hover:bg-surface-750 border border-zinc-700/80 hover:border-brand-500/50 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500 transition cursor-pointer shadow-sm flex items-center gap-2 whitespace-nowrap">
                   <i class="fa-solid fa-closed-captioning text-[11px] text-brand-400"></i>
                   <span id="audioDropdownLabel">Subtitled</span>
@@ -1476,15 +1476,14 @@
       clearTimeout(playerSkeletonTimer);
       playerSkeletonTimer = setTimeout(hidePlayerSkeleton, 3500);
       
+      const resumeSec = Math.max(0, Math.floor(Number(savedResumeTime) || 0));
       let src = '';
       if (currentServer === 'aniembed_se') {
-        src = `https://aniembed.se/e/${animeId}/${currentEpisode}?lang=${currentType}&autoplay=1`;
-        if (savedResumeTime > 0) src += `&t=${savedResumeTime}`;
+        src = `https://aniembed.se/e/${animeId}/${currentEpisode}?lang=${currentType}&autoplay=1&t=${resumeSec}`;
       } else if (currentServer === 'zoko_mal') {
-        src = `https://zokoanime.video/stream/mal/${malId}/${currentEpisode}/${currentType}?color=3BFF53&autoplay=1`;
-        if (savedResumeTime > 0) src += `&time=${savedResumeTime}`;
+        src = `https://zokoanime.video/stream/mal/${malId}/${currentEpisode}/${currentType}?color=3BFF53&autoplay=1&time=${resumeSec}`;
       } else if (currentServer === 'animeembed') {
-        src = `https://animeembed.com/embed/ani/${animeId}/${currentEpisode}?track=${currentType}&accent=3BFF53&autoplay=1`;
+        src = `https://animeembed.com/embed/ani/${animeId}/${currentEpisode}?track=${currentType}&autoPlay=1&start=${resumeSec}&accent=3BFF53`;
       }
 
       // Check ad blocker recommendation state for web browsers
@@ -1544,6 +1543,7 @@
       });
 
       closeAllCustomDropdowns();
+      autoSaveProgress(savedResumeTime);
       loadPlayer();
     }
 
@@ -1565,6 +1565,7 @@
       });
 
       closeAllCustomDropdowns();
+      autoSaveProgress(savedResumeTime);
       loadPlayer();
     }
 
@@ -1593,8 +1594,10 @@
     async function detectAudioTrackAvailability(resolvedMalId) {
       if (!resolvedMalId) return;
       try {
+        // Stagger slightly after episode fetch to avoid Jikan 429 rate limits
+        await new Promise(r => setTimeout(r, 450));
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 3500);
+        const timer = setTimeout(() => controller.abort(), 4500);
         const res = await fetch(`https://api.jikan.moe/v4/anime/${resolvedMalId}/characters`, { signal: controller.signal });
         clearTimeout(timer);
         if (!res.ok) return;
@@ -1613,11 +1616,11 @@
           }
           if (hasSub && hasDub) break;
         }
-        // Default to sub if neither tag was explicitly tagged
-        if (!hasSub && !hasDub) hasSub = true;
-        updateAudioTrackAvailability(hasSub, hasDub);
+        if (hasSub || hasDub) {
+          updateAudioTrackAvailability(hasSub, hasDub);
+        }
       } catch (_) {
-        // Keep single static pill on network timeout
+        // Keep dropdown available if cast metadata is unreachable
       }
     }
 
@@ -1654,8 +1657,16 @@
           currentTime = data.currentTime;
         } else if (data.data && typeof data.data.currentTime === 'number') {
           currentTime = data.data.currentTime;
+        } else if (data.data && typeof data.data.time === 'number') {
+          currentTime = data.data.time;
+        } else if (data.payload && typeof data.payload.currentTime === 'number') {
+          currentTime = data.payload.currentTime;
+        } else if (data.progress && typeof data.progress.currentTime === 'number') {
+          currentTime = data.progress.currentTime;
         } else if (typeof data.time === 'number') {
           currentTime = data.time;
+        } else if (typeof data.position === 'number') {
+          currentTime = data.position;
         } else if (typeof data.seconds === 'number') {
           currentTime = data.seconds;
         }
