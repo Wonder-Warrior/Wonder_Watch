@@ -288,13 +288,44 @@ public final class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        webView.onResume();
+        if (webView != null) {
+            webView.resumeTimers();
+            webView.onResume();
+        }
     }
 
     @Override
     protected void onPause() {
-        webView.onPause();
+        pauseMediaInWebView();
+        if (webView != null) {
+            webView.onPause();
+            webView.pauseTimers();
+        }
         super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        pauseMediaInWebView();
+        super.onStop();
+    }
+
+    private void pauseMediaInWebView() {
+        if (webView == null) return;
+        try {
+            webView.evaluateJavascript(
+                "(function(){" +
+                "try{document.querySelectorAll('video,audio').forEach(function(m){m.pause();});}catch(e){}" +
+                "try{var f=document.getElementById('playerFrame');if(f&&f.contentWindow){" +
+                "f.contentWindow.postMessage(JSON.stringify({event:'command',func:'pauseVideo'}),'*');" +
+                "f.contentWindow.postMessage(JSON.stringify({command:'pause'}),'*');" +
+                "f.contentWindow.postMessage('{\"type\":\"pause\"}','*');" +
+                "}}catch(e){}" +
+                "})();",
+                null
+            );
+        } catch (Exception ignored) {
+        }
     }
 
     @Override

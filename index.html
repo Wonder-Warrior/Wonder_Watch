@@ -195,7 +195,7 @@
       <!-- Right Header Navigation: Sound Toggle, Search Shortcut, Log In / User State, Mobile Toggle -->
       <div class="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
         <!-- Sound Cues Toggle -->
-        <button id="soundToggleBtn" onclick="toggleSoundCues()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-brand-500/50 text-brand-400 hover:text-brand-300 flex items-center justify-center text-xs transition" title="Toggle Sound Cues">
+        <button id="soundToggleBtn" onclick="toggleSoundCues()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-brand-500/50 text-brand-400 hover:text-brand-300 flex items-center justify-center text-xs transition">
           <i id="soundToggleIcon" class="fa-solid fa-volume-high"></i>
         </button>
 
@@ -1329,8 +1329,13 @@
         closeAuthModal();
       } catch (err) {
         console.error('Google auth error:', err);
-        if (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment') {
-          // Popups unavailable: fall back to a full-page redirect
+        const isAppClient = Boolean(
+          window.__WONDERWATCH_DESKTOP__ ||
+          window.__WONDERWATCH_APP__ ||
+          /WonderWatchDesktop|WonderWatchApp/i.test(navigator.userAgent || '')
+        );
+        if (!isAppClient && (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment')) {
+          // Popups unavailable in standard browser: fall back to a full-page redirect
           if (location.protocol !== 'file:') {
             try {
               await auth.signInWithRedirect(provider);
@@ -1990,8 +1995,12 @@
       window.addEventListener(evt, primeAudio, { once: true, passive: true });
     });
 
+    let lastCueTime = 0;
     function playSoundCue(type = 'click') {
       if (!soundEnabled) return;
+      const nowMs = performance.now();
+      if (type !== 'type' && nowMs - lastCueTime < 35) return;
+      lastCueTime = nowMs;
       try {
         const ctx = getAudioCtx();
         if (!ctx) return;
@@ -2079,16 +2088,15 @@
       const btn = document.getElementById('soundToggleBtn');
       const icon = document.getElementById('soundToggleIcon');
       if (!btn || !icon) return;
+      btn.removeAttribute('title');
       if (soundEnabled) {
         icon.className = 'fa-solid fa-volume-high';
         btn.classList.add('text-brand-400', 'hover:text-brand-300');
         btn.classList.remove('text-zinc-500', 'hover:text-zinc-300');
-        btn.title = 'Sound Cues: On';
       } else {
         icon.className = 'fa-solid fa-volume-xmark';
         btn.classList.remove('text-brand-400', 'hover:text-brand-300');
         btn.classList.add('text-zinc-500', 'hover:text-zinc-300');
-        btn.title = 'Sound Cues: Off';
       }
     }
 
@@ -2098,9 +2106,17 @@
       updateSoundToggleUI();
       if (soundEnabled) playSoundCue('fav');
       showToast(soundEnabled
-        ? '<i class="fa-solid fa-volume-high text-brand-400"></i> Sound cues enabled'
-        : '<i class="fa-solid fa-volume-xmark text-zinc-400"></i> Sound cues muted', 2000);
+        ? '<i class="fa-solid fa-volume-high text-brand-400"></i> Unmuted website navigation'
+        : '<i class="fa-solid fa-volume-xmark text-zinc-400"></i> Muted website navigation', 2000);
     }
+
+    // Global interaction sound feedback across buttons, links, cards, and controls
+    document.addEventListener('click', (e) => {
+      if (!soundEnabled) return;
+      const target = e.target?.closest?.('button, a, [role="button"], .cursor-pointer, select');
+      if (!target || target.id === 'soundToggleBtn' || target.closest?.('#soundToggleBtn')) return;
+      playSoundCue(target.tagName === 'A' ? 'nav' : 'click');
+    });
 
     updateSoundToggleUI();
 

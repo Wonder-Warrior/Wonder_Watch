@@ -3,8 +3,11 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
+using System.IO.Pipes;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
@@ -84,6 +87,7 @@ namespace WonderWatchDesktop
 
         private CoreWebView2Environment sharedEnvironment;
         private string ublockExtensionId;
+        private readonly DiscordRpcClient discordRpc = new DiscordRpcClient();
         private bool isInitialized;
         private bool isFullscreen;
         private FormWindowState prevWindowState = FormWindowState.Normal;
@@ -218,6 +222,7 @@ namespace WonderWatchDesktop
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             SaveWindowState();
+            discordRpc.Dispose();
             base.OnFormClosing(e);
         }
 
@@ -370,6 +375,7 @@ namespace WonderWatchDesktop
                 {
                     Text = "WonderWatch";
                 }
+                UpdateDiscordPresence();
             };
 
             webView.CoreWebView2.NavigationCompleted += delegate
@@ -379,6 +385,7 @@ namespace WonderWatchDesktop
                     splashSpinner.Stop();
                     splashPanel.Visible = false;
                 }
+                UpdateDiscordPresence();
             };
 
             webView.CoreWebView2.ContainsFullScreenElementChanged += delegate
@@ -419,19 +426,31 @@ namespace WonderWatchDesktop
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
-        private void OnNewWindowRequested(object sender, CoreWebView2NewWindowRequestedEventArgs e)
+        private async void OnNewWindowRequested(object sender, CoreWebView2NewWindowRequestedEventArgs e)
         {
             string uri = e.Uri ?? string.Empty;
 
-            // Allow legitimate OAuth / Firebase Authentication popups inside a dark WebView2 popup window
+            // Allow legitimate OAuth / Firebase Authentication popups with real window linkage
             if (IsTrustedAuthPopup(uri))
             {
-                e.Handled = true;
-                OpenAuthPopupWindow(uri);
+                CoreWebView2Deferral deferral = e.GetDeferral();
+                try
+                {
+                    CoreWebView2 popupCore = await OpenAuthPopupWindowAsync();
+                    if (popupCore != null)
+                    {
+                        e.NewWindow = popupCore;
+                    }
+                    e.Handled = true;
+                }
+                finally
+                {
+                    deferral.Complete();
+                }
                 return;
             }
 
-            // If a user explicitly initiated a navigation to GitHub / uBlock / docs, open in system browser
+            // If a user explicitly initiated a navigation to GitHub / docs, open in system browser
             if (e.IsUserInitiated && IsSafeExternalLink(uri))
             {
                 e.Handled = true;
@@ -486,9 +505,9 @@ namespace WonderWatchDesktop
             }
         }
 
-        private void OpenAuthPopupWindow(string url)
+        private async Task<CoreWebView2> OpenAuthPopupWindowAsync()
         {
-            if (sharedEnvironment == null) return;
+            if (sharedEnvironment == null) return null;
 
             Form popup = new Form();
             popup.Text = "WonderWatch - Account Sign In";
@@ -507,21 +526,62 @@ namespace WonderWatchDesktop
                 NativeMethods.ApplyDarkTitleBar(popup.Handle);
             };
 
-            popup.Shown += async delegate
-            {
-                try
-                {
-                    await popupWebView.EnsureCoreWebView2Async(sharedEnvironment);
-                    popupWebView.CoreWebView2.WindowCloseRequested += delegate { popup.Close(); };
-                    popupWebView.CoreWebView2.Navigate(url);
-                }
-                catch
-                {
-                    popup.Close();
-                }
-            };
-
             popup.Show(this);
+
+            try
+            {
+                await popupWebView.EnsureCoreWebView2Async(sharedEnvironment);
+                popupWebView.CoreWebView2.WindowCloseRequested += delegate { popup.Close(); };
+                return popupWebView.CoreWebView2;
+            }
+            catch
+            {
+                popup.Close();
+                return null;
+            }
+        }
+
+        private void UpdateDiscordPresence()
+        {
+            try
+            {
+                if (webView == null || webView.CoreWebView2 == null) return;
+                string source = webView.CoreWebView2.Source ?? string.Empty;
+                if (source.IndexOf("watch.html", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    Uri parsed = new Uri(source);
+                    string rawTitle = ExtractQueryParam(parsed.Query, "title");
+                    string rawEp = ExtractQueryParam(parsed.Query, "ep");
+                    string animeName = !string.IsNullOrEmpty(rawTitle) ? Uri.UnescapeDataString(rawTitle.Replace('+', ' ')) : "Anime";
+                    string epLabel = !string.IsNullOrEmpty(rawEp) ? "Episode " + rawEp : "Streaming HD";
+                    discordRpc.UpdatePresence("Watching " + animeName, epLabel);
+                }
+                else
+                {
+                    discordRpc.UpdatePresence("Browsing Anime Catalog", "WonderWatch Desktop");
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private static string ExtractQueryParam(string query, string key)
+        {
+            if (string.IsNullOrEmpty(query)) return null;
+            string trimmed = query.StartsWith("?") ? query.Substring(1) : query;
+            string[] pairs = trimmed.Split('&');
+            foreach (string pair in pairs)
+            {
+                int idx = pair.IndexOf('=');
+                if (idx <= 0) continue;
+                string k = pair.Substring(0, idx);
+                if (string.Equals(k, key, StringComparison.OrdinalIgnoreCase))
+                {
+                    return pair.Substring(idx + 1);
+                }
+            }
+            return null;
         }
 
         private async Task EnsureUBlockOriginActivatedAsync()
@@ -780,7 +840,7 @@ namespace WonderWatchDesktop
 
         private sealed class AnimatedEmblemSpinner : Control
         {
-            private readonly Timer timer;
+            private readonly System.Windows.Forms.Timer timer;
             private readonly Stopwatch clock = Stopwatch.StartNew();
 
             public AnimatedEmblemSpinner()
@@ -793,7 +853,7 @@ namespace WonderWatchDesktop
                     true
                 );
                 BackColor = BgDark;
-                timer = new Timer();
+                timer = new System.Windows.Forms.Timer();
                 timer.Interval = 16;
                 timer.Tick += delegate { Invalidate(); };
                 timer.Start();
@@ -969,6 +1029,124 @@ namespace WonderWatchDesktop
             path.AddArc(bounds.X, bounds.Bottom - d, d, d, 90, 90);
             path.CloseFigure();
             return path;
+        }
+    }
+
+    internal sealed class DiscordRpcClient : IDisposable
+    {
+        private const string DefaultClientId = "1310265768981303306";
+        private readonly string clientId;
+        private readonly long sessionStartEpoch;
+        private readonly object syncLock = new object();
+        private NamedPipeClientStream pipe;
+        private bool handshaken;
+        private bool disposed;
+
+        public DiscordRpcClient()
+        {
+            sessionStartEpoch = (long)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+            string customId = Environment.GetEnvironmentVariable("WONDERWATCH_DISCORD_CLIENT_ID");
+            if (string.IsNullOrWhiteSpace(customId))
+            {
+                string cfg = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "discord_client_id.txt");
+                if (File.Exists(cfg))
+                {
+                    try { customId = File.ReadAllText(cfg).Trim(); } catch { }
+                }
+            }
+            clientId = string.IsNullOrWhiteSpace(customId) ? DefaultClientId : customId.Trim();
+        }
+
+        public void UpdatePresence(string details, string state)
+        {
+            if (disposed) return;
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                lock (syncLock)
+                {
+                    if (disposed) return;
+                    try
+                    {
+                        if (!EnsureConnected()) return;
+                        int pid = Process.GetCurrentProcess().Id;
+                        string json = string.Format(
+                            "{{\"cmd\":\"SET_ACTIVITY\",\"args\":{{\"pid\":{0},\"activity\":{{\"details\":\"{1}\",\"state\":\"{2}\",\"timestamps\":{{\"start\":{3}}}}}}},\"nonce\":\"{4}\"}}",
+                            pid,
+                            EscapeJson(details),
+                            EscapeJson(state),
+                            sessionStartEpoch,
+                            Guid.NewGuid().ToString("N")
+                        );
+                        WriteFrame(1, json);
+                    }
+                    catch
+                    {
+                        ResetPipe();
+                    }
+                }
+            });
+        }
+
+        private bool EnsureConnected()
+        {
+            if (pipe != null && pipe.IsConnected && handshaken) return true;
+            ResetPipe();
+
+            for (int i = 0; i < 10; i++)
+            {
+                try
+                {
+                    NamedPipeClientStream candidate = new NamedPipeClientStream(".", "discord-ipc-" + i, PipeDirection.InOut);
+                    candidate.Connect(80);
+                    pipe = candidate;
+                    WriteFrame(0, string.Format("{{\"v\":1,\"client_id\":\"{0}\"}}", EscapeJson(clientId)));
+                    handshaken = true;
+                    return true;
+                }
+                catch
+                {
+                    ResetPipe();
+                }
+            }
+            return false;
+        }
+
+        private void WriteFrame(int opcode, string json)
+        {
+            byte[] payload = Encoding.UTF8.GetBytes(json);
+            byte[] header = new byte[8];
+            byte[] opBytes = BitConverter.GetBytes(opcode);
+            byte[] lenBytes = BitConverter.GetBytes(payload.Length);
+            Buffer.BlockCopy(opBytes, 0, header, 0, 4);
+            Buffer.BlockCopy(lenBytes, 0, header, 4, 4);
+            pipe.Write(header, 0, 8);
+            pipe.Write(payload, 0, payload.Length);
+            pipe.Flush();
+        }
+
+        private void ResetPipe()
+        {
+            handshaken = false;
+            if (pipe != null)
+            {
+                try { pipe.Dispose(); } catch { }
+                pipe = null;
+            }
+        }
+
+        private static string EscapeJson(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return string.Empty;
+            return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", " ").Replace("\n", " ");
+        }
+
+        public void Dispose()
+        {
+            lock (syncLock)
+            {
+                disposed = true;
+                ResetPipe();
+            }
         }
     }
 

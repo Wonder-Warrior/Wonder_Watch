@@ -191,7 +191,7 @@
       
       <div class="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
         <!-- Sound Cues Toggle -->
-        <button id="soundToggleBtn" onclick="toggleSoundCues()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-brand-500/50 text-brand-400 hover:text-brand-300 flex items-center justify-center text-xs transition" title="Toggle Sound Cues">
+        <button id="soundToggleBtn" onclick="toggleSoundCues()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-brand-500/50 text-brand-400 hover:text-brand-300 flex items-center justify-center text-xs transition">
           <i id="soundToggleIcon" class="fa-solid fa-volume-high"></i>
         </button>
 
@@ -578,8 +578,12 @@
       window.addEventListener(evt, primeAudio, { once: true, passive: true });
     });
 
+    let lastCueTime = 0;
     function playSoundCue(type = 'click') {
       if (!soundEnabled) return;
+      const nowMs = performance.now();
+      if (type !== 'type' && nowMs - lastCueTime < 35) return;
+      lastCueTime = nowMs;
       try {
         const ctx = getAudioCtx();
         if (!ctx) return;
@@ -667,16 +671,15 @@
       const btn = document.getElementById('soundToggleBtn');
       const icon = document.getElementById('soundToggleIcon');
       if (!btn || !icon) return;
+      btn.removeAttribute('title');
       if (soundEnabled) {
         icon.className = 'fa-solid fa-volume-high';
         btn.classList.add('text-brand-400', 'hover:text-brand-300');
         btn.classList.remove('text-zinc-500', 'hover:text-zinc-300');
-        btn.title = 'Sound Cues: On';
       } else {
         icon.className = 'fa-solid fa-volume-xmark';
         btn.classList.remove('text-brand-400', 'hover:text-brand-300');
         btn.classList.add('text-zinc-500', 'hover:text-zinc-300');
-        btn.title = 'Sound Cues: Off';
       }
     }
 
@@ -686,9 +689,16 @@
       updateSoundToggleUI();
       if (soundEnabled) playSoundCue('fav');
       showToast(soundEnabled
-        ? '<i class="fa-solid fa-volume-high text-brand-400"></i> Sound cues enabled'
-        : '<i class="fa-solid fa-volume-xmark text-zinc-400"></i> Sound cues muted', 2000);
+        ? '<i class="fa-solid fa-volume-high text-brand-400"></i> Unmuted website navigation'
+        : '<i class="fa-solid fa-volume-xmark text-zinc-400"></i> Muted website navigation', 2000);
     }
+
+    document.addEventListener('click', (e) => {
+      if (!soundEnabled) return;
+      const target = e.target?.closest?.('button, a, [role="button"], .cursor-pointer, select');
+      if (!target || target.id === 'soundToggleBtn' || target.closest?.('#soundToggleBtn')) return;
+      playSoundCue(target.tagName === 'A' ? 'nav' : 'click');
+    });
 
     updateSoundToggleUI();
 
@@ -1268,7 +1278,7 @@
         }`;
 
         card.innerHTML = `
-          <div class="relative w-24 sm:w-28 h-14 sm:h-16 rounded-xl overflow-hidden bg-surface-950 flex-shrink-0 border border-zinc-800/80 shadow-md">
+          <div class="relative w-24 sm:w-28 h-16 sm:h-[68px] rounded-xl overflow-hidden bg-surface-950 flex-shrink-0 border border-zinc-800/80 shadow-md">
             ${thumbUrl ? `<img src="${escapeHtml(thumbUrl)}" alt="Episode ${i}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="eager" onerror="if(this.src!=='${escapeHtml(fallbackCover)}'){this.src='${escapeHtml(fallbackCover)}';}">` : `<div class="w-full h-full bg-surface-900 flex items-center justify-center text-zinc-600"><i class="fa-solid fa-play text-xs"></i></div>`}
             <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
             <span class="absolute bottom-1 left-1.5 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow ${
@@ -1278,7 +1288,7 @@
           </div>
           <div class="flex-1 min-w-0 pr-1">
             <h4 class="text-xs sm:text-sm font-heading font-bold truncate ${isCurrent ? 'text-brand-400' : 'text-zinc-200 group-hover:text-white transition'}">${escapeHtml(titleText)}</h4>
-            <p class="text-[10px] sm:text-[11px] text-zinc-400 line-clamp-1 mt-0.5">${escapeHtml(summaryText)}</p>
+            <p class="text-[11px] sm:text-xs text-zinc-400 line-clamp-2 leading-snug mt-1">${escapeHtml(summaryText)}</p>
           </div>
           <div class="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 ${isCurrent ? 'bg-brand-500 text-black shadow-md shadow-brand-500/20' : 'text-zinc-500 group-hover:text-brand-400 transition'}">
             <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
