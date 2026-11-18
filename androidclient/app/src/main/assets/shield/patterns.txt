@@ -30,6 +30,8 @@
 /plugins/prebidjs/
 /plugins/ultimate-popunder/
 /popunder/in/click/
+/popunder.js
+/popunder.min.js
 /popunder1.js
 /popunder1000.js
 /popupads.js
