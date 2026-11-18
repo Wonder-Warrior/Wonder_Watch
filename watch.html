@@ -209,8 +209,8 @@
           <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
             <!-- Server Selector -->
             <select id="sourceSelect" onchange="changeSource()" class="bg-surface-800 border border-zinc-700/80 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500">
-              <option value="zoko_mal">Server 1 (Primary - MAL)</option>
-              <option value="animeembed">Server 2 (AnimeEmbed)</option>
+              <option value="animeembed">Server 1 (Primary - AnimeEmbed)</option>
+              <option value="zoko_mal">Server 2 (Backup - Zoko)</option>
             </select>
 
             <!-- Sub / Dub Selector -->
@@ -278,7 +278,34 @@
 
   </main>
 
-  <!-- Auth Modal (Log In / Sign Up) -->
+  <!-- uBlock Origin Lite Recommendation Modal (for fallback servers like Zoko) -->
+  <div id="uBlockModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] hidden items-center justify-center p-4">
+    <div class="relative w-full max-w-md bg-surface-900 border border-brand-500/40 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-4 text-center">
+      <button type="button" onclick="dismissUBlockModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-surface-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition" title="Dismiss">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="w-12 h-12 rounded-2xl bg-brand-500/15 border border-brand-500/30 text-brand-400 flex items-center justify-center mx-auto text-xl shadow-lg shadow-brand-500/10">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+
+      <div class="space-y-1.5">
+        <h3 class="text-lg sm:text-xl font-heading font-black text-white">Recommended for Backup Servers</h3>
+        <p class="text-xs text-zinc-300 leading-relaxed">
+          You switched to a backup stream server. Third-party video hosts may attempt ad redirects or popups. Install <span class="text-brand-400 font-semibold">uBlock Origin Lite</span> for a fast, clean, zero-redirect experience.
+        </p>
+      </div>
+
+      <div class="pt-2 flex flex-col sm:flex-row items-center gap-2.5">
+        <a href="https://chromewebstore.google.com/detail/ublock-origin-lite/ddkjiahejlhfcafbddmgiahcphecmpfh?hl=en" target="_blank" rel="noopener noreferrer" onclick="dismissUBlockModal()" class="w-full sm:flex-1 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2">
+          <i class="fa-brands fa-chrome text-sm"></i> Get uBlock Origin Lite
+        </a>
+        <button type="button" onclick="dismissUBlockModal()" class="w-full sm:w-auto bg-surface-800 hover:bg-surface-750 text-zinc-300 hover:text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition border border-zinc-700/60">
+          Got It
+        </button>
+      </div>
+    </div>
+  </div>
   <div id="authModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-[60] hidden items-center justify-center p-4 overflow-y-auto">
     <div class="relative w-full max-w-md bg-surface-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 my-auto">
       <button type="button" onclick="closeAuthModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-surface-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition">
@@ -951,7 +978,7 @@
     
     let currentEpisode = parseInt(urlParams.get('ep')) || 1;
     let currentType = 'sub';
-    let currentServer = 'zoko_mal';
+    let currentServer = 'animeembed';
     let savedResumeTime = parseInt(urlParams.get('time')) || 0;
 
     let animeMetadata = null;
@@ -989,67 +1016,53 @@
     }
 
     // ============================================================
-    //  BLOB-WRAPPED PLAYER ISOLATION ENGINE
+    //  UBLOCK ORIGIN LITE MODAL CONTROLLER
     // ============================================================
-    let currentBlobUrl = null;
+    const UBLOCK_DISMISSED_KEY = 'uBlockPromptDismissed';
 
-    function buildPlayerBlobHtml(targetEmbedUrl) {
-      return `<!DOCTYPE html>
-<html lang="en" style="width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#000;">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background: #000; }
-    iframe { width: 100%; height: 100%; border: 0; display: block; }
-  </style>
-</head>
-<body>
-  <iframe 
-    src="${targetEmbedUrl.replace(/"/g, '&quot;')}" 
-    allow="autoplay; encrypted-media; fullscreen"
-    allowfullscreen
-    scrolling="no">
-  </iframe>
-  <script>
-    // Relay postMessage events up to WonderWatch parent window
-    window.addEventListener('message', function(e) {
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage(e.data, '*');
+    function checkUBlockPrompt() {
+      const modal = document.getElementById('uBlockModal');
+      if (!modal) return;
+      // ONLY show when on a backup server (e.g. zoko_mal) and not previously dismissed
+      if (currentServer !== 'animeembed' && !localStorage.getItem(UBLOCK_DISMISSED_KEY)) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
       }
-    });
-  <\/script>
-</body>
-</html>`;
+    }
+
+    function dismissUBlockModal() {
+      localStorage.setItem(UBLOCK_DISMISSED_KEY, 'true');
+      const modal = document.getElementById('uBlockModal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
     }
 
     function loadPlayer() {
       document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()}`;
       
       let src = '';
-      if (currentServer === 'zoko_mal') {
-        document.getElementById('activeSourceBadge').innerText = 'Server 1 (Primary)';
+      if (currentServer === 'animeembed') {
+        document.getElementById('activeSourceBadge').innerText = 'Server 1 (Primary - AnimeEmbed)';
+        src = `https://aniembed.se/embed/mal/${malId}/${currentEpisode}?track=${currentType}`;
+      } else if (currentServer === 'zoko_mal') {
+        document.getElementById('activeSourceBadge').innerText = 'Server 2 (Backup - Zoko)';
         src = `https://zokoanime.video/stream/mal/${malId}/${currentEpisode}/${currentType}?color=3BFF53&autoplay=1`;
-      } else if (currentServer === 'animeembed') {
-        document.getElementById('activeSourceBadge').innerText = 'Server 2 (AnimeEmbed)';
-        src = `https://animeembed.com/embed/mal/${malId}/${currentEpisode}?track=${currentType}&autoPlay=1`;
       }
 
       if (savedResumeTime > 0) {
         src += `&time=${savedResumeTime}`;
       }
 
-      // Revoke prior blob URL to avoid memory leakage
-      if (currentBlobUrl) {
-        URL.revokeObjectURL(currentBlobUrl);
-        currentBlobUrl = null;
-      }
+      // Check uBlock recommendation prompt state based on active server
+      checkUBlockPrompt();
 
-      // Generate Blob HTML wrapper without sandbox attributes to pass Zokoplayer environment checks
-      const wrapperHtml = buildPlayerBlobHtml(src);
-      const blob = new Blob([wrapperHtml], { type: 'text/html' });
-      currentBlobUrl = URL.createObjectURL(blob);
-
-      playerFrame.src = currentBlobUrl;
+      // Clean direct mount to the player iframe without complex Blob wrappers
+      playerFrame.src = src;
     }
 
     function changeSource() {
