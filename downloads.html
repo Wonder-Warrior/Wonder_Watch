@@ -144,42 +144,44 @@
             <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black text-2xl shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
               <i class="fa-solid fa-desktop"></i>
             </div>
-            <span class="text-[10px] uppercase font-black px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30">v2.4.0 • Latest</span>
+            <span class="text-[10px] uppercase font-black px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30">v2.4.0 • Built-in uBlock</span>
           </div>
 
           <div class="space-y-1.5">
             <h2 class="text-xl sm:text-2xl font-heading font-black text-white">Desktop Client</h2>
             <p class="text-xs text-zinc-400 leading-relaxed">
-              Native desktop experience for Windows, macOS, and Linux. Built-in ad shielding, keyboard shortcut control, picture-in-picture mode, and Discord rich presence.
+              Dedicated Windows desktop app powered by Microsoft Edge WebView2 with <strong class="text-brand-400 font-semibold">uBlock Origin pre-installed and activated on first boot</strong>. Zero browser setup required.
             </p>
           </div>
 
           <!-- Feature badges -->
           <div class="space-y-2 pt-2">
             <div class="flex items-center gap-2 text-xs text-zinc-300">
-              <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
-              <span>Hardware-accelerated 1080p 60fps video engine</span>
+              <i class="fa-solid fa-shield-halved text-brand-400 text-[11px]"></i>
+              <span>uBlock Origin bundled &amp; auto-enabled on first launch</span>
             </div>
             <div class="flex items-center gap-2 text-xs text-zinc-300">
               <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
-              <span>Discord Rich Presence & auto-sync across sessions</span>
+              <span>Smart popup blocker &amp; dark native immersion (Win 10/11)</span>
             </div>
             <div class="flex items-center gap-2 text-xs text-zinc-300">
               <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
-              <span>Multi-platform executable (Windows x64 installer & portable)</span>
+              <span>F11 fullscreen, Ctrl+Shift+U uBlock dashboard &amp; portable ZIP (~13.6 MB)</span>
             </div>
           </div>
         </div>
 
         <div class="space-y-3 pt-4 border-t border-zinc-800/80">
-          <button onclick="handleDownload('desktop', 'windows')" class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 group-hover:shadow-brand-500/40">
+          <a href="./desktopclient/WonderWatch-Desktop-win-x64.zip" download="WonderWatch-Desktop-win-x64.zip" onclick="handleDownload('desktop', 'windows')" class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 group-hover:shadow-brand-500/40">
             <i class="fa-brands fa-windows text-base"></i>
             <span>Download for Windows (x64)</span>
-          </button>
+          </a>
           <div class="flex items-center justify-center gap-4 text-[11px] text-zinc-500">
-            <button onclick="handleDownload('desktop', 'mac')" class="hover:text-brand-400 transition flex items-center gap-1"><i class="fa-brands fa-apple"></i> macOS (DMG)</button>
+            <button onclick="handleDownload('desktop', 'mac')" class="hover:text-brand-400 transition flex items-center gap-1"><i class="fa-brands fa-apple"></i> macOS (Soon)</button>
             <span>•</span>
-            <button onclick="handleDownload('desktop', 'linux')" class="hover:text-brand-400 transition flex items-center gap-1"><i class="fa-brands fa-linux"></i> Linux (AppImage)</button>
+            <button onclick="handleDownload('desktop', 'linux')" class="hover:text-brand-400 transition flex items-center gap-1"><i class="fa-brands fa-linux"></i> Linux (Soon)</button>
+            <span>•</span>
+            <a href="./desktopclient/README.md" target="_blank" rel="noopener" class="hover:text-brand-400 transition flex items-center gap-1"><i class="fa-solid fa-book"></i> Source &amp; Docs</a>
           </div>
         </div>
       </div>
@@ -374,9 +376,11 @@
     function handleDownload(platform, flavor) {
       playSoundCue('download');
       if (platform === 'android') {
-        showToast('<i class="fa-brands fa-android text-brand-400"></i> Starting WonderWatch Android APK download...');
+        showToast('<i class="fa-brands fa-android text-brand-400"></i> Android APK package is coming soon!');
+      } else if (flavor === 'windows') {
+        showToast('<i class="fa-solid fa-shield-halved text-brand-400"></i> Downloading WonderWatch Desktop (uBlock Origin built-in)...');
       } else {
-        showToast(`<i class="fa-solid fa-download text-brand-400"></i> Starting WonderWatch Desktop (${flavor.toUpperCase()}) download...`);
+        showToast(`<i class="fa-solid fa-clock text-brand-400"></i> ${flavor.toUpperCase()} desktop build coming soon — Windows x64 is ready now!`);
       }
     }
   </script>

@@ -1379,6 +1379,8 @@
     }
 
     function checkUBlockPrompt() {
+      // Do not display inside the official Desktop Client (uBlock Origin is built-in & auto-activated)
+      if (window.__WONDERWATCH_DESKTOP__) return;
       // Do not display to mobile users (browser extensions are largely desktop-only)
       if (isMobileDevice()) return;
 
