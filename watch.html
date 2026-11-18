@@ -1025,7 +1025,8 @@
       const modal = document.getElementById('uBlockModal');
       if (!modal) return;
       // Show for backup servers (Zoko, AnimeEmbed.com) but NOT for Aniembed.se
-      if (currentServer !== 'animeembed_se' && !localStorage.getItem(UBLOCK_DISMISSED_KEY)) {
+      // Uses sessionStorage so it resets each browser session but won't nag within the same one
+      if (currentServer !== 'animeembed_se' && !sessionStorage.getItem(UBLOCK_DISMISSED_KEY)) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
       } else {
@@ -1035,7 +1036,7 @@
     }
 
     function dismissUBlockModal() {
-      localStorage.setItem(UBLOCK_DISMISSED_KEY, 'true');
+      sessionStorage.setItem(UBLOCK_DISMISSED_KEY, 'true');
       const modal = document.getElementById('uBlockModal');
       if (modal) {
         modal.classList.add('hidden');
@@ -1049,17 +1050,16 @@
       let src = '';
       if (currentServer === 'animeembed_se') {
         document.getElementById('activeSourceBadge').innerText = 'Server 1 (Aniembed.se)';
-        src = `https://aniembed.se/mal/${malId}/${currentEpisode}?track=${currentType}`;
+        src = `https://aniembed.se/e/${animeId}/${currentEpisode}?lang=${currentType}&autoplay=1`;
+        if (savedResumeTime > 0) src += `&t=${savedResumeTime}`;
       } else if (currentServer === 'animeembed_com') {
         document.getElementById('activeSourceBadge').innerText = 'Server 2 (AnimeEmbed.com)';
-        src = `https://animeembed.com/mal/${malId}/${currentEpisode}?track=${currentType}`;
+        src = `https://animeembed.com/embed/ani/${animeId}/${currentEpisode}?track=${currentType}&autoPlay=1`;
+        if (savedResumeTime > 0) src += `&start=${savedResumeTime}`;
       } else if (currentServer === 'zoko_mal') {
         document.getElementById('activeSourceBadge').innerText = 'Server 3 (Backup - Zoko)';
         src = `https://zokoanime.video/stream/mal/${malId}/${currentEpisode}/${currentType}?color=3BFF53&autoplay=1`;
-      }
-
-      if (savedResumeTime > 0) {
-        src += `&time=${savedResumeTime}`;
+        if (savedResumeTime > 0) src += `&time=${savedResumeTime}`;
       }
 
       // Check uBlock recommendation prompt state based on active server
