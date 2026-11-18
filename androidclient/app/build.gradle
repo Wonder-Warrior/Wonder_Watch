@@ -1,0 +1,41 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.wonderwatch.app'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "com.wonderwatch.app"
+        minSdk 26
+        targetSdk 36
+        versionCode 240
+        versionName "2.4.0"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("wonderwatch-release.jks")
+            storePassword "wonderwatch240"
+            keyAlias "wonderwatch"
+            keyPassword "wonderwatch240"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

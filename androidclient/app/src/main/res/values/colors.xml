@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ww_bg_dark">#050608</color>
+    <color name="ww_surface_800">#171821</color>
+    <color name="ww_brand_lime">#3BFF53</color>
+    <color name="ww_brand_green">#22CC37</color>
+    <color name="ww_brand_light">#9EFFAB</color>
+    <color name="ww_text_primary">#F4F4F5</color>
+    <color name="ww_text_secondary">#A1A1AA</color>
+</resources>

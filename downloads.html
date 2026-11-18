@@ -197,36 +197,36 @@
           <div class="space-y-1.5">
             <h2 class="text-xl sm:text-2xl font-heading font-black text-white">Android Application</h2>
             <p class="text-xs text-zinc-400 leading-relaxed">
-              Optimized for Android smartphones, tablets, and Android TV / Google TV. Gesture brightness & volume controls, background audio playback, and Chromecast support.
+              Dedicated Android app for phones and tablets. Opens straight into your library with integrated ad and popup shielding, smooth startup animation, and fullscreen playback.
             </p>
           </div>
 
           <!-- Feature badges -->
           <div class="space-y-2 pt-2">
             <div class="flex items-center gap-2 text-xs text-zinc-300">
-              <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
-              <span>Touch gesture scrubbing (volume, brightness & seek)</span>
+              <i class="fa-solid fa-shield-halved text-brand-400 text-[11px]"></i>
+              <span>Built-in ad &amp; popup shielding active from launch</span>
             </div>
             <div class="flex items-center gap-2 text-xs text-zinc-300">
               <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
-              <span>Full Chromecast & Android TV compatibility</span>
+              <span>Fast dark loading splash &amp; hardware-accelerated playback</span>
             </div>
             <div class="flex items-center gap-2 text-xs text-zinc-300">
               <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
-              <span>Zero background telemetry, pure playback performance</span>
+              <span>Automatic landscape fullscreen video &amp; account sync</span>
             </div>
           </div>
         </div>
 
         <div class="space-y-3 pt-4 border-t border-zinc-800/80">
-          <button onclick="handleDownload('android', 'apk')" class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 group-hover:shadow-brand-500/40">
+          <a href="./androidclient/WonderWatch-Android.apk" download="WonderWatch-Android.apk" onclick="handleDownload('android', 'apk')" class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 group-hover:shadow-brand-500/40">
             <i class="fa-brands fa-android text-base"></i>
             <span>Download Android Package (.APK)</span>
-          </button>
+          </a>
           <div class="flex items-center justify-center gap-4 text-[11px] text-zinc-500">
             <span>Requires Android 8.0 or newer</span>
             <span>•</span>
-            <span class="text-zinc-400">~24 MB</span>
+            <span class="text-zinc-400">~1.4 MB</span>
           </div>
         </div>
       </div>
@@ -374,7 +374,7 @@
     function handleDownload(platform, flavor) {
       playSoundCue('download');
       if (platform === 'android') {
-        showToast('<i class="fa-brands fa-android text-brand-400"></i> Android APK package is coming soon!');
+        showToast('<i class="fa-brands fa-android text-brand-400"></i> Downloading WonderWatch for Android (.APK)...');
       } else if (flavor === 'windows') {
         showToast('<i class="fa-solid fa-download text-brand-400"></i> Downloading WonderWatch Desktop for Windows...');
       } else {
