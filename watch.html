@@ -258,23 +258,52 @@
               <i class="fa-regular fa-heart text-sm" id="watchFavIcon"></i>
             </button>
 
-            <!-- Stream Selector -->
-            <div class="relative inline-block">
-              <select id="sourceSelect" onchange="changeSource()" class="appearance-none bg-surface-800 hover:bg-surface-750 border border-zinc-700/80 hover:border-brand-500/50 text-xs font-semibold pl-3 pr-8 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500 transition cursor-pointer shadow-sm">
-                <option value="aniembed_se" class="bg-surface-900 text-zinc-100 py-1">Stream 1</option>
-                <option value="zoko_mal" class="bg-surface-900 text-zinc-100 py-1">Stream 2</option>
-                <option value="animeembed" class="bg-surface-900 text-zinc-100 py-1">Stream 3</option>
-              </select>
-              <i class="fa-solid fa-chevron-down text-[10px] text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none transition"></i>
+            <!-- Stream Selector (Custom Dropdown) -->
+            <div class="relative inline-block" id="serverDropdownWrap">
+              <button id="serverDropdownBtn" type="button" onclick="toggleCustomDropdown('serverDropdownMenu', 'serverDropdownChevron', event)" class="bg-surface-800 hover:bg-surface-750 border border-zinc-700/80 hover:border-brand-500/50 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500 transition cursor-pointer shadow-sm flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-server text-[10px] text-brand-400"></i>
+                <span id="serverDropdownLabel">Stream 1</span>
+                <i id="serverDropdownChevron" class="fa-solid fa-chevron-down text-[10px] text-zinc-400 transition-transform duration-200"></i>
+              </button>
+              <div id="serverDropdownMenu" class="hidden absolute right-0 sm:left-0 mt-2 w-40 bg-surface-900/95 backdrop-blur-xl border border-zinc-700/80 rounded-2xl shadow-2xl p-1.5 z-50 space-y-0.5">
+                <button type="button" onclick="selectStreamSource('aniembed_se', 'Stream 1')" data-server="aniembed_se" class="ww-dd-opt w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition bg-brand-500/15 text-brand-400">
+                  <span>Stream 1</span>
+                  <i class="fa-solid fa-check text-[10px]"></i>
+                </button>
+                <button type="button" onclick="selectStreamSource('zoko_mal', 'Stream 2')" data-server="zoko_mal" class="ww-dd-opt w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition text-zinc-300 hover:bg-surface-800 hover:text-white">
+                  <span>Stream 2</span>
+                  <i class="fa-solid fa-check text-[10px] opacity-0"></i>
+                </button>
+                <button type="button" onclick="selectStreamSource('animeembed', 'Stream 3')" data-server="animeembed" class="ww-dd-opt w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition text-zinc-300 hover:bg-surface-800 hover:text-white">
+                  <span>Stream 3</span>
+                  <i class="fa-solid fa-check text-[10px] opacity-0"></i>
+                </button>
+              </div>
             </div>
 
-            <!-- Sub / Dub Selector -->
-            <div class="relative inline-block">
-              <select id="streamTypeSelect" onchange="changeStreamType()" class="appearance-none bg-surface-800 hover:bg-surface-750 border border-zinc-700/80 hover:border-brand-500/50 text-xs font-semibold pl-3 pr-8 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500 transition cursor-pointer shadow-sm">
-                <option value="sub" class="bg-surface-900 text-zinc-100 py-1">Subtitled</option>
-                <option value="dub" class="bg-surface-900 text-zinc-100 py-1">Dubbed</option>
-              </select>
-              <i class="fa-solid fa-chevron-down text-[10px] text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none transition"></i>
+            <!-- Sub / Dub Control (Static pill when single option, Custom Dropdown when both exist) -->
+            <div class="relative inline-block" id="audioDropdownWrap">
+              <div id="audioStaticBadge" class="bg-surface-800/90 border border-zinc-700/60 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 inline-flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fa-solid fa-closed-captioning text-[11px] text-brand-400"></i>
+                <span id="audioStaticLabel">Subtitled</span>
+              </div>
+              <div id="audioDropdownContainer" class="hidden relative">
+                <button id="audioDropdownBtn" type="button" onclick="toggleCustomDropdown('audioDropdownMenu', 'audioDropdownChevron', event)" class="bg-surface-800 hover:bg-surface-750 border border-zinc-700/80 hover:border-brand-500/50 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500 transition cursor-pointer shadow-sm flex items-center gap-2 whitespace-nowrap">
+                  <i class="fa-solid fa-closed-captioning text-[11px] text-brand-400"></i>
+                  <span id="audioDropdownLabel">Subtitled</span>
+                  <i id="audioDropdownChevron" class="fa-solid fa-chevron-down text-[10px] text-zinc-400 transition-transform duration-200"></i>
+                </button>
+                <div id="audioDropdownMenu" class="hidden absolute right-0 sm:left-0 mt-2 w-36 bg-surface-900/95 backdrop-blur-xl border border-zinc-700/80 rounded-2xl shadow-2xl p-1.5 z-50 space-y-0.5">
+                  <button type="button" onclick="selectStreamType('sub', 'Subtitled')" data-audio="sub" class="ww-dd-audio w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition bg-brand-500/15 text-brand-400">
+                    <span>Subtitled</span>
+                    <i class="fa-solid fa-check text-[10px]"></i>
+                  </button>
+                  <button type="button" onclick="selectStreamType('dub', 'Dubbed')" data-audio="dub" class="ww-dd-audio w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition text-zinc-300 hover:bg-surface-800 hover:text-white">
+                    <span>Dubbed</span>
+                    <i class="fa-solid fa-check text-[10px] opacity-0"></i>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- Next Episode Button -->
@@ -1455,27 +1484,141 @@
         src = `https://zokoanime.video/stream/mal/${malId}/${currentEpisode}/${currentType}?color=3BFF53&autoplay=1`;
         if (savedResumeTime > 0) src += `&time=${savedResumeTime}`;
       } else if (currentServer === 'animeembed') {
-        src = `https://animeembed.com/embed/ani/${animeId}/${currentEpisode}?audio=${currentType}&accent=3BFF53&autoplay=1`;
-        if (savedResumeTime > 0) src += `&t=${savedResumeTime}`;
+        src = `https://animeembed.com/embed/ani/${animeId}/${currentEpisode}?track=${currentType}&accent=3BFF53&autoplay=1`;
       }
 
-      // Check uBlock recommendation prompt state based on active server
+      // Check ad blocker recommendation state for web browsers
       checkUBlockPrompt();
 
-      // Clean direct mount to the player iframe without complex Blob wrappers
-      playerFrame.src = src;
+      // Replace iframe cleanly to prevent mobile WebView session history clutter when switching streams
+      const activeFrame = document.getElementById('playerFrame');
+      if (activeFrame && activeFrame.parentNode) {
+        const freshFrame = activeFrame.cloneNode(false);
+        freshFrame.addEventListener('load', hidePlayerSkeleton);
+        freshFrame.src = src;
+        activeFrame.parentNode.replaceChild(freshFrame, activeFrame);
+      }
     }
 
-    function changeSource() {
+    function closeAllCustomDropdowns() {
+      ['serverDropdownMenu', 'audioDropdownMenu'].forEach(id => {
+        document.getElementById(id)?.classList.add('hidden');
+      });
+      ['serverDropdownChevron', 'audioDropdownChevron'].forEach(id => {
+        document.getElementById(id)?.classList.remove('rotate-180');
+      });
+    }
+
+    function toggleCustomDropdown(menuId, chevronId, event) {
+      if (event) event.stopPropagation();
       playSoundCue('click');
-      currentServer = document.getElementById('sourceSelect').value;
+      const menu = document.getElementById(menuId);
+      const chevron = document.getElementById(chevronId);
+      if (!menu) return;
+      const willOpen = menu.classList.contains('hidden');
+      closeAllCustomDropdowns();
+      if (willOpen) {
+        menu.classList.remove('hidden');
+        if (chevron) chevron.classList.add('rotate-180');
+      }
+    }
+
+    document.addEventListener('click', closeAllCustomDropdowns);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAllCustomDropdowns();
+    });
+
+    function selectStreamSource(value, label) {
+      playSoundCue('click');
+      currentServer = value;
+      const lblEl = document.getElementById('serverDropdownLabel');
+      if (lblEl) lblEl.innerText = label;
+
+      document.querySelectorAll('.ww-dd-opt').forEach(btn => {
+        const active = btn.dataset.server === value;
+        btn.className = `ww-dd-opt w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition ${
+          active ? 'bg-brand-500/15 text-brand-400' : 'text-zinc-300 hover:bg-surface-800 hover:text-white'
+        }`;
+        const icon = btn.querySelector('i');
+        if (icon) icon.classList.toggle('opacity-0', !active);
+      });
+
+      closeAllCustomDropdowns();
       loadPlayer();
     }
 
-    function changeStreamType() {
+    function selectStreamType(value, label) {
       playSoundCue('click');
-      currentType = document.getElementById('streamTypeSelect').value;
+      currentType = value;
+      const lblEl = document.getElementById('audioDropdownLabel');
+      if (lblEl) lblEl.innerText = label;
+      const staticLbl = document.getElementById('audioStaticLabel');
+      if (staticLbl) staticLbl.innerText = label;
+
+      document.querySelectorAll('.ww-dd-audio').forEach(btn => {
+        const active = btn.dataset.audio === value;
+        btn.className = `ww-dd-audio w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition ${
+          active ? 'bg-brand-500/15 text-brand-400' : 'text-zinc-300 hover:bg-surface-800 hover:text-white'
+        }`;
+        const icon = btn.querySelector('i');
+        if (icon) icon.classList.toggle('opacity-0', !active);
+      });
+
+      closeAllCustomDropdowns();
       loadPlayer();
+    }
+
+    function updateAudioTrackAvailability(hasSub, hasDub) {
+      const staticBadge = document.getElementById('audioStaticBadge');
+      const staticLabel = document.getElementById('audioStaticLabel');
+      const dropdownWrap = document.getElementById('audioDropdownContainer');
+      if (!staticBadge || !dropdownWrap) return;
+
+      if (hasSub && hasDub) {
+        staticBadge.classList.add('hidden');
+        dropdownWrap.classList.remove('hidden');
+      } else {
+        dropdownWrap.classList.add('hidden');
+        staticBadge.classList.remove('hidden');
+        const onlyType = (!hasSub && hasDub) ? 'dub' : 'sub';
+        const onlyLabel = onlyType === 'dub' ? 'Dubbed' : 'Subtitled';
+        if (staticLabel) staticLabel.innerText = onlyLabel;
+        if (currentType !== onlyType) {
+          currentType = onlyType;
+          loadPlayer();
+        }
+      }
+    }
+
+    async function detectAudioTrackAvailability(resolvedMalId) {
+      if (!resolvedMalId) return;
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 3500);
+        const res = await fetch(`https://api.jikan.moe/v4/anime/${resolvedMalId}/characters`, { signal: controller.signal });
+        clearTimeout(timer);
+        if (!res.ok) return;
+        const json = await res.json();
+        const chars = json?.data || [];
+        if (!chars.length) return;
+
+        let hasSub = false;
+        let hasDub = false;
+        for (const entry of chars) {
+          const vas = entry?.voice_actors || [];
+          for (const va of vas) {
+            const lang = (va?.language || '').toLowerCase();
+            if (lang === 'japanese') hasSub = true;
+            if (lang === 'english') hasDub = true;
+          }
+          if (hasSub && hasDub) break;
+        }
+        // Default to sub if neither tag was explicitly tagged
+        if (!hasSub && !hasDub) hasSub = true;
+        updateAudioTrackAvailability(hasSub, hasDub);
+      } catch (_) {
+        // Keep single static pill on network timeout
+      }
     }
 
     function handleNextEpisode() {
@@ -1735,6 +1878,7 @@
 
           // Fetch rich episode data (titles, one-liners, and fallback episode count) from Jikan/MAL
           fetchEpisodeDetails(media.idMal || malId);
+          detectAudioTrackAvailability(media.idMal || malId);
 
           autoSaveProgress(savedResumeTime);
         } else {
@@ -1754,6 +1898,7 @@
         document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
         renderEpisodes();
         fetchEpisodeDetails(malId);
+        detectAudioTrackAvailability(malId);
       }
     }
 
