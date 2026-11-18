@@ -3,7 +3,7 @@
 <head>
   <link rel="icon" type="image/x-icon" href="./favicon.ico">
   <link rel="icon" type="image/png" sizes="128x128" href="./favicon.png">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='100%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%233BFF53'/%3E%3Cstop offset='100%25' stop-color='%239effab'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='28' fill='url(%23g)'/%3E%3Cpolygon points='38,28 76,50 38,72' fill='%23000000'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='100%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%2322cc37'/%3E%3Cstop offset='55%25' stop-color='%233BFF53'/%3E%3Cstop offset='100%25' stop-color='%239effab'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='2' y='2' width='96' height='96' rx='26' fill='url(%23g)'/%3E%3Cpath d='M38 30 L72 50 L38 70 Z' fill='%23080a0c' stroke='%23080a0c' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="apple-touch-icon" href="./favicon.png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -106,6 +106,22 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+    .ww-skeleton {
+      position: relative;
+      overflow: hidden;
+      background: #14151c;
+    }
+    .ww-skeleton::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.055), transparent);
+      animation: ww-shimmer 1.4s infinite;
+    }
+    @keyframes ww-shimmer {
+      100% { transform: translateX(100%); }
+    }
   </style>
 </head>
 <body class="bg-surface-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-black">
@@ -180,6 +196,12 @@
         
         <!-- Player Viewport -->
         <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
+          <div id="playerSkeleton" class="absolute inset-0 z-10 ww-skeleton flex flex-col items-center justify-center gap-3 pointer-events-none transition-opacity duration-300">
+            <div class="w-14 h-14 rounded-2xl bg-brand-500/15 border border-brand-500/30 flex items-center justify-center text-brand-400">
+              <i class="fa-solid fa-play text-xl ml-0.5 animate-pulse"></i>
+            </div>
+            <span class="text-xs font-semibold text-zinc-400 tracking-wide">Loading player...</span>
+          </div>
           <iframe 
             id="playerFrame" 
             src="" 
@@ -229,13 +251,22 @@
 
         <!-- Series Overview & Metadata -->
         <div class="bg-surface-900 border border-zinc-800/80 p-5 rounded-2xl space-y-3">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2">
             <h3 class="text-sm font-heading font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
               <i class="fa-solid fa-circle-info text-brand-400"></i> Overview
             </h3>
-            <div id="genresList" class="flex flex-wrap gap-1.5"></div>
+            <div id="genresList" class="flex flex-wrap gap-1.5">
+              <span class="w-14 h-5 rounded-md ww-skeleton"></span>
+              <span class="w-16 h-5 rounded-md ww-skeleton"></span>
+              <span class="w-14 h-5 rounded-md ww-skeleton"></span>
+            </div>
           </div>
-          <p id="animeDescription" class="text-xs sm:text-sm text-zinc-400 leading-relaxed font-normal">Loading anime overview...</p>
+          <div id="animeDescriptionSkeleton" class="space-y-2">
+            <div class="h-3.5 w-full rounded ww-skeleton"></div>
+            <div class="h-3.5 w-11/12 rounded ww-skeleton"></div>
+            <div class="h-3.5 w-3/4 rounded ww-skeleton"></div>
+          </div>
+          <p id="animeDescription" class="hidden text-xs sm:text-sm text-zinc-400 leading-relaxed font-normal"></p>
         </div>
       </div>
 
@@ -248,7 +279,9 @@
             <h2 class="font-heading font-bold text-xs tracking-wider text-zinc-300 uppercase flex items-center gap-2">
               <i class="fa-solid fa-list-ol text-brand-400"></i> Episodes
             </h2>
-            <span id="totalEpCount" class="text-xs font-semibold text-zinc-400">Total: 12</span>
+            <span id="totalEpCount" class="text-xs font-semibold text-zinc-400">
+              <span class="inline-block w-14 h-3.5 rounded ww-skeleton align-middle"></span>
+            </span>
           </div>
 
           <!-- Episode Cards List with Thumbnail and One-Liner -->
@@ -266,7 +299,7 @@
             <span class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Franchise</span>
           </div>
           <div id="seriesGroupList" class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-            <div class="py-4 text-center text-zinc-500 text-xs animate-pulse">Loading related seasons...</div>
+            <!-- Skeletons rendered on init -->
           </div>
         </div>
 
@@ -1003,14 +1036,69 @@
     const episodeGrid = document.getElementById('episodeGrid');
 
     document.getElementById('animeTitle').innerText = animeTitle;
-    document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
 
     let episodeMetadataMap = {};
+
+    function renderEpisodeSkeletons(count = 8) {
+      episodeGrid.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const skel = document.createElement('div');
+        skel.className = 'w-full p-2 rounded-xl flex items-center gap-3 border border-zinc-800/60 bg-surface-800/40';
+        skel.innerHTML = `
+          <div class="w-20 h-12 rounded-lg ww-skeleton flex-shrink-0"></div>
+          <div class="flex-1 space-y-2 pr-1">
+            <div class="h-3.5 w-3/4 rounded ww-skeleton"></div>
+            <div class="h-2.5 w-full rounded ww-skeleton"></div>
+          </div>
+        `;
+        episodeGrid.appendChild(skel);
+      }
+    }
+
+    function renderFranchiseSkeletons(count = 3) {
+      const container = document.getElementById('seriesGroupList');
+      if (!container) return;
+      container.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const skel = document.createElement('div');
+        skel.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-surface-800/50 border border-zinc-800/60';
+        skel.innerHTML = `
+          <div class="w-8 h-11 rounded-lg ww-skeleton flex-shrink-0"></div>
+          <div class="flex-1 space-y-2">
+            <div class="h-3 w-1/3 rounded ww-skeleton"></div>
+            <div class="h-3.5 w-4/5 rounded ww-skeleton"></div>
+          </div>
+        `;
+        container.appendChild(skel);
+      }
+    }
+
+    function indexStreamingEpisodes(streamingList) {
+      if (!Array.isArray(streamingList)) return;
+      streamingList.forEach((item, idx) => {
+        if (!item) return;
+        let epNum = idx + 1;
+        if (item.title) {
+          const m = item.title.match(/episode\s*(\d+)/i) || item.title.match(/^(\d+)\s*[-.:]/);
+          if (m && parseInt(m[1], 10) > 0) {
+            epNum = parseInt(m[1], 10);
+          }
+        }
+        if (!episodeMetadataMap[epNum]) episodeMetadataMap[epNum] = {};
+        if (item.thumbnail && !episodeMetadataMap[epNum].thumbnail) {
+          episodeMetadataMap[epNum].thumbnail = item.thumbnail;
+        }
+        if (item.title && !episodeMetadataMap[epNum].title) {
+          episodeMetadataMap[epNum].title = item.title;
+        }
+      });
+    }
 
     function renderEpisodes() {
       episodeGrid.innerHTML = '';
       const defaultImg = animeMetadata?.coverImage?.large || animeMetadata?.coverImage?.medium || '';
       const streamingList = animeMetadata?.streamingEpisodes || [];
+      let activeCardEl = null;
 
       for (let i = 1; i <= totalEpisodes; i++) {
         const epData = episodeMetadataMap[i] || {};
@@ -1072,26 +1160,55 @@
           setTimeout(() => { allowInternalNavigation = false; }, 1000);
         };
 
+        if (isCurrent) activeCardEl = card;
         episodeGrid.appendChild(card);
       }
+
+      if (activeCardEl && currentEpisode > 3) {
+        activeCardEl.scrollIntoView({ block: 'nearest' });
+      }
+    }
+
+    async function fetchJikanEpisodePage(malAnimeId, page) {
+      const res = await fetch(`https://api.jikan.moe/v4/anime/${malAnimeId}/episodes?page=${page}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      const eps = json.data || [];
+      eps.forEach(ep => {
+        const num = ep.mal_id;
+        if (num) {
+          episodeMetadataMap[num] = {
+            ...(episodeMetadataMap[num] || {}),
+            title: ep.title || ep.title_romanji || (episodeMetadataMap[num]?.title || ''),
+            synopsis: ep.synopsis ? ep.synopsis.split('\n')[0].trim() : (episodeMetadataMap[num]?.synopsis || '')
+          };
+        }
+      });
+      return json.pagination || null;
     }
 
     async function fetchEpisodeDetails(malAnimeId) {
       if (!malAnimeId) return;
       try {
-        const res = await fetch(`https://api.jikan.moe/v4/anime/${malAnimeId}/episodes`);
-        if (!res.ok) return;
-        const json = await res.json();
-        const eps = json.data || [];
-        eps.forEach(ep => {
-          const num = ep.mal_id;
-          if (num) {
-            episodeMetadataMap[num] = {
-              title: ep.title || ep.title_romanji || '',
-              synopsis: ep.synopsis ? ep.synopsis.split('\n')[0].trim() : ''
-            };
-          }
-        });
+        const currentPage = Math.max(1, Math.ceil(currentEpisode / 100));
+        const pagination = await fetchJikanEpisodePage(malAnimeId, 1);
+        if (currentPage > 1) {
+          await fetchJikanEpisodePage(malAnimeId, currentPage);
+        }
+        // If AniList didn't provide an episode count and Jikan indicates more pages, query MAL anime details
+        if (pagination?.has_next_page && totalEpisodes <= 12) {
+          try {
+            const infoRes = await fetch(`https://api.jikan.moe/v4/anime/${malAnimeId}`);
+            if (infoRes.ok) {
+              const infoJson = await infoRes.json();
+              const jikanEps = infoJson.data?.episodes;
+              if (jikanEps && jikanEps > totalEpisodes) {
+                totalEpisodes = jikanEps;
+                document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
+              }
+            }
+          } catch (_) {}
+        }
         renderEpisodes();
       } catch (e) {
         // Non-critical: renderEpisodes already shows default thumbnails and labels
@@ -1182,8 +1299,25 @@
       }
     }
 
+    let playerSkeletonTimer = null;
+    function hidePlayerSkeleton() {
+      const skel = document.getElementById('playerSkeleton');
+      if (skel) {
+        skel.classList.add('opacity-0');
+        setTimeout(() => skel.classList.add('hidden'), 300);
+      }
+    }
+    playerFrame.addEventListener('load', hidePlayerSkeleton);
+
     function loadPlayer() {
       document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()}`;
+
+      const skel = document.getElementById('playerSkeleton');
+      if (skel) {
+        skel.classList.remove('hidden', 'opacity-0');
+      }
+      clearTimeout(playerSkeletonTimer);
+      playerSkeletonTimer = setTimeout(hidePlayerSkeleton, 3500);
       
       let src = '';
       if (currentServer === 'aniembed_se') {
@@ -1337,7 +1471,9 @@
             idMal
             title { romaji english }
             description(asHtml: false)
+            status
             episodes
+            nextAiringEpisode { episode }
             genres
             averageScore
             format
@@ -1356,6 +1492,7 @@
                   title { romaji english }
                   format
                   episodes
+                  nextAiringEpisode { episode }
                   type
                   coverImage { medium }
                   averageScore
@@ -1379,11 +1516,28 @@
         if (media) {
           animeMetadata = media;
 
-          if (media.episodes && media.episodes > 0) {
-            totalEpisodes = media.episodes;
-            document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
-            renderEpisodes();
+          const realTitle = media.title?.english || media.title?.romaji;
+          if (realTitle && (!urlParams.get('title') || animeTitle === 'Anime Stream')) {
+            animeTitle = realTitle;
+            document.getElementById('animeTitle').innerText = animeTitle;
           }
+
+          // Index AniList streamingEpisodes by episode number so thumbnails/titles align accurately
+          indexStreamingEpisodes(media.streamingEpisodes);
+
+          // Resolve accurate total episode count (handles ongoing/RELEASING series like One Piece where media.episodes is null)
+          const airedFromNext = (media.nextAiringEpisode?.episode && media.nextAiringEpisode.episode > 1)
+            ? media.nextAiringEpisode.episode - 1
+            : 0;
+          const resolvedEpisodes = (media.episodes && media.episodes > 0)
+            ? media.episodes
+            : (airedFromNext > 0 ? airedFromNext : (media.streamingEpisodes?.length || totalEpisodes));
+
+          totalEpisodes = Math.max(resolvedEpisodes, currentEpisode);
+          document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
+
+          // Always render episodes immediately with AniList metadata/thumbnails (don't wait for Jikan or user click)
+          renderEpisodes();
 
           // Only reload the player if the MAL id actually changed
           if (media.idMal && String(media.idMal) !== String(malId)) {
@@ -1391,12 +1545,15 @@
             loadPlayer();
           }
 
+          const descSkel = document.getElementById('animeDescriptionSkeleton');
+          if (descSkel) descSkel.classList.add('hidden');
           const descEl = document.getElementById('animeDescription');
           if (descEl) {
             let cleanDesc = media.description || 'No overview available for this anime.';
             // Clean up basic HTML tags if any returned by API
             cleanDesc = cleanDesc.replace(/<br\s*[\/]?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
             descEl.innerText = cleanDesc || 'No overview available for this anime.';
+            descEl.classList.remove('hidden');
           }
           
           // Real stream quality: Movies or anime from 2000+ are 1080p HD, vintage pre-2000 are 480p SD
@@ -1422,13 +1579,27 @@
           renderSeriesRelations(media.relations?.edges, media);
           updateWatchFavButton();
 
-          // Fetch rich episode data (thumbnails, titles, one-liners) from Jikan/MAL
+          // Fetch rich episode data (titles, one-liners, and fallback episode count) from Jikan/MAL
           fetchEpisodeDetails(media.idMal || malId);
 
           autoSaveProgress(savedResumeTime);
+        } else {
+          document.getElementById('animeDescriptionSkeleton')?.classList.add('hidden');
+          document.getElementById('animeDescription')?.classList.remove('hidden');
+          document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
+          renderEpisodes();
         }
       } catch (err) {
         console.error('Failed to load series franchise data:', err);
+        document.getElementById('animeDescriptionSkeleton')?.classList.add('hidden');
+        const descEl = document.getElementById('animeDescription');
+        if (descEl) {
+          descEl.innerText = 'Overview unavailable right now.';
+          descEl.classList.remove('hidden');
+        }
+        document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
+        renderEpisodes();
+        fetchEpisodeDetails(malId);
       }
     }
 
@@ -1436,7 +1607,19 @@
       const container = document.getElementById('seriesGroupList');
       container.innerHTML = '';
 
-      const validRelations = edges ? edges.filter(edge => edge.node && edge.node.type === 'ANIME') : [];
+      // Only include genuine franchise story relations; exclude CHARACTER/OTHER/CONTAINS which pull in unrelated crossovers (e.g. Dragon Ball Z / Toriko)
+      const FRANCHISE_RELATIONS = new Set(['PREQUEL', 'SEQUEL', 'PARENT', 'SIDE_STORY', 'SPIN_OFF', 'ALTERNATIVE', 'SUMMARY', 'COMPILATION']);
+      const currentTitleLower = (currentMedia.title.english || currentMedia.title.romaji || '').toLowerCase();
+
+      const validRelations = edges ? edges.filter(edge => {
+        if (!edge?.node || edge.node.type !== 'ANIME') return false;
+        if (!FRANCHISE_RELATIONS.has(edge.relationType)) return false;
+        const relTitleLower = ((edge.node.title?.english || '') + ' ' + (edge.node.title?.romaji || '')).toLowerCase();
+        // Guard against crossover specials linking another major franchise (e.g., Dragon Ball Z / Toriko collaboration)
+        if (!currentTitleLower.includes('dragon ball') && relTitleLower.includes('dragon ball')) return false;
+        if (!currentTitleLower.includes('toriko') && relTitleLower.includes('toriko')) return false;
+        return true;
+      }) : [];
 
       if (validRelations.length === 0) {
         container.innerHTML = `<div class="py-4 text-center text-zinc-500 text-xs">Standalone anime (No other seasons or spinoffs).</div>`;
@@ -1444,6 +1627,7 @@
       }
 
       const currentTitle = currentMedia.title.english || currentMedia.title.romaji;
+      const currentEpsDisplay = currentMedia.episodes || (currentMedia.nextAiringEpisode?.episode > 1 ? currentMedia.nextAiringEpisode.episode - 1 : '?');
       const currentCard = document.createElement('div');
       currentCard.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/40 text-left';
       currentCard.innerHTML = `
@@ -1453,7 +1637,7 @@
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1.5">
             <span class="text-[9px] font-black uppercase tracking-wider text-brand-400 bg-brand-500/20 px-1.5 py-0.5 rounded">NOW PLAYING</span>
-            <span class="text-[10px] text-zinc-400 font-medium">${currentMedia.episodes || '?'} eps</span>
+            <span class="text-[10px] text-zinc-400 font-medium">${currentEpsDisplay} eps</span>
           </div>
           <h4 class="text-xs font-heading font-bold text-white truncate mt-0.5">${escapeHtml(currentTitle)}</h4>
         </div>
@@ -1466,6 +1650,7 @@
         const relTitle = node.title.english || node.title.romaji || 'Related Title';
         const relImg = node.coverImage?.medium || '';
         const relYear = node.startDate?.year || '';
+        const relEps = node.episodes || (node.nextAiringEpisode?.episode > 1 ? node.nextAiringEpisode.episode - 1 : '?');
 
         const card = document.createElement('div');
         card.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-surface-800 border border-zinc-700/50 hover:border-brand-500/50 hover:bg-surface-750 cursor-pointer transition text-left group';
@@ -1474,7 +1659,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1.5">
               <span class="text-[9px] font-bold uppercase tracking-wider text-brand-400 bg-brand-500/15 border border-brand-500/25 px-1.5 py-0.5 rounded">${escapeHtml(relType)}</span>
-              <span class="text-[10px] text-zinc-400 font-medium">${escapeHtml(node.format || 'TV')} • ${node.episodes || '?'} eps</span>
+              <span class="text-[10px] text-zinc-400 font-medium">${escapeHtml(node.format || 'TV')} • ${relEps} eps</span>
               ${relYear ? `<span class="text-[10px] text-zinc-500">• ${relYear}</span>` : ''}
             </div>
             <h4 class="text-xs font-heading font-bold text-zinc-200 group-hover:text-brand-400 truncate mt-0.5 transition">${escapeHtml(relTitle)}</h4>
@@ -1484,7 +1669,7 @@
 
         card.onclick = () => {
           allowInternalNavigation = true;
-          window.location.href = `watch.html?id=${node.id}&malId=${node.idMal || node.id}&title=${encodeURIComponent(relTitle)}&eps=${node.episodes || 12}`;
+          window.location.href = `watch.html?id=${node.id}&malId=${node.idMal || node.id}&title=${encodeURIComponent(relTitle)}&eps=${relEps}`;
         };
         container.appendChild(card);
       });
@@ -1493,7 +1678,8 @@
     // ============================================================
     //  INIT
     // ============================================================
-    renderEpisodes();
+    renderEpisodeSkeletons(8);
+    renderFranchiseSkeletons(3);
     loadPlayer();
     loadSeriesData();
   </script>
