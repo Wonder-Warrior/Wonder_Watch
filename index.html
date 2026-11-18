@@ -1395,6 +1395,15 @@
       return '?';
     }
 
+    // Helper: Select the sharpest available image across AniList fields
+    function getBestPosterUrl(anime) {
+      return anime?.coverImage?.extraLarge || anime?.coverImage?.large || anime?.coverImage?.medium || '';
+    }
+
+    function getBestBannerUrl(anime) {
+      return anime?.bannerImage || anime?.coverImage?.extraLarge || anime?.coverImage?.large || '';
+    }
+
     function renderGridSkeletons(containerId, count = 6) {
       const container = document.getElementById(containerId);
       if (!container) return;
@@ -1459,13 +1468,22 @@
       document.getElementById('heroContent')?.classList.remove('hidden');
 
       const title = anime.title.english || anime.title.romaji || 'Spotlight Anime';
-      const imgUrl = anime.bannerImage || anime.coverImage?.extraLarge || anime.coverImage?.large;
+      const imgUrl = getBestBannerUrl(anime);
       const score = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : '8.8';
       const eps = resolveAnimeEpisodes(anime);
       const anilistId = anime.id;
       const malId = anime.idMal || anime.id;
       
-      document.getElementById('heroBannerBg').style.backgroundImage = `url('${imgUrl}')`;
+      const bannerBg = document.getElementById('heroBannerBg');
+      if (bannerBg) {
+        bannerBg.style.backgroundImage = `url('${imgUrl}')`;
+        // Preload next slide's banner for seamless transition
+        const nextIdx = (currentSpotlightIdx + 1) % spotlightList.length;
+        if (spotlightList[nextIdx]) {
+          const nextImg = new Image();
+          nextImg.src = getBestBannerUrl(spotlightList[nextIdx]);
+        }
+      }
       document.getElementById('heroTitle').innerText = title;
       document.getElementById('heroFormat').innerText = anime.format || 'TV';
       document.getElementById('heroEpisodes').innerText = `${eps} Episodes`;
@@ -1645,7 +1663,7 @@
       animeList.forEach(anime => {
         const title = anime.title?.english || anime.title?.romaji || anime.title || 'Unknown Title';
         const safeTitle = escapeHtml(title);
-        const imgUrl = anime.coverImage?.extraLarge || anime.coverImage?.large || '';
+        const imgUrl = getBestPosterUrl(anime);
         const eps = resolveAnimeEpisodes(anime);
         const anilistId = anime.id;
         const malId = anime.idMal || anime.id;
@@ -1663,15 +1681,15 @@
         card.className = 'group relative bg-surface-900 border border-zinc-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/60 hover:shadow-xl hover:shadow-brand-500/10 transition-all duration-300 flex flex-col';
         card.innerHTML = `
           <div class="relative aspect-[3/4.2] overflow-hidden bg-surface-950">
-            <img src="${escapeHtml(imgUrl)}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 group-hover:brightness-110 transition duration-500">
-            <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition"></div>
+            <img src="${escapeHtml(imgUrl)}" alt="${safeTitle}" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 group-hover:brightness-105 transition duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-surface-950/20 to-transparent opacity-85 group-hover:opacity-40 transition duration-300"></div>
             
             <div class="absolute top-2 left-2 flex items-center gap-1">
               <span class="backdrop-blur-md text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${qualityBadgeClass}">${qualityTag}</span>
               <span class="bg-surface-950/85 backdrop-blur-md text-[10px] font-bold px-1.5 py-0.5 rounded-md text-zinc-300 border border-zinc-800">${escapeHtml(format)}</span>
             </div>
 
-            <span class="absolute top-2 right-2 bg-surface-950/90 backdrop-blur-md text-brand-400 text-xs font-black px-2 py-0.5 rounded-md border border-zinc-800 flex items-center gap-1">
+            <span class="absolute top-2 right-2 bg-surface-950/90 backdrop-blur-md text-brand-400 text-xs font-black px-2 py-0.5 rounded-md border border-zinc-800 flex items-center gap-1 shadow-sm">
               <i class="fa-solid fa-star text-[10px]"></i> ${score}
             </span>
 
@@ -1820,7 +1838,7 @@
       animeList.forEach(anime => {
         const title = anime.title.english || anime.title.romaji || 'Unknown';
         const nativeTitle = anime.title.native || '';
-        const imgUrl = anime.coverImage?.large || '';
+        const imgUrl = getBestPosterUrl(anime);
         const eps = resolveAnimeEpisodes(anime);
         const anilistId = anime.id;
         const malId = anime.idMal || anime.id;
@@ -1830,7 +1848,7 @@
         const div = document.createElement('div');
         div.className = 'flex items-center gap-4 p-3.5 hover:bg-surface-800/80 cursor-pointer transition group';
         div.innerHTML = `
-          <img src="${escapeHtml(imgUrl)}" class="w-12 h-16 object-cover rounded-xl bg-surface-950 flex-shrink-0 shadow-md group-hover:scale-105 transition">
+          <img src="${escapeHtml(imgUrl)}" class="w-12 h-16 object-cover rounded-xl bg-surface-950 flex-shrink-0 shadow-md group-hover:scale-105 transition" loading="lazy" decoding="async">
           <div class="flex-1 min-w-0">
             <h4 class="text-sm font-heading font-bold text-zinc-100 group-hover:text-brand-400 transition truncate">${escapeHtml(title)}</h4>
             ${nativeTitle ? `<p class="text-[11px] text-zinc-500 truncate">${escapeHtml(nativeTitle)}</p>` : ''}

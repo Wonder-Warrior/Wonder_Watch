@@ -145,6 +145,12 @@
   <!-- Toast -->
   <div id="toastNotif" class="ww-toast"></div>
 
+  <!-- Background Atmospheric Backdrop -->
+  <div id="watchBackdropBg" class="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-25">
+    <div id="watchBackdropImg" class="w-full h-full bg-cover bg-center filter blur-3xl scale-110 transition-all duration-1000"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-surface-950/70 via-surface-950/90 to-surface-950"></div>
+  </div>
+
   <!-- Header / Navigation -->
   <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full">
@@ -208,7 +214,7 @@
   </header>
 
   <!-- Main Watch Layout -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+  <main class="relative z-10 flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
     
     <!-- Video Player + Stream Controls Row -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -278,11 +284,20 @@
         </div>
 
         <!-- Series Overview & Metadata -->
-        <div class="bg-surface-900 border border-zinc-800/80 p-5 rounded-2xl space-y-3">
-          <div class="flex items-center justify-between gap-2">
-            <h3 class="text-sm font-heading font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
-              <i class="fa-solid fa-circle-info text-brand-400"></i> Overview
-            </h3>
+        <div class="relative bg-surface-900/90 border border-zinc-800/80 p-5 sm:p-6 rounded-3xl space-y-4 overflow-hidden shadow-xl backdrop-blur-xl">
+          <!-- Ambient decorative banner blur behind overview -->
+          <div id="overviewAmbientBanner" class="absolute -top-12 -right-12 w-96 h-48 bg-cover bg-center rounded-full opacity-10 filter blur-2xl pointer-events-none transition-all duration-700"></div>
+
+          <div class="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <img id="animeMiniCover" src="" class="hidden w-11 h-14 object-cover rounded-xl border border-zinc-700/80 shadow-md flex-shrink-0" alt="Anime Poster">
+              <div>
+                <h3 class="text-sm font-heading font-bold uppercase tracking-wider text-zinc-200 flex items-center gap-2">
+                  <i class="fa-solid fa-circle-info text-brand-400"></i> Overview
+                </h3>
+                <span id="animeYearFormat" class="text-[11px] text-zinc-400 font-medium"></span>
+              </div>
+            </div>
             <div id="genresList" class="flex flex-wrap gap-1.5">
               <span class="w-14 h-5 rounded-md ww-skeleton"></span>
               <span class="w-16 h-5 rounded-md ww-skeleton"></span>
@@ -294,7 +309,7 @@
             <div class="h-3.5 w-11/12 rounded ww-skeleton"></div>
             <div class="h-3.5 w-3/4 rounded ww-skeleton"></div>
           </div>
-          <p id="animeDescription" class="hidden text-xs sm:text-sm text-zinc-400 leading-relaxed font-normal"></p>
+          <p id="animeDescription" class="relative z-10 hidden text-xs sm:text-sm text-zinc-300 leading-relaxed font-normal"></p>
         </div>
       </div>
 
@@ -1144,8 +1159,8 @@
 
     function renderEpisodes() {
       episodeGrid.innerHTML = '';
-      const defaultImg = animeMetadata?.bannerImage || animeMetadata?.coverImage?.large || animeMetadata?.coverImage?.medium || '';
-      const fallbackCover = animeMetadata?.coverImage?.large || animeMetadata?.coverImage?.medium || '';
+      const defaultImg = animeMetadata?.bannerImage || animeMetadata?.coverImage?.extraLarge || animeMetadata?.coverImage?.large || animeMetadata?.coverImage?.medium || '';
+      const fallbackCover = animeMetadata?.coverImage?.extraLarge || animeMetadata?.coverImage?.large || animeMetadata?.coverImage?.medium || '';
       const streamingList = animeMetadata?.streamingEpisodes || [];
       let activeCardEl = null;
 
@@ -1188,26 +1203,28 @@
         const isCurrent = i === currentEpisode;
         const card = document.createElement('button');
         card.type = 'button';
-        card.className = `w-full text-left p-2 rounded-xl transition flex items-center gap-3 border ${
+        card.className = `w-full text-left p-2.5 rounded-2xl transition flex items-center gap-3 border group ${
           isCurrent 
-            ? 'bg-brand-500/15 border-brand-500/60 shadow-lg shadow-brand-500/10' 
-            : 'bg-surface-800/80 hover:bg-surface-750 border-zinc-800/80 hover:border-zinc-700'
+            ? 'bg-brand-500/15 border-brand-500/60 shadow-lg shadow-brand-500/10 ring-1 ring-brand-500/30' 
+            : 'bg-surface-850/80 hover:bg-surface-750 border-zinc-800/80 hover:border-zinc-700/90'
         }`;
 
         card.innerHTML = `
-          <div class="relative w-20 h-12 rounded-lg overflow-hidden bg-surface-950 flex-shrink-0 border border-zinc-800/80">
-            ${thumbUrl ? `<img src="${escapeHtml(thumbUrl)}" alt="Episode ${i}" class="w-full h-full object-cover" loading="eager" onerror="if(this.src!=='${escapeHtml(fallbackCover)}'){this.src='${escapeHtml(fallbackCover)}';}">` : `<div class="w-full h-full bg-surface-900 flex items-center justify-center text-zinc-600"><i class="fa-solid fa-play text-xs"></i></div>`}
-            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-            <span class="absolute bottom-1 left-1 text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
-              isCurrent ? 'bg-brand-500 text-black' : 'bg-surface-900/90 text-zinc-200'
+          <div class="relative w-24 sm:w-28 h-14 sm:h-16 rounded-xl overflow-hidden bg-surface-950 flex-shrink-0 border border-zinc-800/80 shadow-md">
+            ${thumbUrl ? `<img src="${escapeHtml(thumbUrl)}" alt="Episode ${i}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="eager" onerror="if(this.src!=='${escapeHtml(fallbackCover)}'){this.src='${escapeHtml(fallbackCover)}';}">` : `<div class="w-full h-full bg-surface-900 flex items-center justify-center text-zinc-600"><i class="fa-solid fa-play text-xs"></i></div>`}
+            <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
+            <span class="absolute bottom-1 left-1.5 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow ${
+              isCurrent ? 'bg-brand-500 text-black' : 'bg-surface-900/90 text-zinc-200 border border-zinc-800'
             }">EP ${i}</span>
-            ${isCurrent ? `<span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>` : ''}
+            ${isCurrent ? `<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-400 animate-pulse shadow-sm shadow-brand-400"></span>` : ''}
           </div>
           <div class="flex-1 min-w-0 pr-1">
-            <h4 class="text-xs font-heading font-bold truncate ${isCurrent ? 'text-brand-400' : 'text-zinc-200'}">${escapeHtml(titleText)}</h4>
-            <p class="text-[10px] text-zinc-400 line-clamp-1 mt-0.5">${escapeHtml(summaryText)}</p>
+            <h4 class="text-xs sm:text-sm font-heading font-bold truncate ${isCurrent ? 'text-brand-400' : 'text-zinc-200 group-hover:text-white transition'}">${escapeHtml(titleText)}</h4>
+            <p class="text-[10px] sm:text-[11px] text-zinc-400 line-clamp-1 mt-0.5">${escapeHtml(summaryText)}</p>
           </div>
-          <i class="fa-solid fa-play text-[10px] ${isCurrent ? 'text-brand-400' : 'text-zinc-600'} pr-1"></i>
+          <div class="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 ${isCurrent ? 'bg-brand-500 text-black shadow-md shadow-brand-500/20' : 'text-zinc-500 group-hover:text-brand-400 transition'}">
+            <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
+          </div>
         `;
 
         card.onclick = () => {
@@ -1589,7 +1606,7 @@
                   episodes
                   nextAiringEpisode { episode }
                   type
-                  coverImage { medium }
+                  coverImage { extraLarge large medium }
                   averageScore
                   startDate { year }
                 }
@@ -1649,6 +1666,30 @@
             cleanDesc = cleanDesc.replace(/<br\s*[\/]?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
             descEl.innerText = cleanDesc || 'No overview available for this anime.';
             descEl.classList.remove('hidden');
+          }
+
+          // Dynamic Atmospheric Backdrop & Overview Ambient Glow
+          const bannerUrl = media.bannerImage || media.coverImage?.extraLarge || media.coverImage?.large || '';
+          const coverUrl = media.coverImage?.extraLarge || media.coverImage?.large || media.coverImage?.medium || '';
+          
+          const backdropImgEl = document.getElementById('watchBackdropImg');
+          if (backdropImgEl && bannerUrl) {
+            backdropImgEl.style.backgroundImage = `url('${bannerUrl}')`;
+          }
+          const ambientBannerEl = document.getElementById('overviewAmbientBanner');
+          if (ambientBannerEl && (bannerUrl || coverUrl)) {
+            ambientBannerEl.style.backgroundImage = `url('${bannerUrl || coverUrl}')`;
+          }
+          const miniCoverEl = document.getElementById('animeMiniCover');
+          if (miniCoverEl && coverUrl) {
+            miniCoverEl.src = coverUrl;
+            miniCoverEl.classList.remove('hidden');
+          }
+          const yearFormatEl = document.getElementById('animeYearFormat');
+          if (yearFormatEl) {
+            const y = media.startDate?.year || '';
+            const f = media.format || 'TV';
+            yearFormatEl.innerText = `${f}${y ? ' • ' + y : ''}`;
           }
           
           // Real stream quality: Movies or anime from 2000+ are 1080p HD, vintage pre-2000 are 480p SD
@@ -1765,7 +1806,7 @@
         const node = edge.node;
         const relType = edge.relationType.replace(/_/g, ' ');
         const relTitle = node.title.english || node.title.romaji || 'Related Title';
-        const relImg = node.coverImage?.medium || '';
+        const relImg = node.coverImage?.large || node.coverImage?.medium || '';
         const relYear = node.startDate?.year || '';
         const relEps = node.episodes || (node.nextAiringEpisode?.episode > 1 ? node.nextAiringEpisode.episode - 1 : '?');
 
