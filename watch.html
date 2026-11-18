@@ -122,6 +122,15 @@
     @keyframes ww-shimmer {
       100% { transform: translateX(100%); }
     }
+    .ww-player-shell {
+      isolation: isolate;
+      transform: translateZ(0);
+      clip-path: inset(0 round 1.5rem);
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
+    }
+    .ww-player-shell iframe {
+      border-radius: 1.5rem;
+    }
   </style>
 </head>
 <body class="bg-surface-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-black">
@@ -139,8 +148,13 @@
         <span class="text-base sm:text-xl font-heading font-black tracking-wider text-white truncate">WONDER<span class="text-brand-400">WATCH</span></span>
       </a>
       
-      <div class="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
-        <a href="index.html" class="w-8 h-8 sm:w-auto p-0 sm:px-4 sm:py-2 text-xs bg-surface-900 border border-zinc-800 hover:border-brand-500/50 rounded-xl text-zinc-300 hover:text-white transition flex items-center justify-center sm:justify-start gap-1.5 font-medium whitespace-nowrap" title="Back to Browse">
+      <div class="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+        <!-- Sound Cues Toggle -->
+        <button id="soundToggleBtn" onclick="toggleSoundCues()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-brand-500/50 text-brand-400 hover:text-brand-300 flex items-center justify-center text-xs transition" title="Toggle Sound Cues">
+          <i id="soundToggleIcon" class="fa-solid fa-volume-high"></i>
+        </button>
+
+        <a href="index.html" onclick="playSoundCue('nav')" class="w-8 h-8 sm:w-auto p-0 sm:px-4 sm:py-2 text-xs bg-surface-900 border border-zinc-800 hover:border-brand-500/50 rounded-xl text-zinc-300 hover:text-white transition flex items-center justify-center sm:justify-start gap-1.5 font-medium whitespace-nowrap" title="Back to Browse">
           <i class="fa-solid fa-arrow-left text-xs"></i> <span class="hidden sm:inline">Back to Browse</span>
         </a>
 
@@ -195,8 +209,8 @@
       <div class="lg:col-span-2 flex flex-col gap-4">
         
         <!-- Player Viewport -->
-        <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
-          <div id="playerSkeleton" class="absolute inset-0 z-10 ww-skeleton flex flex-col items-center justify-center gap-3 pointer-events-none transition-opacity duration-300">
+        <div class="ww-player-shell relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
+          <div id="playerSkeleton" class="absolute inset-0 z-10 ww-skeleton rounded-3xl flex flex-col items-center justify-center gap-3 pointer-events-none transition-opacity duration-300">
             <div class="w-14 h-14 rounded-2xl bg-brand-500/15 border border-brand-500/30 flex items-center justify-center text-brand-400">
               <i class="fa-solid fa-play text-xl ml-0.5 animate-pulse"></i>
             </div>
@@ -205,7 +219,7 @@
           <iframe 
             id="playerFrame" 
             src="" 
-            class="w-full h-full border-0" 
+            class="w-full h-full border-0 rounded-3xl" 
             allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
             allowfullscreen 
             scrolling="no">
@@ -230,10 +244,10 @@
               <i class="fa-regular fa-heart text-sm" id="watchFavIcon"></i>
             </button>
 
-            <!-- Server Selector -->
+            <!-- Stream Selector -->
             <select id="sourceSelect" onchange="changeSource()" class="bg-surface-800 border border-zinc-700/80 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500">
-              <option value="aniembed_se">Server 1</option>
-              <option value="zoko_mal">Server 2</option>
+              <option value="aniembed_se">Stream 1</option>
+              <option value="zoko_mal">Stream 2</option>
             </select>
 
             <!-- Sub / Dub Selector -->
@@ -309,7 +323,7 @@
 
   </main>
 
-  <!-- uBlock Origin Lite Recommendation Modal (for all streaming servers) -->
+  <!-- uBlock Recommendation Modal -->
   <div id="uBlockModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] hidden items-center justify-center p-4">
     <div class="relative w-full max-w-md bg-surface-900 border border-brand-500/40 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-4 text-center">
       <button type="button" onclick="dismissUBlockModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-surface-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition" title="Dismiss">
@@ -323,7 +337,7 @@
       <div class="space-y-1.5">
         <h3 class="text-lg sm:text-xl font-heading font-black text-white">Ad Blocker Recommended</h3>
         <p class="text-xs text-zinc-300 leading-relaxed">
-          Third-party video servers may attempt ad redirects or popups during playback. Install <span class="text-brand-400 font-semibold">uBlock Origin Lite</span> for a clean, zero-redirect experience across all servers.
+          Enable <span class="text-brand-400 font-semibold">uBlock Origin</span> in your browser for a cleaner, uninterrupted viewing experience without popups or redirects.
         </p>
       </div>
 
@@ -435,141 +449,108 @@
     const db = firebase.firestore();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
 
-    // ============================================================
-    //  REDIRECT LOCKDOWN (blocks ad popups, but lets Google sign-in open its popup)
-    // ============================================================
-    let allowInternalNavigation = false;
-    const nativeWindowOpen = window.open.bind(window);
-
-    // Hosts that are allowed to open in a popup (needed for Google / Firebase login)
-    function isAuthPopupUrl(url) {
-      if (!url) return false;
-      try {
-        const host = new URL(url, location.href).hostname;
-        return host.endsWith('firebaseapp.com') || host.endsWith('accounts.google.com') || host.endsWith('google.com');
-      } catch (e) { return false; }
-    }
-
-    // Flag legitimate parent UI clicks
+    // Close user dropdown when clicking outside
     document.addEventListener('click', (e) => {
-      const target = e.target.closest('a, button, select');
-      if (target) {
-        allowInternalNavigation = true;
-        setTimeout(() => { allowInternalNavigation = false; }, 2000);
-      }
       const userSection = document.getElementById('authUserSection');
       const dropdown = document.getElementById('userDropdownMenu');
       if (userSection && !userSection.contains(e.target) && dropdown) {
         dropdown.classList.add('hidden');
       }
-    }, true);
+    });
 
-    // Detect click-hijacking overlays inserted by rogue ad scripts on the parent page
-    // (e.g. fixed full-screen transparent divs or dummy links with high z-index)
-    function cleanClickHijackOverlays() {
+    // ============================================================
+    //  UI SOUND CUES ENGINE (Web Audio API)
+    // ============================================================
+    const SOUND_KEY = 'wonderwatch_sound';
+    let soundEnabled = localStorage.getItem(SOUND_KEY) !== 'off';
+    let audioCtx = null;
+
+    function getAudioCtx() {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) audioCtx = new Ctx();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+
+    function playSoundCue(type = 'click') {
+      if (!soundEnabled) return;
       try {
-        const suspiciousElements = document.querySelectorAll('body > a[target="_blank"], body > div[style*="z-index"]');
-        suspiciousElements.forEach(el => {
-          // Never touch our genuine UI elements
-          if (el.id === 'authModal' || el.id === 'uBlockModal' || el.id === 'toastNotif' || el.tagName === 'HEADER' || el.tagName === 'MAIN') return;
-          const style = window.getComputedStyle(el);
-          const zIndex = parseInt(style.zIndex, 10);
-          const isFixedOrAbsolute = style.position === 'fixed' || style.position === 'absolute';
-          const isTransparent = style.opacity === '0' || style.backgroundColor === 'rgba(0, 0, 0, 0)' || style.backgroundColor === 'transparent';
-          
-          if (isFixedOrAbsolute && zIndex >= 50 && (isTransparent || el.offsetWidth >= window.innerWidth * 0.75)) {
-            console.warn('🛡️ WonderWatch removed invisible click-hijack overlay:', el);
-            el.remove();
-          }
-        });
-      } catch (e) {}
-    }
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
 
-    // Run overlay cleaner on interval and observer
-    setInterval(cleanClickHijackOverlays, 1000);
-    const bodyObserver = new MutationObserver(() => cleanClickHijackOverlays());
-    if (document.body) {
-      bodyObserver.observe(document.body, { childList: true });
-    } else {
-      document.addEventListener('DOMContentLoaded', () => {
-        bodyObserver.observe(document.body, { childList: true });
-      });
-    }
-
-    // Intercept synthetic click dispatches on elements opening outside
-    document.addEventListener('click', (e) => {
-      const anchor = e.target.closest('a');
-      if (anchor && anchor.href && !isAuthPopupUrl(anchor.href)) {
-        if (!anchor.closest('header') && !anchor.closest('main') && !anchor.closest('#authModal') && !anchor.closest('#uBlockModal')) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.warn('🛡️ WonderWatch blocked suspicious rogue link click:', anchor.href);
+        if (type === 'fav') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(780, now + 0.09);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+          osc.start(now);
+          osc.stop(now + 0.14);
+        } else if (type === 'unfav') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(540, now);
+          osc.frequency.exponentialRampToValueAtTime(340, now + 0.09);
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        } else if (type === 'nav') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(420, now);
+          osc.frequency.exponentialRampToValueAtTime(560, now + 0.06);
+          gain.gain.setValueAtTime(0.045, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(640, now);
+          osc.frequency.exponentialRampToValueAtTime(480, now + 0.045);
+          gain.gain.setValueAtTime(0.035, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          osc.start(now);
+          osc.stop(now + 0.05);
         }
-      }
-    }, true);
-
-    // Deeply intercept window.open across window and HTMLDocument prototypes
-    function createProtectedWindowOpen() {
-      return function(url, target, features) {
-        // Legitimate Firebase / Google login popup
-        if (url && isAuthPopupUrl(url)) {
-          return nativeWindowOpen(url, target, features);
-        }
-        if (allowInternalNavigation && url) {
-          window.location.href = url;
-          return null;
-        }
-        console.warn("🛡️ WonderWatch blocked ad popup/tab:", url);
-        // Return a dummy window proxy so rogue caller scripts don't crash expecting an object
-        return {
-          closed: false,
-          close: function() {},
-          focus: function() {},
-          blur: function() {},
-          postMessage: function() {},
-          location: { href: '' }
-        };
-      };
+      } catch (_) {}
     }
 
-    try {
-      const protectedOpen = createProtectedWindowOpen();
-      Object.defineProperty(window, 'open', {
-        configurable: false,
-        writable: false,
-        value: protectedOpen
-      });
-      if (window.Window && window.Window.prototype) {
-        try {
-          Object.defineProperty(window.Window.prototype, 'open', {
-            configurable: false,
-            writable: false,
-            value: protectedOpen
-          });
-        } catch (e) {}
+    function updateSoundToggleUI() {
+      const btn = document.getElementById('soundToggleBtn');
+      const icon = document.getElementById('soundToggleIcon');
+      if (!btn || !icon) return;
+      if (soundEnabled) {
+        icon.className = 'fa-solid fa-volume-high';
+        btn.classList.add('text-brand-400', 'hover:text-brand-300');
+        btn.classList.remove('text-zinc-500', 'hover:text-zinc-300');
+        btn.title = 'Sound Cues: On';
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark';
+        btn.classList.remove('text-brand-400', 'hover:text-brand-300');
+        btn.classList.add('text-zinc-500', 'hover:text-zinc-300');
+        btn.title = 'Sound Cues: Off';
       }
-    } catch(err) {
-      window.open = createProtectedWindowOpen();
     }
 
-    // Trap top-level page departures caused by rogue frame scripts or popunder focus shifts
-    window.addEventListener('beforeunload', (e) => {
-      if (!allowInternalNavigation) {
-        e.preventDefault();
-        e.returnValue = 'Are you sure you want to leave WonderWatch?';
-        return 'Are you sure you want to leave WonderWatch?';
-      }
-    });
+    function toggleSoundCues() {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem(SOUND_KEY, soundEnabled ? 'on' : 'off');
+      updateSoundToggleUI();
+      if (soundEnabled) playSoundCue('fav');
+      showToast(soundEnabled
+        ? '<i class="fa-solid fa-volume-high text-brand-400"></i> Sound cues enabled'
+        : '<i class="fa-solid fa-volume-xmark text-zinc-400"></i> Sound cues muted', 2000);
+    }
 
-    // Detect popunder window creation by tracking rapid blur events when user clicks near/in player
-    window.addEventListener('blur', () => {
-      if (!allowInternalNavigation) {
-        // If the window loses focus suddenly without an internal navigation click, refocus parent
-        setTimeout(() => {
-          window.focus();
-        }, 100);
-      }
-    });
+    updateSoundToggleUI();
 
     // ============================================================
     //  HELPERS
@@ -1096,7 +1077,8 @@
 
     function renderEpisodes() {
       episodeGrid.innerHTML = '';
-      const defaultImg = animeMetadata?.coverImage?.large || animeMetadata?.coverImage?.medium || '';
+      const defaultImg = animeMetadata?.bannerImage || animeMetadata?.coverImage?.large || animeMetadata?.coverImage?.medium || '';
+      const fallbackCover = animeMetadata?.coverImage?.large || animeMetadata?.coverImage?.medium || '';
       const streamingList = animeMetadata?.streamingEpisodes || [];
       let activeCardEl = null;
 
@@ -1104,25 +1086,36 @@
         const epData = episodeMetadataMap[i] || {};
         const streamingItem = streamingList[i - 1] || null;
 
-        // Thumbnail: episode-specific thumbnail from metadata or streamingEpisodes, fallback to anime cover
+        // Thumbnail: unique episode image from AniZip / streamingEpisodes, fallback to banner/cover
         const thumbUrl = epData.thumbnail || streamingItem?.thumbnail || defaultImg;
         
-        // Title: specific episode title or Ep X
-        let titleText = epData.title || streamingItem?.title || '';
-        if (titleText && !titleText.toLowerCase().startsWith('episode')) {
-          titleText = `Ep ${i}: ${titleText}`;
-        } else if (!titleText) {
-          titleText = `Episode ${i}`;
-        }
+        // Title: unique episode title or Ep X
+        let rawTitle = epData.title || streamingItem?.title || '';
+        rawTitle = rawTitle.replace(/^episode\s*\d+\s*[-:.]?\s*/i, '').trim();
+        const titleText = rawTitle ? `Ep ${i}: ${rawTitle}` : `Episode ${i}`;
 
-        // Overview / One-liner: real synopsis from MAL/Jikan, or clean description snippet
-        let summaryText = epData.synopsis || epData.summary || '';
-        if (!summaryText && animeMetadata?.description) {
-          const cleanDesc = animeMetadata.description.replace(/<[^>]+>/g, '').trim();
-          summaryText = cleanDesc.length > 90 ? cleanDesc.slice(0, 87) + '...' : cleanDesc;
-        }
+        // Unique per-episode one-liner (never repeat the same series description across all episodes)
+        let summaryText = epData.overview || epData.summary || epData.synopsis || '';
         if (!summaryText) {
-          summaryText = `Episode ${i} of ${animeTitle}`;
+          const parts = [];
+          if (epData.filler) parts.push('Filler');
+          else if (epData.recap) parts.push('Recap');
+          if (epData.aired) {
+            try {
+              const d = new Date(epData.aired);
+              if (!isNaN(d.getTime())) {
+                parts.push(`Aired ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`);
+              }
+            } catch (_) {}
+          }
+          if (epData.length) parts.push(`${epData.length} min`);
+          if (parts.length > 0) {
+            summaryText = parts.join(' • ');
+          } else if (rawTitle) {
+            summaryText = `Watch "${rawTitle}"`;
+          } else {
+            summaryText = `${animeTitle} — Episode ${i}`;
+          }
         }
 
         const isCurrent = i === currentEpisode;
@@ -1136,7 +1129,7 @@
 
         card.innerHTML = `
           <div class="relative w-20 h-12 rounded-lg overflow-hidden bg-surface-950 flex-shrink-0 border border-zinc-800/80">
-            ${thumbUrl ? `<img src="${escapeHtml(thumbUrl)}" alt="Episode ${i}" class="w-full h-full object-cover" loading="eager" onerror="if(this.src!=='${escapeHtml(defaultImg)}'){this.src='${escapeHtml(defaultImg)}';}">` : `<div class="w-full h-full bg-surface-900 flex items-center justify-center text-zinc-600"><i class="fa-solid fa-play text-xs"></i></div>`}
+            ${thumbUrl ? `<img src="${escapeHtml(thumbUrl)}" alt="Episode ${i}" class="w-full h-full object-cover" loading="eager" onerror="if(this.src!=='${escapeHtml(fallbackCover)}'){this.src='${escapeHtml(fallbackCover)}';}">` : `<div class="w-full h-full bg-surface-900 flex items-center justify-center text-zinc-600"><i class="fa-solid fa-play text-xs"></i></div>`}
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
             <span class="absolute bottom-1 left-1 text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
               isCurrent ? 'bg-brand-500 text-black' : 'bg-surface-900/90 text-zinc-200'
@@ -1151,13 +1144,12 @@
         `;
 
         card.onclick = () => {
-          allowInternalNavigation = true;
+          playSoundCue('click');
           currentEpisode = i;
           savedResumeTime = 0;
           loadPlayer();
           renderEpisodes();
           autoSaveProgress();
-          setTimeout(() => { allowInternalNavigation = false; }, 1000);
         };
 
         if (isCurrent) activeCardEl = card;
@@ -1167,6 +1159,35 @@
       if (activeCardEl && currentEpisode > 3) {
         activeCardEl.scrollIntoView({ block: 'nearest' });
       }
+    }
+
+    async function fetchAniZipEpisodes(anilistId) {
+      if (!anilistId) return;
+      try {
+        const res = await fetch(`https://api.ani.zip/mappings?anilist_id=${anilistId}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const epsObj = json.episodes || {};
+        Object.keys(epsObj).forEach(key => {
+          const ep = epsObj[key];
+          const num = parseInt(ep?.episodeNumber || ep?.episode || key, 10);
+          if (!num || isNaN(num) || num <= 0) return;
+          const enTitle = ep.title?.en || ep.title?.['x-jat'] || ep.title?.ja || '';
+          const summary = (ep.summary || ep.overview || '').replace(/\s+/g, ' ').trim();
+          episodeMetadataMap[num] = {
+            ...(episodeMetadataMap[num] || {}),
+            title: enTitle || episodeMetadataMap[num]?.title || '',
+            summary: summary || episodeMetadataMap[num]?.summary || '',
+            thumbnail: ep.image || episodeMetadataMap[num]?.thumbnail || '',
+            aired: ep.airDate || ep.airdate || episodeMetadataMap[num]?.aired || '',
+            length: ep.length || ep.runtime || episodeMetadataMap[num]?.length || null
+          };
+        });
+        if (json.episodeCount && json.episodeCount > totalEpisodes) {
+          totalEpisodes = json.episodeCount;
+          document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
+        }
+      } catch (_) {}
     }
 
     async function fetchJikanEpisodePage(malAnimeId, page) {
@@ -1179,8 +1200,11 @@
         if (num) {
           episodeMetadataMap[num] = {
             ...(episodeMetadataMap[num] || {}),
-            title: ep.title || ep.title_romanji || (episodeMetadataMap[num]?.title || ''),
-            synopsis: ep.synopsis ? ep.synopsis.split('\n')[0].trim() : (episodeMetadataMap[num]?.synopsis || '')
+            title: episodeMetadataMap[num]?.title || ep.title || ep.title_romanji || '',
+            synopsis: episodeMetadataMap[num]?.synopsis || (ep.synopsis ? ep.synopsis.split('\n')[0].trim() : ''),
+            aired: episodeMetadataMap[num]?.aired || ep.aired || '',
+            filler: Boolean(ep.filler),
+            recap: Boolean(ep.recap)
           };
         }
       });
@@ -1188,27 +1212,32 @@
     }
 
     async function fetchEpisodeDetails(malAnimeId) {
-      if (!malAnimeId) return;
       try {
         const currentPage = Math.max(1, Math.ceil(currentEpisode / 100));
-        const pagination = await fetchJikanEpisodePage(malAnimeId, 1);
-        if (currentPage > 1) {
-          await fetchJikanEpisodePage(malAnimeId, currentPage);
-        }
-        // If AniList didn't provide an episode count and Jikan indicates more pages, query MAL anime details
-        if (pagination?.has_next_page && totalEpisodes <= 12) {
-          try {
-            const infoRes = await fetch(`https://api.jikan.moe/v4/anime/${malAnimeId}`);
-            if (infoRes.ok) {
-              const infoJson = await infoRes.json();
-              const jikanEps = infoJson.data?.episodes;
-              if (jikanEps && jikanEps > totalEpisodes) {
-                totalEpisodes = jikanEps;
-                document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
+        const tasks = [fetchAniZipEpisodes(animeId)];
+        if (malAnimeId) {
+          tasks.push(
+            fetchJikanEpisodePage(malAnimeId, 1).then(async (pagination) => {
+              if (currentPage > 1) {
+                await fetchJikanEpisodePage(malAnimeId, currentPage);
               }
-            }
-          } catch (_) {}
+              if (pagination?.has_next_page && totalEpisodes <= 12) {
+                try {
+                  const infoRes = await fetch(`https://api.jikan.moe/v4/anime/${malAnimeId}`);
+                  if (infoRes.ok) {
+                    const infoJson = await infoRes.json();
+                    const jikanEps = infoJson.data?.episodes;
+                    if (jikanEps && jikanEps > totalEpisodes) {
+                      totalEpisodes = jikanEps;
+                      document.getElementById('totalEpCount').innerText = `Total: ${totalEpisodes}`;
+                    }
+                  }
+                } catch (_) {}
+              }
+            })
+          );
         }
+        await Promise.allSettled(tasks);
         renderEpisodes();
       } catch (e) {
         // Non-critical: renderEpisodes already shows default thumbnails and labels
@@ -1336,28 +1365,25 @@
     }
 
     function changeSource() {
-      allowInternalNavigation = true;
+      playSoundCue('click');
       currentServer = document.getElementById('sourceSelect').value;
       loadPlayer();
-      setTimeout(() => { allowInternalNavigation = false; }, 1000);
     }
 
     function changeStreamType() {
-      allowInternalNavigation = true;
+      playSoundCue('click');
       currentType = document.getElementById('streamTypeSelect').value;
       loadPlayer();
-      setTimeout(() => { allowInternalNavigation = false; }, 1000);
     }
 
     function handleNextEpisode() {
       if (currentEpisode < totalEpisodes) {
-        allowInternalNavigation = true;
+        playSoundCue('nav');
         currentEpisode++;
         savedResumeTime = 0;
         loadPlayer();
         renderEpisodes();
         autoSaveProgress();
-        setTimeout(() => { allowInternalNavigation = false; }, 1000);
       } else {
         showToast('<i class="fa-solid fa-flag-checkered text-brand-400"></i> This is the last episode');
       }
@@ -1443,6 +1469,7 @@
       const id = parseInt(animeId);
       if (isAnimeFavorite(id)) {
         await removeFavorite(id);
+        playSoundCue('unfav');
         showToast('<i class="fa-regular fa-heart text-zinc-400"></i> Removed from favourites');
       } else {
         await addFavorite({
@@ -1455,6 +1482,7 @@
           format: animeMetadata?.format || null,
           genres: animeMetadata?.genres || []
         });
+        playSoundCue('fav');
         showToast('<i class="fa-solid fa-heart text-red-500"></i> Added to favourites!');
       }
       updateWatchFavButton();
@@ -1668,7 +1696,7 @@
         `;
 
         card.onclick = () => {
-          allowInternalNavigation = true;
+          playSoundCue('nav');
           window.location.href = `watch.html?id=${node.id}&malId=${node.idMal || node.id}&title=${encodeURIComponent(relTitle)}&eps=${relEps}`;
         };
         container.appendChild(card);
