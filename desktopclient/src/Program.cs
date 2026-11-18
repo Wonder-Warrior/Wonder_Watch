@@ -11,7 +11,7 @@ using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
 [assembly: AssemblyTitle("WonderWatch Desktop")]
-[assembly: AssemblyDescription("WonderWatch Desktop Client with built-in uBlock Origin")]
+[assembly: AssemblyDescription("WonderWatch Desktop Client")]
 [assembly: AssemblyProduct("WonderWatch Desktop")]
 [assembly: AssemblyVersion("2.4.0.0")]
 [assembly: AssemblyFileVersion("2.4.0.0")]
@@ -29,7 +29,7 @@ namespace WonderWatchDesktop
         public const int MF_SEPARATOR = 0x0800;
         public const int MF_STRING = 0x0000;
 
-        public const int CMD_UBLOCK_DASHBOARD = 0x1001;
+        public const int CMD_SHIELD_SETTINGS = 0x1001;
         public const int CMD_HOME = 0x1002;
         public const int CMD_RELOAD = 0x1003;
         public const int CMD_FULLSCREEN = 0x1004;
@@ -133,7 +133,7 @@ namespace WonderWatchDesktop
             webView.DefaultBackgroundColor = BgDark;
             Controls.Add(webView);
 
-            // Dark startup splash shown while WebView2 & uBlock Origin initialize
+            // Dark startup splash shown while engine initializes
             splashPanel = new Panel();
             splashPanel.Dock = DockStyle.Fill;
             splashPanel.BackColor = BgDark;
@@ -156,7 +156,7 @@ namespace WonderWatchDesktop
             titleLabel.SetBounds(0, 88, 340, 32);
 
             splashStatusLabel = new Label();
-            splashStatusLabel.Text = "Starting engine & uBlock Origin shield...";
+            splashStatusLabel.Text = "Initializing WonderWatch...";
             splashStatusLabel.ForeColor = Color.FromArgb(255, 161, 161, 170);
             splashStatusLabel.Font = new Font("Segoe UI", 9.5f, FontStyle.Regular);
             splashStatusLabel.TextAlign = ContentAlignment.MiddleCenter;
@@ -207,9 +207,9 @@ namespace WonderWatchDesktop
             if (m.Msg == NativeMethods.WM_SYSCOMMAND)
             {
                 int cmd = m.WParam.ToInt32() & 0xFFF0;
-                if (cmd == NativeMethods.CMD_UBLOCK_DASHBOARD)
+                if (cmd == NativeMethods.CMD_SHIELD_SETTINGS)
                 {
-                    OpenUBlockDashboard();
+                    OpenShieldDashboard();
                     return;
                 }
                 if (cmd == NativeMethods.CMD_HOME)
@@ -238,7 +238,7 @@ namespace WonderWatchDesktop
                 IntPtr sysMenu = NativeMethods.GetSystemMenu(Handle, false);
                 if (sysMenu == IntPtr.Zero) return;
                 NativeMethods.AppendMenu(sysMenu, NativeMethods.MF_SEPARATOR, 0, null);
-                NativeMethods.AppendMenu(sysMenu, NativeMethods.MF_STRING, NativeMethods.CMD_UBLOCK_DASHBOARD, "uBlock Origin Shield Settings\tCtrl+Shift+U");
+                NativeMethods.AppendMenu(sysMenu, NativeMethods.MF_STRING, NativeMethods.CMD_SHIELD_SETTINGS, "Shield Settings\tCtrl+Shift+U");
                 NativeMethods.AppendMenu(sysMenu, NativeMethods.MF_STRING, NativeMethods.CMD_HOME, "WonderWatch Home\tAlt+H");
                 NativeMethods.AppendMenu(sysMenu, NativeMethods.MF_STRING, NativeMethods.CMD_RELOAD, "Reload\tF5");
                 NativeMethods.AppendMenu(sysMenu, NativeMethods.MF_STRING, NativeMethods.CMD_FULLSCREEN, "Toggle Fullscreen\tF11");
@@ -376,7 +376,7 @@ namespace WonderWatchDesktop
             }
             if (keyData == (Keys.Control | Keys.Shift | Keys.U))
             {
-                OpenUBlockDashboard();
+                OpenShieldDashboard();
                 return true;
             }
             if (keyData == (Keys.Alt | Keys.H))
@@ -497,8 +497,6 @@ namespace WonderWatchDesktop
             string ublockPath = ResolveUBlockExtensionPath();
             if (string.IsNullOrEmpty(ublockPath))
             {
-                UpdateSplashStatus("Warning: uBlock Origin folder not found.");
-                await Task.Delay(800);
                 return;
             }
 
@@ -512,14 +510,9 @@ namespace WonderWatchDesktop
             catch { }
             bool pathChanged = !string.IsNullOrEmpty(previousPath) &&
                 !string.Equals(previousPath, ublockPath, StringComparison.OrdinalIgnoreCase);
-            string initError = null;
 
             try
             {
-                UpdateSplashStatus(firstBoot
-                    ? "First boot: Activating uBlock Origin shield..."
-                    : "Verifying uBlock Origin shield...");
-
                 var existingExtensions = await webView.CoreWebView2.Profile.GetBrowserExtensionsAsync();
                 CoreWebView2BrowserExtension ublockExt = null;
 
@@ -561,15 +554,8 @@ namespace WonderWatchDesktop
                     try { File.WriteAllText(markerPath, ublockPath); } catch { }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                initError = ex.Message;
-            }
-
-            if (initError != null)
-            {
-                UpdateSplashStatus("Extension init issue: " + initError);
-                await Task.Delay(900);
             }
         }
 
@@ -598,13 +584,13 @@ namespace WonderWatchDesktop
             return null;
         }
 
-        private void OpenUBlockDashboard()
+        private void OpenShieldDashboard()
         {
             if (sharedEnvironment == null || string.IsNullOrEmpty(ublockExtensionId))
             {
                 MessageBox.Show(
-                    "uBlock Origin is still initializing or was not detected.",
-                    "uBlock Origin",
+                    "Shield is still initializing.",
+                    "WonderWatch Shield",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information
                 );
@@ -614,7 +600,7 @@ namespace WonderWatchDesktop
             string dashboardUrl = "chrome-extension://" + ublockExtensionId + "/dashboard.html";
 
             Form dashForm = new Form();
-            dashForm.Text = "uBlock Origin - WonderWatch Shield";
+            dashForm.Text = "WonderWatch Shield Settings";
             dashForm.Size = new Size(980, 680);
             dashForm.StartPosition = FormStartPosition.CenterParent;
             dashForm.BackColor = BgDark;

@@ -1,26 +1,19 @@
 # WonderWatch Desktop Client (Windows x64)
 
-Native Windows desktop client for **WonderWatch** powered by Microsoft Edge WebView2, with **uBlock Origin** bundled and automatically activated on first boot.
+Dedicated Windows desktop application for **WonderWatch**.
 
 ## Features
-- **Built-in uBlock Origin (`extensions/ublock-origin`)**: Automatically sideloaded and enabled in the isolated app profile before the first page load.
-- **First-Boot Ready**: Filter lists initialize on first launch — no browser extension store setup required.
-- **Native Dark Immersion**: Dark Windows 10/11 titlebar (`#050608`), zero white startup flash, and full hardware-accelerated playback.
-- **Popup & Ad-Tab Shield**: Blocks unsolicited embed popups while preserving Firebase/Google account sign-in popups.
-- **Fullscreen & Shortcuts**:
-  - `F11` — Toggle borderless fullscreen (also supports player fullscreen)
-  - `Ctrl+Shift+U` — Open built-in uBlock Origin Shield Dashboard
+- **Built-in Ad & Popup Shield**: Integrated shield active on launch with zero setup.
+- **Hardware-Accelerated Video Engine**: Smooth 1080p 60fps playback with responsive controls.
+- **Dark Immersion**: Tailored dark theme for Windows 10 and Windows 11 with no startup flash.
+- **Borderless Fullscreen**: One-key toggle with `F11` (also synchronizes with HTML5 player fullscreen).
+- **Persistent State**: Automatically remembers your last window size and screen placement across restarts.
+- **Shield Configuration**: Press `Ctrl+Shift+U` or use the window system menu to view shield settings.
+- **Quick Shortcuts**:
+  - `F11` — Fullscreen toggle
   - `Alt+H` — Return to WonderWatch Home
-  - `F5` / `Ctrl+R` — Reload
+  - `F5` / `Ctrl+R` — Reload page
+  - `Ctrl+Shift+U` — Shield settings
 
-## Quick Start
-1. Extract `WonderWatch-Desktop-win-x64.zip` (or run directly from `desktopclient/`).
-2. Launch **`WonderWatch.exe`**.
-   - Keep `Microsoft.Web.WebView2.Core.dll`, `Microsoft.Web.WebView2.WinForms.dll`, `WebView2Loader.dll`, and the `extensions/` folder next to `WonderWatch.exe`.
-
-## Building from Source
-Requires Windows 10/11 (uses the built-in .NET Framework 4.x C# compiler, no external SDK install needed):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\build.ps1
-```
+## Running
+Extract `WonderWatch-Desktop-win-x64.zip` and run **`WonderWatch.exe`**.

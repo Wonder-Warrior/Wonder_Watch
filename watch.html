@@ -1378,10 +1378,22 @@
       };
     }
 
+    function isAppEnvironment() {
+      // Return true if running in desktop client, mobile app wrapper, or standalone PWA
+      return (
+        Boolean(window.__WONDERWATCH_DESKTOP__) ||
+        Boolean(window.__WONDERWATCH_APP__) ||
+        Boolean(window.Capacitor) ||
+        Boolean(window.Android) ||
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true
+      );
+    }
+
     function checkUBlockPrompt() {
-      // Do not display inside the official Desktop Client (uBlock Origin is built-in & auto-activated)
-      if (window.__WONDERWATCH_DESKTOP__) return;
-      // Do not display to mobile users (browser extensions are largely desktop-only)
+      // Do not display inside app clients (desktop app, upcoming mobile app, or installed PWA)
+      if (isAppEnvironment()) return;
+      // Do not display to mobile users (browser extensions are desktop browser only)
       if (isMobileDevice()) return;
 
       const modal = document.getElementById('uBlockModal');

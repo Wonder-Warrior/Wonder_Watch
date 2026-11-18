@@ -144,13 +144,13 @@
             <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black text-2xl shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
               <i class="fa-solid fa-desktop"></i>
             </div>
-            <span class="text-[10px] uppercase font-black px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30">v2.4.0 • Built-in uBlock</span>
+            <span class="text-[10px] uppercase font-black px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30">v2.4.0 • Latest</span>
           </div>
 
           <div class="space-y-1.5">
             <h2 class="text-xl sm:text-2xl font-heading font-black text-white">Desktop Client</h2>
             <p class="text-xs text-zinc-400 leading-relaxed">
-              Dedicated Windows desktop app powered by Microsoft Edge WebView2 with <strong class="text-brand-400 font-semibold">uBlock Origin pre-installed and activated on first boot</strong>. Zero browser setup required.
+              Dedicated Windows desktop app featuring integrated ad and popup shielding, instant playback, keyboard controls, and borderless fullscreen.
             </p>
           </div>
 
@@ -158,15 +158,15 @@
           <div class="space-y-2 pt-2">
             <div class="flex items-center gap-2 text-xs text-zinc-300">
               <i class="fa-solid fa-shield-halved text-brand-400 text-[11px]"></i>
-              <span>uBlock Origin bundled &amp; auto-enabled on first launch</span>
+              <span>Built-in ad &amp; popup shielding (ready out of the box)</span>
             </div>
             <div class="flex items-center gap-2 text-xs text-zinc-300">
               <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
-              <span>Smart popup blocker &amp; dark native immersion (Win 10/11)</span>
+              <span>Deep dark mode immersion &amp; window position memory</span>
             </div>
             <div class="flex items-center gap-2 text-xs text-zinc-300">
               <i class="fa-solid fa-check text-brand-400 text-[11px]"></i>
-              <span>F11 fullscreen, Ctrl+Shift+U uBlock dashboard &amp; portable ZIP (~13.6 MB)</span>
+              <span>F11 borderless fullscreen &amp; hotkey navigation</span>
             </div>
           </div>
         </div>
@@ -180,8 +180,6 @@
             <button onclick="handleDownload('desktop', 'mac')" class="hover:text-brand-400 transition flex items-center gap-1"><i class="fa-brands fa-apple"></i> macOS (Soon)</button>
             <span>•</span>
             <button onclick="handleDownload('desktop', 'linux')" class="hover:text-brand-400 transition flex items-center gap-1"><i class="fa-brands fa-linux"></i> Linux (Soon)</button>
-            <span>•</span>
-            <a href="./desktopclient/README.md" target="_blank" rel="noopener" class="hover:text-brand-400 transition flex items-center gap-1"><i class="fa-solid fa-book"></i> Source &amp; Docs</a>
           </div>
         </div>
       </div>
@@ -378,7 +376,7 @@
       if (platform === 'android') {
         showToast('<i class="fa-brands fa-android text-brand-400"></i> Android APK package is coming soon!');
       } else if (flavor === 'windows') {
-        showToast('<i class="fa-solid fa-shield-halved text-brand-400"></i> Downloading WonderWatch Desktop (uBlock Origin built-in)...');
+        showToast('<i class="fa-solid fa-download text-brand-400"></i> Downloading WonderWatch Desktop for Windows...');
       } else {
         showToast(`<i class="fa-solid fa-clock text-brand-400"></i> ${flavor.toUpperCase()} desktop build coming soon — Windows x64 is ready now!`);
       }
