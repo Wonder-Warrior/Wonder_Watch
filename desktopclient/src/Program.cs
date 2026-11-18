@@ -1034,7 +1034,7 @@ namespace WonderWatchDesktop
 
     internal sealed class DiscordRpcClient : IDisposable
     {
-        private const string DefaultClientId = "1310265768981303306";
+        private const string DefaultClientId = "1572722491514691694";
         private readonly string clientId;
         private readonly long sessionStartEpoch;
         private readonly object syncLock = new object();
@@ -1078,6 +1078,8 @@ namespace WonderWatchDesktop
                             Guid.NewGuid().ToString("N")
                         );
                         WriteFrame(1, json);
+                        // Read response or acknowledge frame
+                        ReadFrameNonBlocking();
                     }
                     catch
                     {
@@ -1097,11 +1099,31 @@ namespace WonderWatchDesktop
                 try
                 {
                     NamedPipeClientStream candidate = new NamedPipeClientStream(".", "discord-ipc-" + i, PipeDirection.InOut);
-                    candidate.Connect(80);
+                    candidate.Connect(150);
                     pipe = candidate;
+
+                    // Handshake opcode 0
                     WriteFrame(0, string.Format("{{\"v\":1,\"client_id\":\"{0}\"}}", EscapeJson(clientId)));
-                    handshaken = true;
-                    return true;
+
+                    // Read READY opcode 1 from Discord
+                    byte[] header = new byte[8];
+                    int read = ReadExact(header, 0, 8);
+                    if (read == 8)
+                    {
+                        int opcode = BitConverter.ToInt32(header, 0);
+                        int length = BitConverter.ToInt32(header, 4);
+                        if (length > 0 && length < 65536)
+                        {
+                            byte[] payload = new byte[length];
+                            ReadExact(payload, 0, length);
+                        }
+                        if (opcode == 1) // DISPATCH / READY
+                        {
+                            handshaken = true;
+                            return true;
+                        }
+                    }
+                    ResetPipe();
                 }
                 catch
                 {
@@ -1109,6 +1131,38 @@ namespace WonderWatchDesktop
                 }
             }
             return false;
+        }
+
+        private int ReadExact(byte[] buffer, int offset, int count)
+        {
+            int total = 0;
+            while (total < count)
+            {
+                int read = pipe.Read(buffer, offset + total, count - total);
+                if (read <= 0) break;
+                total += read;
+            }
+            return total;
+        }
+
+        private void ReadFrameNonBlocking()
+        {
+            try
+            {
+                if (pipe == null || !pipe.IsConnected) return;
+                byte[] header = new byte[8];
+                int read = ReadExact(header, 0, 8);
+                if (read == 8)
+                {
+                    int length = BitConverter.ToInt32(header, 4);
+                    if (length > 0 && length < 65536)
+                    {
+                        byte[] payload = new byte[length];
+                        ReadExact(payload, 0, length);
+                    }
+                }
+            }
+            catch { }
         }
 
         private void WriteFrame(int opcode, string json)
