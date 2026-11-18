@@ -75,6 +75,7 @@ namespace WonderWatchDesktop
 
         private readonly WebView2 webView;
         private readonly Panel splashPanel;
+        private readonly AnimatedEmblemSpinner splashSpinner;
         private readonly Label splashStatusLabel;
         private readonly string startUrl;
         private readonly string appDataDir;
@@ -133,37 +134,55 @@ namespace WonderWatchDesktop
             webView.DefaultBackgroundColor = BgDark;
             Controls.Add(webView);
 
-            // Dark startup splash shown while engine initializes
+            // Dark startup splash matching mobile animated loading emblem
             splashPanel = new Panel();
             splashPanel.Dock = DockStyle.Fill;
             splashPanel.BackColor = BgDark;
 
             Panel centerBox = new Panel();
-            centerBox.Size = new Size(340, 180);
+            centerBox.Size = new Size(340, 210);
             centerBox.BackColor = BgDark;
 
-            PictureBox logoBox = new PictureBox();
-            logoBox.Size = new Size(64, 64);
-            logoBox.Location = new Point(138, 12);
-            logoBox.Image = CreatePlayBadgeBitmap(64);
-            logoBox.SizeMode = PictureBoxSizeMode.Normal;
+            splashSpinner = new AnimatedEmblemSpinner();
+            splashSpinner.Size = new Size(108, 108);
+            splashSpinner.Location = new Point(116, 4);
 
-            Label titleLabel = new Label();
-            titleLabel.Text = "WONDERWATCH";
-            titleLabel.ForeColor = Color.White;
-            titleLabel.Font = new Font("Segoe UI", 16f, FontStyle.Bold);
-            titleLabel.TextAlign = ContentAlignment.MiddleCenter;
-            titleLabel.SetBounds(0, 88, 340, 32);
+            Panel brandRow = new Panel();
+            brandRow.Size = new Size(340, 34);
+            brandRow.Location = new Point(0, 124);
+            brandRow.BackColor = BgDark;
+
+            Label wonderLabel = new Label();
+            wonderLabel.Text = "WONDER";
+            wonderLabel.ForeColor = Color.White;
+            wonderLabel.Font = new Font("Segoe UI", 16f, FontStyle.Bold);
+            wonderLabel.AutoSize = true;
+
+            Label watchLabel = new Label();
+            watchLabel.Text = "WATCH";
+            watchLabel.ForeColor = BrandLime;
+            watchLabel.Font = new Font("Segoe UI", 16f, FontStyle.Bold);
+            watchLabel.AutoSize = true;
+
+            brandRow.Controls.Add(wonderLabel);
+            brandRow.Controls.Add(watchLabel);
+            brandRow.Layout += delegate
+            {
+                int totalW = wonderLabel.Width + watchLabel.Width - 4;
+                int startX = Math.Max(0, (brandRow.Width - totalW) / 2);
+                wonderLabel.Location = new Point(startX, 2);
+                watchLabel.Location = new Point(startX + wonderLabel.Width - 4, 2);
+            };
 
             splashStatusLabel = new Label();
             splashStatusLabel.Text = "Initializing WonderWatch...";
             splashStatusLabel.ForeColor = Color.FromArgb(255, 161, 161, 170);
             splashStatusLabel.Font = new Font("Segoe UI", 9.5f, FontStyle.Regular);
             splashStatusLabel.TextAlign = ContentAlignment.MiddleCenter;
-            splashStatusLabel.SetBounds(0, 124, 340, 24);
+            splashStatusLabel.SetBounds(0, 164, 340, 24);
 
-            centerBox.Controls.Add(logoBox);
-            centerBox.Controls.Add(titleLabel);
+            centerBox.Controls.Add(splashSpinner);
+            centerBox.Controls.Add(brandRow);
             centerBox.Controls.Add(splashStatusLabel);
 
             splashPanel.Controls.Add(centerBox);
@@ -345,6 +364,7 @@ namespace WonderWatchDesktop
             {
                 if (splashPanel.Visible)
                 {
+                    splashSpinner.Stop();
                     splashPanel.Visible = false;
                 }
             };
@@ -743,6 +763,123 @@ namespace WonderWatchDesktop
             }
             catch
             {
+            }
+        }
+
+        private sealed class AnimatedEmblemSpinner : Control
+        {
+            private readonly Timer timer;
+            private readonly Stopwatch clock = Stopwatch.StartNew();
+
+            public AnimatedEmblemSpinner()
+            {
+                SetStyle(
+                    ControlStyles.AllPaintingInWmPaint |
+                    ControlStyles.UserPaint |
+                    ControlStyles.OptimizedDoubleBuffer |
+                    ControlStyles.SupportsTransparentBackColor,
+                    true
+                );
+                BackColor = BgDark;
+                timer = new Timer();
+                timer.Interval = 16;
+                timer.Tick += delegate { Invalidate(); };
+                timer.Start();
+            }
+
+            public void Stop()
+            {
+                timer.Stop();
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing)
+                {
+                    timer.Stop();
+                    timer.Dispose();
+                }
+                base.Dispose(disposing);
+            }
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                base.OnPaint(e);
+                Graphics g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(BgDark);
+
+                double secs = clock.Elapsed.TotalSeconds;
+                float angle = (float)((secs * 327.0) % 360.0);
+                float pulseScale = 1.0f + 0.04f * (float)Math.Sin(secs * Math.PI / 0.9);
+
+                int w = Width;
+                int h = Height;
+                float cx = w / 2f;
+                float cy = h / 2f;
+
+                // Soft ambient lime glow
+                float glowRadius = (w * 0.38f) * pulseScale;
+                using (SolidBrush glowBrush = new SolidBrush(Color.FromArgb(28, 59, 255, 83)))
+                {
+                    g.FillEllipse(glowBrush, cx - glowRadius, cy - glowRadius, glowRadius * 2f, glowRadius * 2f);
+                }
+
+                // Track ring & rotating neon orbital arc
+                float pad = 7f;
+                RectangleF ringRect = new RectangleF(pad, pad, w - pad * 2f, h - pad * 2f);
+                using (Pen trackPen = new Pen(Color.FromArgb(255, 29, 33, 43), 3f))
+                {
+                    g.DrawEllipse(trackPen, ringRect);
+                }
+
+                using (LinearGradientBrush arcBrush = new LinearGradientBrush(
+                    new PointF(0f, h),
+                    new PointF(w, 0f),
+                    Color.FromArgb(255, 34, 204, 55),
+                    Color.FromArgb(255, 158, 255, 171)))
+                using (Pen arcPen = new Pen(arcBrush, 3f))
+                {
+                    arcPen.StartCap = LineCap.Round;
+                    arcPen.EndCap = LineCap.Round;
+                    g.DrawArc(arcPen, ringRect, angle - 90f, 250f);
+                }
+
+                // Pulsing WonderWatch lime badge
+                float badgeSize = (w * 0.58f) * pulseScale;
+                float left = cx - badgeSize / 2f;
+                float top = cy - badgeSize / 2f;
+                Rectangle rect = new Rectangle(
+                    (int)Math.Round(left),
+                    (int)Math.Round(top),
+                    (int)Math.Round(badgeSize),
+                    (int)Math.Round(badgeSize)
+                );
+                int cornerRadius = Math.Max(4, (int)(badgeSize * 0.27f));
+
+                using (GraphicsPath path = CreateRoundedRect(rect, cornerRadius))
+                using (LinearGradientBrush badgeBrush = new LinearGradientBrush(
+                    new PointF(left, top + badgeSize),
+                    new PointF(left + badgeSize, top),
+                    Color.FromArgb(255, 34, 204, 55),
+                    Color.FromArgb(255, 158, 255, 171)))
+                {
+                    g.FillPath(badgeBrush, path);
+                }
+
+                PointF[] triangle = new PointF[]
+                {
+                    new PointF(left + badgeSize * 0.39f, top + badgeSize * 0.30f),
+                    new PointF(left + badgeSize * 0.72f, top + badgeSize * 0.50f),
+                    new PointF(left + badgeSize * 0.39f, top + badgeSize * 0.70f)
+                };
+                using (SolidBrush innerBrush = new SolidBrush(Color.FromArgb(255, 8, 10, 12)))
+                using (Pen innerPen = new Pen(Color.FromArgb(255, 8, 10, 12), 2.5f))
+                {
+                    innerPen.LineJoin = LineJoin.Round;
+                    g.FillPolygon(innerBrush, triangle);
+                    g.DrawPolygon(innerPen, triangle);
+                }
             }
         }
 

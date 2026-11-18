@@ -263,6 +263,7 @@
               <select id="sourceSelect" onchange="changeSource()" class="appearance-none bg-surface-800 hover:bg-surface-750 border border-zinc-700/80 hover:border-brand-500/50 text-xs font-semibold pl-3 pr-8 py-2 rounded-xl text-zinc-200 focus:outline-none focus:border-brand-500 transition cursor-pointer shadow-sm">
                 <option value="aniembed_se" class="bg-surface-900 text-zinc-100 py-1">Stream 1</option>
                 <option value="zoko_mal" class="bg-surface-900 text-zinc-100 py-1">Stream 2</option>
+                <option value="animeembed" class="bg-surface-900 text-zinc-100 py-1">Stream 3</option>
               </select>
               <i class="fa-solid fa-chevron-down text-[10px] text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none transition"></i>
             </div>
@@ -1453,6 +1454,9 @@
       } else if (currentServer === 'zoko_mal') {
         src = `https://zokoanime.video/stream/mal/${malId}/${currentEpisode}/${currentType}?color=3BFF53&autoplay=1`;
         if (savedResumeTime > 0) src += `&time=${savedResumeTime}`;
+      } else if (currentServer === 'animeembed') {
+        src = `https://animeembed.com/embed/ani/${animeId}/${currentEpisode}?audio=${currentType}&accent=3BFF53&autoplay=1`;
+        if (savedResumeTime > 0) src += `&t=${savedResumeTime}`;
       }
 
       // Check uBlock recommendation prompt state based on active server

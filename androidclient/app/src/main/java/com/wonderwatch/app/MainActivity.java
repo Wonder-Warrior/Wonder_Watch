@@ -42,6 +42,7 @@ public final class MainActivity extends Activity {
     private static final int BRAND_LIME = Color.parseColor("#3BFF53");
 
     private FrameLayout rootContainer;
+    private FrameLayout contentContainer;
     private WebView webView;
     private SplashOverlayView splashOverlay;
     private LinearLayout errorOverlay;
@@ -63,6 +64,10 @@ public final class MainActivity extends Activity {
         rootContainer = new FrameLayout(this);
         rootContainer.setBackgroundColor(BG_DARK);
 
+        // Wrapper receives system bar / cutout insets so WebView never renders under status bar
+        contentContainer = new FrameLayout(this);
+        contentContainer.setBackgroundColor(BG_DARK);
+
         webView = new WebView(this);
         webView.setBackgroundColor(BG_DARK);
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
@@ -76,7 +81,19 @@ public final class MainActivity extends Activity {
         webView.setWebViewClient(new WonderWebViewClient());
         webView.setWebChromeClient(new WonderWebChromeClient());
 
-        rootContainer.addView(webView, new FrameLayout.LayoutParams(
+        contentContainer.addView(webView, new FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+
+        errorOverlay = createErrorOverlay();
+        errorOverlay.setVisibility(View.GONE);
+        contentContainer.addView(errorOverlay, new FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+
+        rootContainer.addView(contentContainer, new FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         ));
@@ -89,22 +106,16 @@ public final class MainActivity extends Activity {
             ViewGroup.LayoutParams.MATCH_PARENT
         ));
 
-        errorOverlay = createErrorOverlay();
-        errorOverlay.setVisibility(View.GONE);
-        rootContainer.addView(errorOverlay, new FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        ));
-
         splashOverlay = new SplashOverlayView(this);
         rootContainer.addView(splashOverlay, new FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         ));
 
-        applySafeSystemInsets(webView);
+        applySafeSystemInsets(contentContainer);
         setContentView(rootContainer);
         configureSystemBars();
+        contentContainer.requestApplyInsets();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
@@ -121,20 +132,9 @@ public final class MainActivity extends Activity {
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState);
         } else {
-            // Wait briefly up to 250ms if needed so shield rules are warm before first navigation
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    shieldEngine.awaitReady(250);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            splashOverlay.setStatusText("Loading WonderWatch...");
-                            webView.loadUrl(HOME_URL);
-                        }
-                    });
-                }
-            }).start();
+            // Load immediately at t=0; AdShieldEngine preloads concurrently and gates third-party resources
+            splashOverlay.setStatusText("Loading WonderWatch...");
+            webView.loadUrl(HOME_URL);
         }
     }
 
@@ -151,6 +151,7 @@ public final class MainActivity extends Activity {
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setOffscreenPreRaster(true);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
 
         // Strip '; wv' token so OAuth sign-in flows work cleanly inside WebView
@@ -435,7 +436,7 @@ public final class MainActivity extends Activity {
         @Override
         public void onProgressChanged(WebView view, int newProgress) {
             super.onProgressChanged(view, newProgress);
-            if (newProgress >= 85 && !initialPageRevealed) {
+            if (newProgress >= 65 && !initialPageRevealed) {
                 initialPageRevealed = true;
                 splashOverlay.dismissAnimated();
             }
