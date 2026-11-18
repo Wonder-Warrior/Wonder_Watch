@@ -1325,13 +1325,35 @@
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
-      // On Android/desktop clients, try signInWithPopup first; if popups fail or are disallowed, seamlessly redirect
+      const isAndroidApp = Boolean(
+        window.__WONDERWATCH_APP__ ||
+        /WonderWatchApp/i.test(navigator.userAgent || '')
+      );
+
+      // Android WebView uses full-page redirect so Google sign-in opens reliably without popup/opener issues;
+      // Desktop client keeps the dedicated popup window.
+      if (isAndroidApp && location.protocol !== 'file:') {
+        try {
+          await auth.signInWithRedirect(provider);
+          return;
+        } catch (redirErr) {
+          console.error('Google redirect auth error:', redirErr);
+          explicitLogin = false;
+          showAuthMessage(friendlyAuthError(redirErr.code));
+          setAuthLoading(false);
+          return;
+        }
+      }
+
+      const startedAt = Date.now();
       try {
         await auth.signInWithPopup(provider);
         closeAuthModal();
       } catch (err) {
         console.error('Google popup auth error:', err);
+        const instantPopupDrop = err.code === 'auth/popup-closed-by-user' && (Date.now() - startedAt) < 800;
         const shouldTryRedirect = (
+          instantPopupDrop ||
           err.code === 'auth/popup-blocked' ||
           err.code === 'auth/operation-not-supported-in-this-environment' ||
           err.code === 'auth/cancelled-popup-request' ||

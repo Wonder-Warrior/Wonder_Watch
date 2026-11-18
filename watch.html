@@ -895,6 +895,14 @@
       }
     });
 
+    auth.getRedirectResult().then(result => {
+      if (result && result.user) explicitLogin = true;
+    }).catch(err => {
+      console.error('Redirect sign-in error:', err);
+      openAuthModal('login');
+      showAuthError(friendlyAuthError(err.code));
+    });
+
     async function loadCloudTimestamp() {
       if (!currentUser) return;
       try {
@@ -1102,12 +1110,34 @@
       explicitLogin = true;
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
+
+      const isAndroidApp = Boolean(
+        window.__WONDERWATCH_APP__ ||
+        /WonderWatchApp/i.test(navigator.userAgent || '')
+      );
+
+      if (isAndroidApp && location.protocol !== 'file:') {
+        try {
+          await auth.signInWithRedirect(provider);
+          return;
+        } catch (redirErr) {
+          console.error('Google redirect auth error:', redirErr);
+          explicitLogin = false;
+          showAuthError(friendlyAuthError(redirErr.code));
+          setAuthLoading(false);
+          return;
+        }
+      }
+
+      const startedAt = Date.now();
       try {
         await auth.signInWithPopup(provider);
         closeAuthModal();
       } catch (err) {
         console.error('Google popup auth error:', err);
+        const instantPopupDrop = err.code === 'auth/popup-closed-by-user' && (Date.now() - startedAt) < 800;
         const shouldTryRedirect = (
+          instantPopupDrop ||
           err.code === 'auth/popup-blocked' ||
           err.code === 'auth/operation-not-supported-in-this-environment' ||
           err.code === 'auth/cancelled-popup-request' ||
