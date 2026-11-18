@@ -471,7 +471,7 @@
         const suspiciousElements = document.querySelectorAll('body > a[target="_blank"], body > div[style*="z-index"]');
         suspiciousElements.forEach(el => {
           // Never touch our genuine UI elements
-          if (el.id === 'authModal' || el.id === 'toastNotif' || el.tagName === 'HEADER' || el.tagName === 'MAIN') return;
+          if (el.id === 'authModal' || el.id === 'uBlockModal' || el.id === 'toastNotif' || el.tagName === 'HEADER' || el.tagName === 'MAIN') return;
           const style = window.getComputedStyle(el);
           const zIndex = parseInt(style.zIndex, 10);
           const isFixedOrAbsolute = style.position === 'fixed' || style.position === 'absolute';
@@ -500,7 +500,7 @@
     document.addEventListener('click', (e) => {
       const anchor = e.target.closest('a');
       if (anchor && anchor.href && !isAuthPopupUrl(anchor.href)) {
-        if (!anchor.closest('header') && !anchor.closest('main') && !anchor.closest('#authModal')) {
+        if (!anchor.closest('header') && !anchor.closest('main') && !anchor.closest('#authModal') && !anchor.closest('#uBlockModal')) {
           e.preventDefault();
           e.stopPropagation();
           console.warn('🛡️ WonderWatch blocked suspicious rogue link click:', anchor.href);
@@ -1229,7 +1229,16 @@
 
     function detectBrowserUBlockInfo() {
       const ua = navigator.userAgent;
-      // Firefox
+      // Microsoft Edge (Edg/ or Edge/)
+      if (/Edg\/|Edge\//i.test(ua)) {
+        return {
+          name: 'Edge',
+          icon: 'fa-brands fa-edge',
+          url: 'https://microsoftedge.microsoft.com/addons/detail/ublock-origin/odfafepnkmbhccpbejgmiehpchacaeak',
+          label: 'Get uBlock for Edge'
+        };
+      }
+      // Mozilla Firefox
       if (/Firefox\/([0-9.]+)/i.test(ua)) {
         return {
           name: 'Firefox',
@@ -1238,17 +1247,8 @@
           label: 'Get uBlock for Firefox'
         };
       }
-      // Edge (Edg/)
-      if (/Edg\/([0-9.]+)/i.test(ua)) {
-        return {
-          name: 'Edge',
-          icon: 'fa-brands fa-edge',
-          url: 'https://microsoftedge.microsoft.com/addons/detail/ublock-origin-lite/hkgchocpkephkdpffpcilbcmoabjigkm',
-          label: 'Get uBlock for Edge'
-        };
-      }
       // Opera
-      if (/OPR\/([0-9.]+)/i.test(ua)) {
+      if (/OPR\/|Opera/i.test(ua)) {
         return {
           name: 'Opera',
           icon: 'fa-brands fa-opera',
@@ -1256,7 +1256,7 @@
           label: 'Get uBlock for Opera'
         };
       }
-      // Chrome / Default Chromium
+      // Chrome / Brave / Default Chromium
       return {
         name: 'Chrome',
         icon: 'fa-brands fa-chrome',
