@@ -1100,14 +1100,29 @@
       hideAuthError();
       setAuthLoading(true);
       explicitLogin = true;
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
       try {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
         await auth.signInWithPopup(provider);
         closeAuthModal();
       } catch (err) {
+        console.error('Google popup auth error:', err);
+        const shouldTryRedirect = (
+          err.code === 'auth/popup-blocked' ||
+          err.code === 'auth/operation-not-supported-in-this-environment' ||
+          err.code === 'auth/cancelled-popup-request' ||
+          err.code === 'auth/internal-error'
+        );
+        if (shouldTryRedirect && location.protocol !== 'file:') {
+          try {
+            await auth.signInWithRedirect(provider);
+            return;
+          } catch (redirErr) {
+            console.error('Google redirect auth error:', redirErr);
+            err = redirErr;
+          }
+        }
         explicitLogin = false;
-        console.error('Google auth error:', err);
         if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
           showAuthError(friendlyAuthError(err.code));
         }

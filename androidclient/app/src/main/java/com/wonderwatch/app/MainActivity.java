@@ -521,12 +521,11 @@ public final class MainActivity extends Activity {
             String extra = hit != null ? hit.getExtra() : null;
 
             // Block automated or ad-driven popup windows immediately
-            if (!isUserGesture || (extra != null && shieldEngine.isBlockedDomainUrl(extra))) {
+            if (extra != null && shieldEngine.isBlockedDomainUrl(extra)) {
                 return false;
             }
 
-            // Route window.open (used by account sign-in) into a deferred popup;
-            // only display the dialog if the destination URL is a trusted auth/app origin.
+            // Route window.open (used by Google/Firebase account sign-in) into a dialog window
             final WebView popupView = new WebView(MainActivity.this);
             popupView.setBackgroundColor(BG_DARK);
             configureWebSettings(popupView.getSettings());

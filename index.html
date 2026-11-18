@@ -1324,25 +1324,26 @@
       explicitLogin = true;
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
+
+      // On Android/desktop clients, try signInWithPopup first; if popups fail or are disallowed, seamlessly redirect
       try {
         await auth.signInWithPopup(provider);
         closeAuthModal();
       } catch (err) {
-        console.error('Google auth error:', err);
-        const isAppClient = Boolean(
-          window.__WONDERWATCH_DESKTOP__ ||
-          window.__WONDERWATCH_APP__ ||
-          /WonderWatchDesktop|WonderWatchApp/i.test(navigator.userAgent || '')
+        console.error('Google popup auth error:', err);
+        const shouldTryRedirect = (
+          err.code === 'auth/popup-blocked' ||
+          err.code === 'auth/operation-not-supported-in-this-environment' ||
+          err.code === 'auth/cancelled-popup-request' ||
+          err.code === 'auth/internal-error'
         );
-        if (!isAppClient && (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment')) {
-          // Popups unavailable in standard browser: fall back to a full-page redirect
-          if (location.protocol !== 'file:') {
-            try {
-              await auth.signInWithRedirect(provider);
-              return;
-            } catch (redirErr) {
-              err = redirErr;
-            }
+        if (shouldTryRedirect && location.protocol !== 'file:') {
+          try {
+            await auth.signInWithRedirect(provider);
+            return;
+          } catch (redirErr) {
+            console.error('Google redirect auth error:', redirErr);
+            err = redirErr;
           }
         }
         explicitLogin = false;
