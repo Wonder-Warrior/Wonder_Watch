@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-  <link rel="icon" type="image/png" href="./favicon.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="icon" type="image/x-icon" href="./favicon.ico">
+  <link rel="icon" type="image/png" sizes="128x128" href="./favicon.png">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='100%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%233BFF53'/%3E%3Cstop offset='100%25' stop-color='%239effab'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='28' fill='url(%23g)'/%3E%3Cpolygon points='38,28 76,50 38,72' fill='%23000000'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="./favicon.png">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>WonderWatch | Stream Anime Free in HD</title>
   <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -156,15 +158,15 @@
 
         <!-- Guest State: Log In Button -->
         <div id="authGuestSection">
-          <button onclick="openAuthModal('login')" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl transition shadow-lg shadow-brand-500/20 whitespace-nowrap">
-            <i class="fa-solid fa-user text-xs"></i> <span>Log In</span>
+          <button onclick="openAuthModal('login')" class="w-8 h-8 sm:w-auto inline-flex items-center justify-center sm:justify-start gap-1.5 text-xs sm:text-sm font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 p-0 sm:px-4 sm:py-2 rounded-xl transition shadow-lg shadow-brand-500/20" title="Log In">
+            <i class="fa-solid fa-user text-xs"></i> <span class="hidden sm:inline">Log In</span>
           </button>
         </div>
 
         <!-- Logged-In User Profile State -->
         <div id="authUserSection" class="hidden relative">
-          <button onclick="toggleUserDropdown(event)" class="flex items-center gap-1.5 sm:gap-2 bg-surface-900 hover:bg-surface-850 border border-zinc-800/80 px-2 sm:px-3 py-1.5 rounded-2xl transition">
-            <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-brand-500 text-black flex items-center justify-center font-bold text-[11px] sm:text-xs shadow-sm overflow-hidden" id="userAvatarContainer">
+          <button onclick="toggleUserDropdown(event)" class="flex items-center gap-1.5 sm:gap-2 bg-surface-900 hover:bg-surface-850 border border-zinc-800/80 p-1 sm:px-3 sm:py-1.5 rounded-xl sm:rounded-2xl transition" title="User Menu">
+            <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-brand-500 text-black flex items-center justify-center font-bold text-[11px] sm:text-xs shadow-sm overflow-hidden flex-shrink-0" id="userAvatarContainer">
               <span id="userAvatarLetter">U</span>
             </div>
             <span id="headerUsername" class="text-xs font-semibold text-zinc-200 hidden sm:inline max-w-[90px] truncate">User</span>

@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-  <link rel="icon" type="image/png" href="./favicon.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="icon" type="image/x-icon" href="./favicon.ico">
+  <link rel="icon" type="image/png" sizes="128x128" href="./favicon.png">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='100%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%233BFF53'/%3E%3Cstop offset='100%25' stop-color='%239effab'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='28' fill='url(%23g)'/%3E%3Cpolygon points='38,28 76,50 38,72' fill='%23000000'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="./favicon.png">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>WonderWatch | Watch Anime</title>
   <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -122,8 +124,8 @@
       </a>
       
       <div class="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
-        <a href="index.html" class="text-xs bg-surface-900 border border-zinc-800 hover:border-brand-500/50 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-zinc-300 hover:text-white transition flex items-center gap-1 font-medium whitespace-nowrap" title="Back to Browse">
-          <i class="fa-solid fa-arrow-left text-[10px]"></i> <span class="hidden sm:inline">Back to Browse</span><span class="sm:hidden text-[11px]">Browse</span>
+        <a href="index.html" class="w-8 h-8 sm:w-auto p-0 sm:px-4 sm:py-2 text-xs bg-surface-900 border border-zinc-800 hover:border-brand-500/50 rounded-xl text-zinc-300 hover:text-white transition flex items-center justify-center sm:justify-start gap-1.5 font-medium whitespace-nowrap" title="Back to Browse">
+          <i class="fa-solid fa-arrow-left text-xs"></i> <span class="hidden sm:inline">Back to Browse</span>
         </a>
 
         <!-- Sync indicator -->
@@ -134,17 +136,18 @@
 
         <!-- User Profile / Log In state in Header -->
         <div id="authGuestSection">
-          <button onclick="openAuthModal('login')" class="inline-flex items-center gap-1.5 text-xs font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition shadow-lg shadow-brand-500/20 whitespace-nowrap">
-            <i class="fa-solid fa-user text-xs"></i> <span>Log In</span>
+          <button onclick="openAuthModal('login')" class="w-8 h-8 sm:w-auto p-0 sm:px-3.5 sm:py-2 inline-flex items-center justify-center sm:justify-start gap-1.5 text-xs font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 rounded-xl transition shadow-lg shadow-brand-500/20 whitespace-nowrap" title="Log In">
+            <i class="fa-solid fa-user text-xs"></i> <span class="hidden sm:inline">Log In</span>
           </button>
         </div>
 
         <div id="authUserSection" class="hidden relative">
-          <button onclick="toggleUserDropdown(event)" class="flex items-center gap-1.5 bg-surface-900 hover:bg-surface-850 border border-zinc-800/80 px-2 sm:px-2.5 py-1.5 rounded-2xl transition">
-            <div class="w-6 h-6 rounded-full bg-brand-500 text-black flex items-center justify-center font-bold text-[11px] shadow-sm overflow-hidden" id="userAvatarContainer">
+          <button onclick="toggleUserDropdown(event)" class="flex items-center gap-1.5 bg-surface-900 hover:bg-surface-850 border border-zinc-800/80 p-1 sm:px-2.5 sm:py-1.5 rounded-xl sm:rounded-2xl transition" title="User Menu">
+            <div class="w-6 h-6 rounded-full bg-brand-500 text-black flex items-center justify-center font-bold text-[11px] shadow-sm overflow-hidden flex-shrink-0" id="userAvatarContainer">
               <span id="userAvatarLetter">U</span>
             </div>
             <span id="headerUsername" class="text-xs font-semibold text-zinc-200 hidden sm:inline max-w-[90px] truncate">User</span>
+            <i class="fa-solid fa-chevron-down text-[10px] text-zinc-500 hidden sm:inline"></i>
           </button>
 
           <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-surface-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-zinc-800/60 backdrop-blur-xl">
@@ -1016,7 +1019,7 @@
         // Thumbnail: episode-specific thumbnail from metadata or streamingEpisodes, fallback to anime cover
         const thumbUrl = epData.thumbnail || streamingItem?.thumbnail || defaultImg;
         
-        // One-liner / Title: specific episode title, summary, or meaningful one-liner
+        // Title: specific episode title or Ep X
         let titleText = epData.title || streamingItem?.title || '';
         if (titleText && !titleText.toLowerCase().startsWith('episode')) {
           titleText = `Ep ${i}: ${titleText}`;
@@ -1024,7 +1027,15 @@
           titleText = `Episode ${i}`;
         }
 
-        const summaryText = epData.synopsis || epData.summary || `Episode ${i} of ${animeTitle}`;
+        // Overview / One-liner: real synopsis from MAL/Jikan, or clean description snippet
+        let summaryText = epData.synopsis || epData.summary || '';
+        if (!summaryText && animeMetadata?.description) {
+          const cleanDesc = animeMetadata.description.replace(/<[^>]+>/g, '').trim();
+          summaryText = cleanDesc.length > 90 ? cleanDesc.slice(0, 87) + '...' : cleanDesc;
+        }
+        if (!summaryText) {
+          summaryText = `Episode ${i} of ${animeTitle}`;
+        }
 
         const isCurrent = i === currentEpisode;
         const card = document.createElement('button');
@@ -1037,7 +1048,7 @@
 
         card.innerHTML = `
           <div class="relative w-20 h-12 rounded-lg overflow-hidden bg-surface-950 flex-shrink-0 border border-zinc-800/80">
-            ${thumbUrl ? `<img src="${escapeHtml(thumbUrl)}" alt="Episode ${i}" class="w-full h-full object-cover" loading="lazy">` : `<div class="w-full h-full bg-surface-900 flex items-center justify-center text-zinc-600"><i class="fa-solid fa-play text-xs"></i></div>`}
+            ${thumbUrl ? `<img src="${escapeHtml(thumbUrl)}" alt="Episode ${i}" class="w-full h-full object-cover" loading="eager" onerror="if(this.src!=='${escapeHtml(defaultImg)}'){this.src='${escapeHtml(defaultImg)}';}">` : `<div class="w-full h-full bg-surface-900 flex items-center justify-center text-zinc-600"><i class="fa-solid fa-play text-xs"></i></div>`}
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
             <span class="absolute bottom-1 left-1 text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
               isCurrent ? 'bg-brand-500 text-black' : 'bg-surface-900/90 text-zinc-200'
@@ -1077,7 +1088,7 @@
           if (num) {
             episodeMetadataMap[num] = {
               title: ep.title || ep.title_romanji || '',
-              synopsis: ep.synopsis ? ep.synopsis.split('\n')[0] : ''
+              synopsis: ep.synopsis ? ep.synopsis.split('\n')[0].trim() : ''
             };
           }
         });
