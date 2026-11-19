@@ -35,6 +35,7 @@ namespace WonderWatchDesktop
         public const int CMD_HOME = 0x1002;
         public const int CMD_RELOAD = 0x1003;
         public const int CMD_FULLSCREEN = 0x1004;
+        public const int CMD_CHECK_UPDATES = 0x1005;
 
         [DllImport("dwmapi.dll")]
         public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
@@ -130,7 +131,7 @@ namespace WonderWatchDesktop
             catch { }
         }
 
-        private void CheckForUpdatesAsync()
+        private void CheckForUpdatesAsync(bool manual)
         {
             System.Threading.Tasks.Task.Run(() =>
             {
@@ -143,19 +144,33 @@ namespace WonderWatchDesktop
                         string json = wc.DownloadString("https://raw.githubusercontent.com/wonder-warrior/Wonder-Watch/main/version.json?t=" + DateTimeOffset.UtcNow.ToUnixTimeSeconds());
                         var verMatch = System.Text.RegularExpressions.Regex.Match(json, @"""desktop""\s*:\s*\{[^}]*""version""\s*:\s*""([0-9]+\.[0-9]+\.[0-9]+)""");
                         var urlMatch = System.Text.RegularExpressions.Regex.Match(json, @"""desktop""\s*:\s*\{[^}]*""exeUrl""\s*:\s*""([^""]+)""");
-                        if (!verMatch.Success || !urlMatch.Success) return;
-
-                        Version remoteVer = new Version(verMatch.Groups[1].Value);
                         Version localVer = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
                         Version local3 = new Version(localVer.Major, localVer.Minor, Math.Max(0, localVer.Build));
-                        if (remoteVer <= local3) return;
+                        if (!verMatch.Success || !urlMatch.Success)
+                        {
+                            if (manual)
+                            {
+                                BeginInvoke((Action)(() => MessageBox.Show(this, "Current version: v" + local3.ToString(3) + "\nLatest version: Unable to read version.json", "WonderWatch Updates", MessageBoxButtons.OK, MessageBoxIcon.Information)));
+                            }
+                            return;
+                        }
+
+                        Version remoteVer = new Version(verMatch.Groups[1].Value);
+                        if (remoteVer <= local3)
+                        {
+                            if (manual)
+                            {
+                                BeginInvoke((Action)(() => MessageBox.Show(this, "You are up to date!\n\nCurrent version: v" + local3.ToString(3) + "\nLatest version: v" + remoteVer.ToString(3), "WonderWatch Updates", MessageBoxButtons.OK, MessageBoxIcon.Information)));
+                            }
+                            return;
+                        }
 
                         string exeUrl = urlMatch.Groups[1].Value;
                         BeginInvoke((Action)(() =>
                         {
                             var res = MessageBox.Show(
                                 this,
-                                "A new version of WonderWatch Desktop (v" + remoteVer.ToString(3) + ") is available!\n\nYou are currently on v" + local3.ToString(3) + ".\nWould you like to update now?",
+                                "A new version of WonderWatch Desktop is available!\n\nCurrent version: v" + local3.ToString(3) + "\nLatest version: v" + remoteVer.ToString(3) + "\n\nWould you like to update now?",
                                 "WonderWatch Update Available",
                                 MessageBoxButtons.YesNo,
                                 MessageBoxIcon.Information
@@ -212,7 +227,7 @@ namespace WonderWatchDesktop
             else
             {
                 EnsureHighPerformanceGpuPreference();
-                Shown += (s, e) => CheckForUpdatesAsync();
+                Shown += (s, e) => CheckForUpdatesAsync(false);
             }
 
             Text = "WonderWatch";
@@ -357,6 +372,11 @@ namespace WonderWatchDesktop
                     ToggleFullscreen();
                     return;
                 }
+                if (cmd == NativeMethods.CMD_CHECK_UPDATES)
+                {
+                    CheckForUpdatesAsync(true);
+                    return;
+                }
             }
             base.WndProc(ref m);
         }
@@ -372,6 +392,7 @@ namespace WonderWatchDesktop
                 NativeMethods.AppendMenu(sysMenu, NativeMethods.MF_STRING, NativeMethods.CMD_HOME, "WonderWatch Home\tAlt+H");
                 NativeMethods.AppendMenu(sysMenu, NativeMethods.MF_STRING, NativeMethods.CMD_RELOAD, "Reload\tF5");
                 NativeMethods.AppendMenu(sysMenu, NativeMethods.MF_STRING, NativeMethods.CMD_FULLSCREEN, "Toggle Fullscreen\tF11");
+                NativeMethods.AppendMenu(sysMenu, NativeMethods.MF_STRING, NativeMethods.CMD_CHECK_UPDATES, "Check for Updates...");
             }
             catch
             {

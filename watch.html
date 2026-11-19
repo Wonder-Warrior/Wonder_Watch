@@ -1713,6 +1713,9 @@
     }
 
     function loadPlayer() {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
       syncAudioControlVisibility();
       document.getElementById('animeSubInfo').innerText = currentServer === 'zoko_mal'
         ? `Episode ${currentEpisode} • ${currentType.toUpperCase()}`
