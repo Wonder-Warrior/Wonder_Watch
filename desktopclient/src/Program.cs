@@ -89,6 +89,8 @@ namespace WonderWatchDesktop
         private readonly DiscordRpcClient discordRpc = new DiscordRpcClient();
         private bool isInitialized;
         private bool isFullscreen;
+        private bool isAppFullscreen;
+        private bool isElementFullscreen;
         private FormWindowState prevWindowState = FormWindowState.Normal;
         private FormBorderStyle prevBorderStyle = FormBorderStyle.Sizable;
         private Rectangle prevBounds;
@@ -491,7 +493,8 @@ namespace WonderWatchDesktop
 
             webView.CoreWebView2.ContainsFullScreenElementChanged += delegate
             {
-                SetFullscreen(webView.CoreWebView2.ContainsFullScreenElement);
+                isElementFullscreen = webView.CoreWebView2.ContainsFullScreenElement;
+                SetFullscreen(isAppFullscreen || isElementFullscreen);
             };
 
             webView.CoreWebView2.NewWindowRequested += OnNewWindowRequested;
@@ -846,7 +849,8 @@ namespace WonderWatchDesktop
 
         private void ToggleFullscreen()
         {
-            SetFullscreen(!isFullscreen);
+            isAppFullscreen = !isAppFullscreen;
+            SetFullscreen(isAppFullscreen || isElementFullscreen);
         }
 
         private void SetFullscreen(bool enable)
