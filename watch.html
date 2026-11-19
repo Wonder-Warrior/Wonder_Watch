@@ -1284,6 +1284,15 @@
     let currentType = 'sub';
     let currentServer = 'aniembed_se';
     let savedResumeTime = Math.max(0, parseInt(urlParams.get('time'), 10) || 0);
+    if (!urlParams.get('time')) {
+      try {
+        const localHist = JSON.parse(localStorage.getItem('ww_watch_history') || '[]');
+        const match = localHist.find(item => String(item.id) === String(animeId) && Number(item.episode) === Number(currentEpisode));
+        if (match && Number(match.timestamp) > 0) {
+          savedResumeTime = Math.floor(Number(match.timestamp));
+        }
+      } catch (_) {}
+    }
 
     let animeMetadata = null;
 
