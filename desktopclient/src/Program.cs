@@ -141,7 +141,7 @@ namespace WonderWatchDesktop
                     using (var wc = new System.Net.WebClient())
                     {
                         wc.Headers.Add("User-Agent", "WonderWatchDesktop");
-                        string json = wc.DownloadString("https://raw.githubusercontent.com/wonder-warrior/Wonder-Watch/main/version.json?t=" + DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                        string json = wc.DownloadString("https://wonder-warrior.github.io/Wonder-Watch/version.json?t=" + DateTimeOffset.UtcNow.ToUnixTimeSeconds());
                         var verMatch = System.Text.RegularExpressions.Regex.Match(json, @"""desktop""\s*:\s*\{[^}]*""version""\s*:\s*""([0-9]+\.[0-9]+\.[0-9]+)""");
                         var urlMatch = System.Text.RegularExpressions.Regex.Match(json, @"""desktop""\s*:\s*\{[^}]*""exeUrl""\s*:\s*""([^""]+)""");
                         Version localVer = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;

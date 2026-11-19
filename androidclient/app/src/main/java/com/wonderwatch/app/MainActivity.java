@@ -450,7 +450,7 @@ public final class MainActivity extends Activity {
                 final String localVer = currentVer;
 
                 try {
-                    java.net.URL url = new java.net.URL("https://raw.githubusercontent.com/wonder-warrior/Wonder-Watch/main/version.json?t=" + System.currentTimeMillis());
+                    java.net.URL url = new java.net.URL("https://wonder-warrior.github.io/Wonder-Watch/version.json?t=" + System.currentTimeMillis());
                     java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                     conn.setConnectTimeout(8000);
                     conn.setReadTimeout(8000);
