@@ -327,19 +327,19 @@
                   <span>Stream 1</span>
                   <i class="fa-solid fa-check text-[10px]"></i>
                 </button>
-                <button type="button" onclick="selectStreamSource('zoko_mal', 'Stream 2')" data-server="zoko_mal" class="ww-dd-opt w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition text-zinc-300 hover:bg-surface-800 hover:text-white">
+                <button type="button" onclick="selectStreamSource('animeembed', 'Stream 2')" data-server="animeembed" class="ww-dd-opt w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition text-zinc-300 hover:bg-surface-800 hover:text-white">
                   <span>Stream 2</span>
                   <i class="fa-solid fa-check text-[10px] opacity-0"></i>
                 </button>
-                <button type="button" onclick="selectStreamSource('animeembed', 'Stream 3')" data-server="animeembed" class="ww-dd-opt w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition text-zinc-300 hover:bg-surface-800 hover:text-white">
+                <button type="button" onclick="selectStreamSource('zoko_mal', 'Stream 3')" data-server="zoko_mal" class="ww-dd-opt w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition text-zinc-300 hover:bg-surface-800 hover:text-white">
                   <span>Stream 3</span>
                   <i class="fa-solid fa-check text-[10px] opacity-0"></i>
                 </button>
               </div>
             </div>
 
-            <!-- Sub / Dub Control (Static pill when single option, Custom Dropdown when both exist) -->
-            <div class="relative inline-block" id="audioDropdownWrap">
+            <!-- Sub / Dub Control (Shown only for Stream 3, which has no built-in selector) -->
+            <div class="relative hidden inline-block" id="audioDropdownWrap">
               <div id="audioStaticBadge" class="bg-surface-800/90 border border-zinc-700/60 text-xs font-semibold px-3 py-2 rounded-xl text-zinc-200 inline-flex items-center gap-1.5 whitespace-nowrap">
                 <i class="fa-solid fa-closed-captioning text-[11px] text-brand-400"></i>
                 <span id="audioStaticLabel">Subtitled</span>
@@ -1272,16 +1272,18 @@
     //  APPLICATION LOGIC
     // ============================================================
     const urlParams = new URLSearchParams(window.location.search);
-    let animeId = urlParams.get('id') || '1';
-    let malId = urlParams.get('malId') || animeId;
+    const parsedAnimeId = parseInt(urlParams.get('id'), 10);
+    let animeId = String(Number.isFinite(parsedAnimeId) && parsedAnimeId > 0 ? parsedAnimeId : 1);
+    const parsedMalId = parseInt(urlParams.get('malId'), 10);
+    let malId = String(Number.isFinite(parsedMalId) && parsedMalId > 0 ? parsedMalId : animeId);
     let animeTitle = urlParams.get('title') || 'Anime Stream';
-    let totalEpisodes = parseInt(urlParams.get('eps')) || 12;
+    let totalEpisodes = parseInt(urlParams.get('eps'), 10) || 12;
     if (isNaN(totalEpisodes) || totalEpisodes <= 0) totalEpisodes = 12;
     
-    let currentEpisode = parseInt(urlParams.get('ep')) || 1;
+    let currentEpisode = Math.max(1, parseInt(urlParams.get('ep'), 10) || 1);
     let currentType = 'sub';
     let currentServer = 'aniembed_se';
-    let savedResumeTime = parseInt(urlParams.get('time')) || 0;
+    let savedResumeTime = Math.max(0, parseInt(urlParams.get('time'), 10) || 0);
 
     let animeMetadata = null;
 
@@ -1691,9 +1693,21 @@
     }
     playerFrame.addEventListener('load', hidePlayerSkeleton);
 
-    let aniembedDubFallbackTried = false;
-    function loadPlayer(forceNeroDualAudio = false) {
-      document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()}`;
+    function syncAudioControlVisibility() {
+      const wrap = document.getElementById('audioDropdownWrap');
+      if (!wrap) return;
+      if (currentServer === 'zoko_mal') {
+        wrap.classList.remove('hidden');
+      } else {
+        wrap.classList.add('hidden');
+      }
+    }
+
+    function loadPlayer() {
+      syncAudioControlVisibility();
+      document.getElementById('animeSubInfo').innerText = currentServer === 'zoko_mal'
+        ? `Episode ${currentEpisode} • ${currentType.toUpperCase()}`
+        : `Episode ${currentEpisode}`;
 
       const skel = document.getElementById('playerSkeleton');
       if (skel) {
@@ -1705,13 +1719,11 @@
       const resumeSec = Math.max(0, Math.floor(Number(savedResumeTime) || 0));
       let src = '';
       if (currentServer === 'aniembed_se') {
-        if (!forceNeroDualAudio) aniembedDubFallbackTried = false;
-        const langParam = forceNeroDualAudio ? 'sub&s=nero' : currentType;
-        src = `https://aniembed.se/e/${animeId}/${currentEpisode}?lang=${langParam}&autoplay=1&t=${resumeSec}`;
+        src = `https://aniembed.se/e/${animeId}/${currentEpisode}?autoplay=1&t=${resumeSec}`;
+      } else if (currentServer === 'animeembed') {
+        src = `https://animeembed.com/embed/ani/${animeId}/${currentEpisode}?autoPlay=1&start=${resumeSec}&accent=3BFF53`;
       } else if (currentServer === 'zoko_mal') {
         src = `https://zokoanime.video/stream/mal/${malId}/${currentEpisode}/${currentType}?color=3BFF53&autoplay=1&time=${resumeSec}`;
-      } else if (currentServer === 'animeembed') {
-        src = `https://animeembed.com/embed/ani/${animeId}/${currentEpisode}?track=${currentType}&autoPlay=1&start=${resumeSec}&accent=3BFF53`;
       }
 
       // Check ad blocker recommendation state for web browsers
@@ -1891,8 +1903,18 @@
       } catch (_) {}
     }
 
+    const TRUSTED_PLAYER_ORIGINS = new Set([
+      'https://aniembed.se',
+      'https://www.aniembed.se',
+      'https://animeembed.com',
+      'https://www.animeembed.com',
+      'https://zokoanime.video',
+      'https://www.zokoanime.video'
+    ]);
+
     window.addEventListener('message', (event) => {
       try {
+        if (!event.origin || !TRUSTED_PLAYER_ORIGINS.has(event.origin)) return;
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         if (!data) return;
 
@@ -1906,22 +1928,7 @@
               autoSaveProgress(savedResumeTime);
             }
           }
-          if (data.name === 'ready' && !aniembedDubFallbackTried && d.language && d.language !== currentType) {
-            // Sync AniEmbed if its persisted localStorage preferredLanguage overrode URL ?lang=
-            sendAniEmbedCommand('setProvider', {
-              language: currentType,
-              providerId: currentType === 'sub' ? 'nero' : 'sora'
-            });
-          } else if (data.name === 'error' && currentServer === 'aniembed_se' && currentType === 'dub' && !aniembedDubFallbackTried) {
-            // Fallback to dual-audio nero stream when dedicated dub provider fails (e.g. Thus Spoke Rohan Kishibe)
-            aniembedDubFallbackTried = true;
-            loadPlayer(true);
-            showToast('<i class="fa-solid fa-headphones text-brand-400"></i> Loaded dual-audio stream — use player Settings for English audio', 3800);
-          } else if (data.name === 'command-result' && d.command === 'setProvider' && d.ok === false && currentServer === 'aniembed_se' && currentType === 'dub' && !aniembedDubFallbackTried) {
-            aniembedDubFallbackTried = true;
-            loadPlayer(true);
-            showToast('<i class="fa-solid fa-headphones text-brand-400"></i> Loaded dual-audio stream — use player Settings for English audio', 3800);
-          } else if (data.name === 'ended' || data.name === 'next') {
+          if (data.name === 'ended' || data.name === 'next') {
             handleNextEpisode();
           }
           return;
@@ -2391,6 +2398,8 @@
       });
 
       buildInitialFranchiseGraph(currentMedia, edges || []);
+      // Pre-load full franchise graph in background so Skill Tree opens completely ready
+      ensureFullFranchiseGraphExpanded();
     }
 
     // 2. Fullscreen Skill Tree Franchise Graph & Renderer
@@ -2431,73 +2440,103 @@
     }
 
     async function ensureFullFranchiseGraphExpanded() {
-      if (!franchiseGraphState || franchiseGraphState.expanded) return;
-      franchiseGraphState.expanded = true;
+      if (!franchiseGraphState) return;
+      if (franchiseGraphState.expanded) return;
+      if (franchiseGraphState.expandPromise) {
+        return franchiseGraphState.expandPromise;
+      }
 
-      const { currentMedia, nodesById, directedEdges, edgeKeys } = franchiseGraphState;
-      const visited = new Set([currentMedia.id]);
-      let frontier = Array.from(nodesById.keys()).filter(id => id !== currentMedia.id);
+      franchiseGraphState.expandPromise = (async () => {
+        const { currentMedia, nodesById, directedEdges, edgeKeys } = franchiseGraphState;
+        const visited = new Set([currentMedia.id]);
+        let frontier = Array.from(nodesById.keys()).filter(id => id !== currentMedia.id);
 
-      const q = `query ($ids: [Int]) {
-        Page(perPage: 15) {
-          media(id_in: $ids, type: ANIME) {
-            id
-            relations {
-              edges {
-                relationType
-                node {
-                  id idMal title { romaji english } format status episodes nextAiringEpisode { episode } type coverImage { large medium } startDate { year month }
+        const q = `query ($ids: [Int]) {
+          Page(perPage: 15) {
+            media(id_in: $ids, type: ANIME) {
+              id
+              relations {
+                edges {
+                  relationType
+                  node {
+                    id idMal title { romaji english } format status episodes nextAiringEpisode { episode } type coverImage { large medium } startDate { year month }
+                  }
                 }
               }
             }
           }
-        }
-      }`;
+        }`;
 
-      try {
-        let rounds = 0;
-        while (frontier.length > 0 && rounds < 6 && nodesById.size < 36) {
-          rounds++;
-          const batch = frontier.filter(id => !visited.has(id)).slice(0, 10);
-          batch.forEach(id => visited.add(id));
-          if (!batch.length) break;
+        try {
+          let rounds = 0;
+          while (frontier.length > 0 && rounds < 6 && nodesById.size < 36) {
+            rounds++;
+            const batch = frontier.filter(id => !visited.has(id)).slice(0, 10);
+            batch.forEach(id => visited.add(id));
+            if (!batch.length) break;
 
-          const res = await fetch('https://graphql.anilist.co', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ query: q, variables: { ids: batch } })
-          });
-          if (!res.ok) break;
-          const json = await res.json();
-          const list = json?.data?.Page?.media || [];
-          const nextFrontier = [];
-
-          list.forEach(item => {
-            (item.relations?.edges || []).forEach(e => {
-              if (!isSafeFranchiseEdge(e, currentMedia)) return;
-              const isNew = !nodesById.has(e.node.id);
-              if (isNew) {
-                nodesById.set(e.node.id, e.node);
-              }
-              const key = `${item.id}->${e.node.id}:${e.relationType}`;
-              if (!edgeKeys.has(key)) {
-                edgeKeys.add(key);
-                directedEdges.push({ fromId: item.id, toId: e.node.id, relationType: e.relationType });
-              }
-              if (isNew && MAINLINE_RELATIONS_SET.has(e.relationType)) {
-                nextFrontier.push(e.node.id);
-              }
+            const res = await fetch('https://graphql.anilist.co', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({ query: q, variables: { ids: batch } })
             });
-          });
-          frontier = nextFrontier;
-        }
+            if (!res.ok) break;
+            const json = await res.json();
+            const list = json?.data?.Page?.media || [];
+            const nextFrontier = [];
+
+            list.forEach(item => {
+              (item.relations?.edges || []).forEach(e => {
+                if (!isSafeFranchiseEdge(e, currentMedia)) return;
+                const isNew = !nodesById.has(e.node.id);
+                if (isNew) {
+                  nodesById.set(e.node.id, e.node);
+                }
+                const key = `${item.id}->${e.node.id}:${e.relationType}`;
+                if (!edgeKeys.has(key)) {
+                  edgeKeys.add(key);
+                  directedEdges.push({ fromId: item.id, toId: e.node.id, relationType: e.relationType });
+                }
+                if (isNew && MAINLINE_RELATIONS_SET.has(e.relationType)) {
+                  nextFrontier.push(e.node.id);
+                }
+              });
+            });
+            frontier = nextFrontier;
+          }
+        } catch (_) {}
+        franchiseGraphState.expanded = true;
+      })();
+
+      return franchiseGraphState.expandPromise;
+    }
+
+    let modalHistoryDepth = 0;
+    function pushModalBackState() {
+      try {
+        history.pushState({ wwModalOpen: true }, '');
+        modalHistoryDepth++;
       } catch (_) {}
     }
 
     async function openFranchiseTreeModal() {
       playSoundCue('click');
       const modal = document.getElementById('franchiseTreeModal');
+      const viewBtn = document.getElementById('viewFranchiseTreeBtn');
       if (!modal || !animeMetadata) return;
+
+      // Completely load the full franchise tree before showing it
+      if (franchiseGraphState && !franchiseGraphState.expanded) {
+        if (viewBtn) {
+          viewBtn.disabled = true;
+          viewBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[10px]"></i> Loading...';
+        }
+        await ensureFullFranchiseGraphExpanded();
+        if (viewBtn) {
+          viewBtn.disabled = false;
+          viewBtn.innerHTML = '<i class="fa-solid fa-diagram-project text-[10px]"></i> View';
+        }
+      }
 
       const titleEl = document.getElementById('skillTreeModalTitle');
       if (titleEl) {
@@ -2506,23 +2545,50 @@
 
       modal.classList.remove('hidden');
       modal.classList.add('flex');
-
+      pushModalBackState();
       renderFranchiseSkillTree();
-      if (franchiseGraphState && !franchiseGraphState.expanded) {
-        await ensureFullFranchiseGraphExpanded();
-        if (!modal.classList.contains('hidden')) {
-          renderFranchiseSkillTree();
+    }
+
+    function closeFranchiseTreeModal(fromPopState = false) {
+      const modal = document.getElementById('franchiseTreeModal');
+      if (modal && !modal.classList.contains('hidden')) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        if (!fromPopState && modalHistoryDepth > 0) {
+          modalHistoryDepth--;
+          try { history.back(); } catch (_) {}
         }
       }
     }
 
-    function closeFranchiseTreeModal() {
-      const modal = document.getElementById('franchiseTreeModal');
-      if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+    window.__wwHandleBack = function() {
+      const treeModal = document.getElementById('franchiseTreeModal');
+      if (treeModal && !treeModal.classList.contains('hidden')) {
+        closeFranchiseTreeModal(true);
+        return true;
       }
-    }
+      const ublockModal = document.getElementById('uBlockModal');
+      if (ublockModal && !ublockModal.classList.contains('hidden')) {
+        dismissUBlockModal();
+        return true;
+      }
+      const authModal = document.getElementById('authModal');
+      if (authModal && !authModal.classList.contains('hidden')) {
+        closeAuthModal();
+        return true;
+      }
+      const openDropdown = document.querySelector('#serverDropdownMenu:not(.hidden), #audioDropdownMenu:not(.hidden)');
+      if (openDropdown) {
+        closeAllCustomDropdowns();
+        return true;
+      }
+      return false;
+    };
+
+    window.addEventListener('popstate', () => {
+      if (modalHistoryDepth > 0) modalHistoryDepth--;
+      window.__wwHandleBack();
+    });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeFranchiseTreeModal();

@@ -283,8 +283,23 @@ public final class MainActivity extends Activity {
             authPopupDialog.dismiss();
             return;
         }
-        if (webView.canGoBack()) {
-            webView.goBack();
+        if (webView != null) {
+            webView.evaluateJavascript(
+                "(function(){try{if(typeof window.__wwHandleBack==='function'&&window.__wwHandleBack())return true;}catch(e){}return false;})()",
+                new android.webkit.ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String value) {
+                        if ("true".equals(value)) {
+                            return;
+                        }
+                        if (webView.canGoBack()) {
+                            webView.goBack();
+                        } else {
+                            finish();
+                        }
+                    }
+                }
+            );
             return;
         }
         finish();

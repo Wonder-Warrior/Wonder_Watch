@@ -94,9 +94,29 @@ namespace WonderWatchDesktop
         private FormBorderStyle prevBorderStyle = FormBorderStyle.Sizable;
         private Rectangle prevBounds;
 
+        private static string SanitizeStartUrl(string initialUrl)
+        {
+            if (string.IsNullOrWhiteSpace(initialUrl)) return DefaultHomeUrl;
+            try
+            {
+                Uri u = new Uri(initialUrl);
+                if (u.Scheme == Uri.UriSchemeHttps && u.Host.Equals("wonder-warrior.github.io", StringComparison.OrdinalIgnoreCase))
+                {
+                    return u.AbsoluteUri;
+                }
+                if ((u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps) &&
+                    (u.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || u.Host == "127.0.0.1"))
+                {
+                    return u.AbsoluteUri;
+                }
+            }
+            catch { }
+            return DefaultHomeUrl;
+        }
+
         public MainForm(string initialUrl, string customProfileDir, string smokeLogPath)
         {
-            startUrl = string.IsNullOrWhiteSpace(initialUrl) ? DefaultHomeUrl : initialUrl;
+            startUrl = SanitizeStartUrl(initialUrl);
             appDataDir = string.IsNullOrWhiteSpace(customProfileDir)
                 ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WonderWatchDesktop")
                 : customProfileDir;

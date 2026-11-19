@@ -1500,6 +1500,30 @@
       if (icon) icon.classList.remove('is-open');
     }
 
+    window.__wwHandleBack = function() {
+      const authModal = document.getElementById('authModal');
+      if (authModal && !authModal.classList.contains('hidden')) {
+        closeAuthModal();
+        return true;
+      }
+      const drawer = document.getElementById('mobileNavDrawer');
+      if (drawer && drawer.classList.contains('is-open')) {
+        closeMobileNav();
+        return true;
+      }
+      const dropdown = document.getElementById('userDropdownMenu');
+      if (dropdown && !dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+        return true;
+      }
+      const sr = document.getElementById('searchResults');
+      if (sr && !sr.classList.contains('hidden')) {
+        sr.classList.add('hidden');
+        return true;
+      }
+      return false;
+    };
+
     function focusMainSearch() {
       const input = document.getElementById('searchInput');
       if (input) {
