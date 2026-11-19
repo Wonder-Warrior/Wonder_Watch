@@ -420,15 +420,15 @@
           </div>
         </div>
 
-        <!-- Series Franchise Seasons & Related Parts -->
+        <!-- Franchise & Episodes Tree View -->
         <div id="seriesGroupSection" class="bg-surface-900 border border-zinc-800/80 rounded-2xl p-5 space-y-3 shadow-xl">
           <div class="flex justify-between items-center pb-2 border-b border-zinc-800">
             <h2 class="font-heading font-bold text-xs tracking-wider text-zinc-300 uppercase flex items-center gap-2">
-              <i class="fa-solid fa-layer-group text-brand-400"></i> Series & Seasons
+              <i class="fa-solid fa-diagram-project text-brand-400"></i> Franchise Tree
             </h2>
-            <span class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Franchise</span>
+            <span id="franchiseCountBadge" class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Seasons &amp; Eps</span>
           </div>
-          <div id="seriesGroupList" class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+          <div id="seriesGroupList" class="space-y-2 max-h-[430px] overflow-y-auto pr-1">
             <!-- Skeletons rendered on init -->
           </div>
         </div>
@@ -628,22 +628,22 @@
         gain.connect(ctx.destination);
 
         if (type === 'type') {
-          // Subtle, tactile mechanical key tap with random micro-pitch variation
+          // Crisp tactile mechanical key tap with random micro-pitch variation
           const pitch = 1800 + Math.random() * 450;
           osc.type = 'triangle';
           osc.frequency.setValueAtTime(pitch, now);
           osc.frequency.exponentialRampToValueAtTime(320, now + 0.022);
-          gain.gain.setValueAtTime(0.015, now);
-          gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.025);
+          gain.gain.setValueAtTime(0.038, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.026);
           osc.start(now);
-          osc.stop(now + 0.025);
+          osc.stop(now + 0.026);
         } else if (type === 'logo') {
           // Playful ascending lime spark chord
           osc.type = 'sine';
           osc.frequency.setValueAtTime(587.33, now); // D5
           osc.frequency.exponentialRampToValueAtTime(880, now + 0.08); // A5
           osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.16); // D6
-          gain.gain.setValueAtTime(0.045, now);
+          gain.gain.setValueAtTime(0.11, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
           osc.start(now);
           osc.stop(now + 0.22);
@@ -652,7 +652,7 @@
           osc.type = 'sawtooth';
           osc.frequency.setValueAtTime(220, now);
           osc.frequency.exponentialRampToValueAtTime(660, now + 0.11);
-          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.setValueAtTime(0.10, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
           osc.start(now);
           osc.stop(now + 0.16);
@@ -661,7 +661,7 @@
           osc.type = 'sine';
           osc.frequency.setValueAtTime(380, now);
           osc.frequency.exponentialRampToValueAtTime(740, now + 0.07);
-          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.setValueAtTime(0.11, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.10);
           osc.start(now);
           osc.stop(now + 0.10);
@@ -669,7 +669,7 @@
           osc.type = 'sine';
           osc.frequency.setValueAtTime(520, now);
           osc.frequency.exponentialRampToValueAtTime(780, now + 0.09);
-          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.setValueAtTime(0.12, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
           osc.start(now);
           osc.stop(now + 0.14);
@@ -677,7 +677,7 @@
           osc.type = 'sine';
           osc.frequency.setValueAtTime(540, now);
           osc.frequency.exponentialRampToValueAtTime(340, now + 0.09);
-          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.setValueAtTime(0.10, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
           osc.start(now);
           osc.stop(now + 0.12);
@@ -685,7 +685,7 @@
           osc.type = 'triangle';
           osc.frequency.setValueAtTime(420, now);
           osc.frequency.exponentialRampToValueAtTime(560, now + 0.06);
-          gain.gain.setValueAtTime(0.045, now);
+          gain.gain.setValueAtTime(0.095, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
           osc.start(now);
           osc.stop(now + 0.08);
@@ -693,10 +693,10 @@
           osc.type = 'sine';
           osc.frequency.setValueAtTime(640, now);
           osc.frequency.exponentialRampToValueAtTime(480, now + 0.045);
-          gain.gain.setValueAtTime(0.035, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          gain.gain.setValueAtTime(0.085, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
           osc.start(now);
-          osc.stop(now + 0.05);
+          osc.stop(now + 0.055);
         }
       } catch (_) {}
     }
@@ -1648,7 +1648,8 @@
     }
     playerFrame.addEventListener('load', hidePlayerSkeleton);
 
-    function loadPlayer() {
+    let aniembedDubFallbackTried = false;
+    function loadPlayer(forceNeroDualAudio = false) {
       document.getElementById('animeSubInfo').innerText = `Episode ${currentEpisode} • ${currentType.toUpperCase()}`;
 
       const skel = document.getElementById('playerSkeleton');
@@ -1661,7 +1662,9 @@
       const resumeSec = Math.max(0, Math.floor(Number(savedResumeTime) || 0));
       let src = '';
       if (currentServer === 'aniembed_se') {
-        src = `https://aniembed.se/e/${animeId}/${currentEpisode}?lang=${currentType}&autoplay=1&t=${resumeSec}`;
+        if (!forceNeroDualAudio) aniembedDubFallbackTried = false;
+        const langParam = forceNeroDualAudio ? 'sub&s=nero' : currentType;
+        src = `https://aniembed.se/e/${animeId}/${currentEpisode}?lang=${langParam}&autoplay=1&t=${resumeSec}`;
       } else if (currentServer === 'zoko_mal') {
         src = `https://zokoanime.video/stream/mal/${malId}/${currentEpisode}/${currentType}?color=3BFF53&autoplay=1&time=${resumeSec}`;
       } else if (currentServer === 'animeembed') {
@@ -1829,14 +1832,59 @@
     // ============================================================
     let lastSavedTime = 0;
 
+    function sendAniEmbedCommand(name, dataPayload) {
+      try {
+        const frame = document.getElementById('playerFrame');
+        if (frame && frame.contentWindow) {
+          frame.contentWindow.postMessage({
+            source: 'aniembed',
+            version: 1,
+            type: 'command',
+            name,
+            requestId: 'ww_' + Date.now(),
+            data: dataPayload
+          }, '*');
+        }
+      } catch (_) {}
+    }
+
     window.addEventListener('message', (event) => {
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         if (!data) return;
+
+        // Handle AniEmbed v1 official bridge events
+        if (data.source === 'aniembed' && data.type === 'event') {
+          const d = data.data || {};
+          if (typeof d.currentTime === 'number' && d.currentTime > 0) {
+            savedResumeTime = Math.floor(d.currentTime);
+            if (Math.abs(d.currentTime - lastSavedTime) >= 5) {
+              lastSavedTime = d.currentTime;
+              autoSaveProgress(savedResumeTime);
+            }
+          }
+          if (data.name === 'ready' && !aniembedDubFallbackTried && d.language && d.language !== currentType) {
+            // Sync AniEmbed if its persisted localStorage preferredLanguage overrode URL ?lang=
+            sendAniEmbedCommand('setProvider', {
+              language: currentType,
+              providerId: currentType === 'sub' ? 'nero' : 'sora'
+            });
+          } else if (data.name === 'error' && currentServer === 'aniembed_se' && currentType === 'dub' && !aniembedDubFallbackTried) {
+            // Fallback to dual-audio nero stream when dedicated dub provider fails (e.g. Thus Spoke Rohan Kishibe)
+            aniembedDubFallbackTried = true;
+            loadPlayer(true);
+            showToast('<i class="fa-solid fa-headphones text-brand-400"></i> Loaded dual-audio stream — use player Settings for English audio', 3800);
+          } else if (data.name === 'command-result' && d.command === 'setProvider' && d.ok === false && currentServer === 'aniembed_se' && currentType === 'dub' && !aniembedDubFallbackTried) {
+            aniembedDubFallbackTried = true;
+            loadPlayer(true);
+            showToast('<i class="fa-solid fa-headphones text-brand-400"></i> Loaded dual-audio stream — use player Settings for English audio', 3800);
+          } else if (data.name === 'ended' || data.name === 'next') {
+            handleNextEpisode();
+          }
+          return;
+        }
         
-        // Handle various postMessage formats from different embed providers
-        // Zoko / Standard: { type: 'progress', currentTime: N } or { type: 'timeupdate', currentTime: N }
-        // Aniembed: { type: 'aniembed:play', data: { currentTime: N } } or { event: 'timeupdate', currentTime: N }
+        // Handle Zoko / AnimeEmbed / Standard player events
         const eventType = data.type || data.event || '';
         
         let currentTime = null;
@@ -1950,13 +1998,13 @@
             format
             startDate { year }
             coverImage { extraLarge large medium }
-            enCast: characters(perPage: 6, sort: [ROLE, RELEVANCE, ID]) {
+            enCast: characters(perPage: 12, sort: [ROLE, RELEVANCE, ID]) {
               edges {
                 node { id }
                 voiceActors(language: ENGLISH) { id }
               }
             }
-            jpCast: characters(perPage: 6, sort: [ROLE, RELEVANCE, ID]) {
+            jpCast: characters(perPage: 12, sort: [ROLE, RELEVANCE, ID]) {
               edges {
                 node { id }
                 voiceActors(language: JAPANESE) { id }
@@ -2182,7 +2230,105 @@
       return aired > 0 ? aired : '?';
     }
 
-    function renderSeriesRelations(edges, currentMedia) {
+    function buildEpisodeLeavesElement(node, playableCount, isCurrentNode) {
+      const wrap = document.createElement('div');
+      wrap.className = 'mt-1.5 ml-3 pl-3 border-l border-zinc-800/80 space-y-1.5';
+
+      const count = typeof playableCount === 'number' && playableCount > 0 ? playableCount : 0;
+      if (count <= 0) {
+        wrap.innerHTML = `<div class="text-[11px] text-zinc-500 py-1 px-2">Episodes unavailable yet.</div>`;
+        return wrap;
+      }
+
+      const rawTitle = node.title?.english || node.title?.romaji || 'Anime';
+      const displayTitle = normalizeSeasonTitle(rawTitle);
+      const targetMal = node.idMal || node.id;
+
+      const renderEpPillGrid = (startEp, endEp) => {
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-5 gap-1 pt-1';
+        for (let ep = startEp; ep <= endEp; ep++) {
+          const isActiveEp = isCurrentNode && ep === currentEpisode;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `py-1 px-1 rounded-lg text-[10px] font-bold transition text-center ${
+            isActiveEp
+              ? 'bg-brand-500 text-black shadow-sm shadow-brand-500/30'
+              : 'bg-surface-900 hover:bg-surface-750 text-zinc-300 hover:text-brand-400 border border-zinc-800/90'
+          }`;
+          btn.innerText = ep;
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            if (isCurrentNode) {
+              playSoundCue('click');
+              currentEpisode = ep;
+              savedResumeTime = 0;
+              loadPlayer();
+              renderEpisodes();
+              autoSaveProgress();
+              renderSeriesRelations(animeMetadata?.relations?.edges, animeMetadata, true);
+            } else {
+              playSoundCue('open');
+              window.location.href = `watch.html?id=${node.id}&malId=${targetMal}&title=${encodeURIComponent(displayTitle)}&eps=${count}&ep=${ep}`;
+            }
+          };
+          grid.appendChild(btn);
+        }
+        return grid;
+      };
+
+      // Compact chunking when > 30 episodes so huge series (One Piece, Naruto) stay clean
+      if (count <= 30) {
+        wrap.appendChild(renderEpPillGrid(1, count));
+      } else {
+        const chunkSize = 25;
+        const totalChunks = Math.ceil(count / chunkSize);
+        const activeChunkIdx = isCurrentNode ? Math.floor((currentEpisode - 1) / chunkSize) : 0;
+
+        const tabsRow = document.createElement('div');
+        tabsRow.className = 'flex flex-wrap gap-1';
+        const gridHolder = document.createElement('div');
+
+        const selectChunk = (chunkIdx) => {
+          const s = chunkIdx * chunkSize + 1;
+          const end = Math.min(count, (chunkIdx + 1) * chunkSize);
+          Array.from(tabsRow.children).forEach((tBtn, idx) => {
+            const active = idx === chunkIdx;
+            tBtn.className = `px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
+              active
+                ? 'bg-brand-500/20 text-brand-400 border border-brand-500/40'
+                : 'bg-surface-900 text-zinc-400 hover:text-white border border-zinc-800'
+            }`;
+          });
+          gridHolder.innerHTML = '';
+          gridHolder.appendChild(renderEpPillGrid(s, end));
+        };
+
+        for (let c = 0; c < totalChunks; c++) {
+          const s = c * chunkSize + 1;
+          const end = Math.min(count, (c + 1) * chunkSize);
+          const tab = document.createElement('button');
+          tab.type = 'button';
+          tab.innerText = `${s}-${end}`;
+          tab.onclick = (e) => {
+            e.stopPropagation();
+            playSoundCue('click');
+            selectChunk(c);
+          };
+          tabsRow.appendChild(tab);
+        }
+
+        wrap.appendChild(tabsRow);
+        wrap.appendChild(gridHolder);
+        selectChunk(activeChunkIdx);
+      }
+
+      return wrap;
+    }
+
+    let cachedFranchiseNodes = null;
+
+    function renderSeriesRelations(edges, currentMedia, skipChainExpand = false) {
       const container = document.getElementById('seriesGroupList');
       container.innerHTML = '';
 
@@ -2198,26 +2344,59 @@
         'COMPILATION': 9,
         'OTHER': 10
       };
-
+      const MAINLINE_SET = new Set(['SEQUEL', 'PREQUEL', 'PARENT']);
       const ALLOWED_RELATIONS = new Set(Object.keys(RELATION_PRIORITY));
       const currentTitleLower = (currentMedia.title.english || currentMedia.title.romaji || '').toLowerCase();
 
-      const validRelations = [];
-      const seenIds = new Set([currentMedia.id]);
-
-      (edges || []).forEach(edge => {
-        if (!edge?.node || edge.node.type !== 'ANIME') return;
-        if (!ALLOWED_RELATIONS.has(edge.relationType)) return;
-        if (edge.node.status === 'NOT_YET_RELEASED') return;
-        if (seenIds.has(edge.node.id)) return;
+      const isSafeNode = (edge) => {
+        if (!edge?.node || edge.node.type !== 'ANIME') return false;
+        if (!ALLOWED_RELATIONS.has(edge.relationType)) return false;
+        if (edge.node.status === 'NOT_YET_RELEASED') return false;
         const relTitleLower = ((edge.node.title?.english || '') + ' ' + (edge.node.title?.romaji || '')).toLowerCase();
-        if (!currentTitleLower.includes('dragon ball') && relTitleLower.includes('dragon ball')) return;
-        if (!currentTitleLower.includes('toriko') && relTitleLower.includes('toriko')) return;
-        seenIds.add(edge.node.id);
-        validRelations.push({ relationType: edge.relationType, node: edge.node });
-      });
+        if (!currentTitleLower.includes('dragon ball') && relTitleLower.includes('dragon ball')) return false;
+        if (!currentTitleLower.includes('toriko') && relTitleLower.includes('toriko')) return false;
+        return true;
+      };
 
-      validRelations.sort((a, b) => {
+      const relationMap = cachedFranchiseNodes || new Map();
+      if (!cachedFranchiseNodes) {
+        relationMap.set(currentMedia.id, { relationType: 'CURRENT', node: currentMedia, isMainline: true });
+        (edges || []).forEach(edge => {
+          if (!isSafeNode(edge)) return;
+          if (!relationMap.has(edge.node.id)) {
+            relationMap.set(edge.node.id, {
+              relationType: edge.relationType,
+              node: edge.node,
+              isMainline: MAINLINE_SET.has(edge.relationType)
+            });
+          }
+          (edge.node.relations?.edges || []).forEach(sub => {
+            if (!isSafeNode(sub) || !MAINLINE_SET.has(sub.relationType)) return;
+            if (!relationMap.has(sub.node.id)) {
+              relationMap.set(sub.node.id, {
+                relationType: sub.relationType,
+                node: sub.node,
+                isMainline: true
+              });
+            }
+          });
+        });
+      }
+
+      const items = Array.from(relationMap.values()).filter(entry => entry.node.id !== currentMedia.id);
+      const countBadge = document.getElementById('franchiseCountBadge');
+      if (countBadge) {
+        countBadge.innerText = items.length > 0 ? `${items.length + 1} Titles` : 'Standalone';
+      }
+
+      if (items.length === 0) {
+        // Still allow viewing current anime's episode tree cleanly
+        const soloWrap = createTreeNodeRow({ relationType: 'CURRENT', node: currentMedia, isMainline: true }, true, true);
+        container.appendChild(soloWrap);
+        return;
+      }
+
+      items.sort((a, b) => {
         const pA = RELATION_PRIORITY[a.relationType] || 99;
         const pB = RELATION_PRIORITY[b.relationType] || 99;
         if (pA !== pB) return pA - pB;
@@ -2227,58 +2406,179 @@
         return (a.node.id || 0) - (b.node.id || 0);
       });
 
-      if (validRelations.length === 0) {
-        container.innerHTML = `<div class="py-4 text-center text-zinc-500 text-xs">Standalone anime (No other seasons or spinoffs).</div>`;
-        return;
-      }
+      const orderedList = [{ relationType: 'CURRENT', node: currentMedia, isMainline: true }, ...items];
 
-      const currentTitle = normalizeSeasonTitle(currentMedia.title.english || currentMedia.title.romaji);
-      const currentEpsDisplay = resolveNodePlayableEps(currentMedia);
-      const currentYear = currentMedia.startDate?.year || '';
-      const currentCard = document.createElement('div');
-      currentCard.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/40 text-left';
-      currentCard.innerHTML = `
-        <div class="w-8 h-10 rounded-lg bg-brand-500 flex items-center justify-center text-black font-black text-xs flex-shrink-0">
-          <i class="fa-solid fa-circle-play"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-[9px] font-black uppercase tracking-wider text-brand-400 bg-brand-500/20 px-1.5 py-0.5 rounded">NOW PLAYING</span>
-            <span class="text-[10px] text-zinc-400 font-medium">${escapeHtml(currentMedia.format || 'TV')} • ${currentEpsDisplay} eps${currentYear ? ' • ' + currentYear : ''}</span>
-          </div>
-          <h4 class="text-xs font-heading font-bold text-white line-clamp-2 leading-snug mt-0.5">${escapeHtml(currentTitle)}</h4>
-        </div>
-      `;
-      container.appendChild(currentCard);
-
-      validRelations.forEach(edge => {
-        const node = edge.node;
-        const relType = edge.relationType.replace(/_/g, ' ');
-        const displayTitle = normalizeSeasonTitle(node.title.english || node.title.romaji || 'Related Title');
+      function createTreeNodeRow(entry, isCurrent, defaultExpanded) {
+        const node = entry.node;
+        const displayTitle = normalizeSeasonTitle(node.title?.english || node.title?.romaji || 'Related Title');
         const relImg = node.coverImage?.large || node.coverImage?.medium || '';
         const relYear = node.startDate?.year || '';
         const relEps = resolveNodePlayableEps(node);
+        const relLabel = isCurrent ? 'NOW PLAYING' : entry.relationType.replace(/_/g, ' ');
+        const isBranch = !isCurrent && !entry.isMainline;
+
+        const treeItem = document.createElement('div');
+        treeItem.className = isBranch ? 'ml-3 pl-2.5 border-l border-zinc-800/80' : '';
 
         const card = document.createElement('div');
-        card.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-surface-800 border border-zinc-700/50 hover:border-brand-500/50 hover:bg-surface-750 cursor-pointer transition text-left group';
-        card.innerHTML = `
-          <img src="${escapeHtml(relImg)}" loading="lazy" decoding="async" class="w-8 h-11 object-cover rounded-lg bg-surface-950 flex-shrink-0">
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-[9px] font-bold uppercase tracking-wider text-brand-400 bg-brand-500/15 border border-brand-500/25 px-1.5 py-0.5 rounded">${escapeHtml(relType)}</span>
-              <span class="text-[10px] text-zinc-400 font-medium">${escapeHtml(node.format || 'TV')} • ${relEps} eps${relYear ? ' • ' + relYear : ''}</span>
-            </div>
-            <h4 class="text-xs font-heading font-bold text-zinc-200 group-hover:text-brand-400 line-clamp-2 leading-snug mt-0.5 transition">${escapeHtml(displayTitle)}</h4>
+        card.className = `flex items-center gap-2.5 p-2 rounded-xl border transition text-left group ${
+          isCurrent
+            ? 'bg-brand-500/10 border-brand-500/45'
+            : 'bg-surface-800/90 border-zinc-800 hover:border-brand-500/45 hover:bg-surface-750 cursor-pointer'
+        }`;
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = `w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition ${
+          defaultExpanded
+            ? 'bg-brand-500/20 text-brand-400'
+            : 'bg-surface-900/90 text-zinc-400 hover:text-white hover:bg-surface-750'
+        }`;
+        toggleBtn.innerHTML = `<i class="fa-solid fa-chevron-right text-[9px] transition-transform duration-200 ${defaultExpanded ? 'rotate-90' : ''}"></i>`;
+
+        const thumbHtml = isCurrent
+          ? `<div class="w-7 h-9 rounded-lg bg-brand-500 flex items-center justify-center text-black font-black text-[11px] flex-shrink-0"><i class="fa-solid fa-circle-play"></i></div>`
+          : `<img src="${escapeHtml(relImg)}" loading="lazy" decoding="async" class="w-7 h-9 object-cover rounded-lg bg-surface-950 flex-shrink-0">`;
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'flex-1 min-w-0';
+        infoDiv.innerHTML = `
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+              isCurrent
+                ? 'bg-brand-500/20 text-brand-400 font-black'
+                : (entry.isMainline
+                    ? 'bg-brand-500/15 text-brand-400 border border-brand-500/25'
+                    : 'bg-zinc-800 text-zinc-300 border border-zinc-700/60')
+            }">${escapeHtml(relLabel)}</span>
+            <span class="text-[10px] text-zinc-400 font-medium">${escapeHtml(node.format || 'TV')} • ${relEps} eps${relYear ? ' • ' + relYear : ''}</span>
           </div>
-          <i class="fa-solid fa-play text-zinc-600 group-hover:text-brand-400 text-xs pr-1 transition"></i>
+          <h4 class="text-xs font-heading font-bold ${isCurrent ? 'text-white' : 'text-zinc-200 group-hover:text-brand-400'} line-clamp-1 leading-snug mt-0.5 transition">${escapeHtml(displayTitle)}</h4>
         `;
 
-        card.onclick = () => {
-          playSoundCue('open');
-          window.location.href = `watch.html?id=${node.id}&malId=${node.idMal || node.id}&title=${encodeURIComponent(displayTitle)}&eps=${relEps}`;
+        card.appendChild(toggleBtn);
+        const temp = document.createElement('div');
+        temp.innerHTML = thumbHtml;
+        card.appendChild(temp.firstElementChild);
+        card.appendChild(infoDiv);
+
+        if (!isCurrent) {
+          const playIcon = document.createElement('i');
+          playIcon.className = 'fa-solid fa-play text-zinc-600 group-hover:text-brand-400 text-[10px] pr-1.5 transition';
+          card.appendChild(playIcon);
+          card.onclick = () => {
+            playSoundCue('open');
+            window.location.href = `watch.html?id=${node.id}&malId=${node.idMal || node.id}&title=${encodeURIComponent(displayTitle)}&eps=${relEps}`;
+          };
+        }
+
+        const leavesContainer = document.createElement('div');
+        let isExpanded = defaultExpanded;
+        if (isExpanded) {
+          leavesContainer.appendChild(buildEpisodeLeavesElement(node, relEps, isCurrent));
+        } else {
+          leavesContainer.className = 'hidden';
+        }
+
+        toggleBtn.onclick = (e) => {
+          e.stopPropagation();
+          playSoundCue('click');
+          isExpanded = !isExpanded;
+          const icon = toggleBtn.querySelector('i');
+          if (icon) icon.classList.toggle('rotate-90', isExpanded);
+          toggleBtn.className = `w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition ${
+            isExpanded
+              ? 'bg-brand-500/20 text-brand-400'
+              : 'bg-surface-900/90 text-zinc-400 hover:text-white hover:bg-surface-750'
+          }`;
+          if (isExpanded) {
+            if (!leavesContainer.hasChildNodes()) {
+              leavesContainer.appendChild(buildEpisodeLeavesElement(node, relEps, isCurrent));
+            }
+            leavesContainer.classList.remove('hidden');
+          } else {
+            leavesContainer.classList.add('hidden');
+          }
         };
-        container.appendChild(card);
+
+        treeItem.appendChild(card);
+        treeItem.appendChild(leavesContainer);
+        return treeItem;
+      }
+
+      orderedList.forEach(entry => {
+        const isCurrent = entry.node.id === currentMedia.id;
+        container.appendChild(createTreeNodeRow(entry, isCurrent, isCurrent));
       });
+
+      if (!skipChainExpand && !cachedFranchiseNodes) {
+        expandFullFranchiseTree(relationMap, currentMedia);
+      }
+    }
+
+    async function expandFullFranchiseTree(relationMap, currentMedia) {
+      try {
+        const MAINLINE_SET = new Set(['SEQUEL', 'PREQUEL', 'PARENT']);
+        const q = `query ($ids: [Int]) {
+          Page(perPage: 15) {
+            media(id_in: $ids, type: ANIME) {
+              id
+              relations {
+                edges {
+                  relationType
+                  node {
+                    id idMal title { romaji english } format status episodes nextAiringEpisode { episode } type coverImage { large medium } startDate { year }
+                  }
+                }
+              }
+            }
+          }
+        }`;
+        let queue = Array.from(relationMap.keys()).filter(id => id !== currentMedia.id).slice(0, 8);
+        const visited = new Set([currentMedia.id]);
+        let rounds = 0;
+        let added = false;
+
+        while (queue.length > 0 && rounds < 4 && relationMap.size < 22) {
+          rounds++;
+          const batch = queue.filter(id => !visited.has(id)).slice(0, 8);
+          batch.forEach(id => visited.add(id));
+          if (!batch.length) break;
+
+          const res = await fetch('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ query: q, variables: { ids: batch } })
+          });
+          if (!res.ok) break;
+          const json = await res.json();
+          const list = json?.data?.Page?.media || [];
+          const nextQueue = [];
+          list.forEach(item => {
+            (item.relations?.edges || []).forEach(e => {
+              if (!e?.node || e.node.type !== 'ANIME') return;
+              if (!MAINLINE_SET.has(e.relationType)) return;
+              if (e.node.status === 'NOT_YET_RELEASED') return;
+              if (!relationMap.has(e.node.id)) {
+                relationMap.set(e.node.id, {
+                  relationType: e.relationType,
+                  node: e.node,
+                  isMainline: true
+                });
+                nextQueue.push(e.node.id);
+                added = true;
+              }
+            });
+          });
+          queue = nextQueue;
+        }
+        if (added) {
+          cachedFranchiseNodes = relationMap;
+          renderSeriesRelations(currentMedia.relations?.edges, currentMedia, true);
+        } else {
+          cachedFranchiseNodes = relationMap;
+        }
+      } catch (_) {}
     }
 
     async function expandFranchiseChain(frontierIds, nodeMap, currentMedia) {

@@ -1564,10 +1564,11 @@
       return '?';
     }
 
-    // Helper: Select optimal poster resolution (mobile uses ~230px 'large' to cut GPU texture upload 4x)
+    // Helper: Balance sharp poster resolution with mobile decode speed (middle ground for small/low-DPI vs retina)
     function getBestPosterUrl(anime) {
-      if (window.innerWidth < 768) {
-        return anime?.coverImage?.large || anime?.coverImage?.medium || anime?.coverImage?.extraLarge || '';
+      const dpr = window.devicePixelRatio || 1;
+      if (window.innerWidth < 420 && dpr < 2) {
+        return anime?.coverImage?.large || anime?.coverImage?.extraLarge || anime?.coverImage?.medium || '';
       }
       return anime?.coverImage?.extraLarge || anime?.coverImage?.large || anime?.coverImage?.medium || '';
     }
@@ -2144,22 +2145,22 @@
         gain.connect(ctx.destination);
 
         if (type === 'type') {
-          // Subtle, tactile mechanical key tap with random micro-pitch variation
+          // Crisp tactile mechanical key tap with random micro-pitch variation
           const pitch = 1800 + Math.random() * 450;
           osc.type = 'triangle';
           osc.frequency.setValueAtTime(pitch, now);
           osc.frequency.exponentialRampToValueAtTime(320, now + 0.022);
-          gain.gain.setValueAtTime(0.015, now);
-          gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.025);
+          gain.gain.setValueAtTime(0.038, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.026);
           osc.start(now);
-          osc.stop(now + 0.025);
+          osc.stop(now + 0.026);
         } else if (type === 'logo') {
           // Playful ascending lime spark chord
           osc.type = 'sine';
           osc.frequency.setValueAtTime(587.33, now); // D5
           osc.frequency.exponentialRampToValueAtTime(880, now + 0.08); // A5
           osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.16); // D6
-          gain.gain.setValueAtTime(0.045, now);
+          gain.gain.setValueAtTime(0.11, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
           osc.start(now);
           osc.stop(now + 0.22);
@@ -2168,7 +2169,7 @@
           osc.type = 'sawtooth';
           osc.frequency.setValueAtTime(220, now);
           osc.frequency.exponentialRampToValueAtTime(660, now + 0.11);
-          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.setValueAtTime(0.10, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
           osc.start(now);
           osc.stop(now + 0.16);
@@ -2177,7 +2178,7 @@
           osc.type = 'sine';
           osc.frequency.setValueAtTime(380, now);
           osc.frequency.exponentialRampToValueAtTime(740, now + 0.07);
-          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.setValueAtTime(0.11, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.10);
           osc.start(now);
           osc.stop(now + 0.10);
@@ -2185,7 +2186,7 @@
           osc.type = 'sine';
           osc.frequency.setValueAtTime(520, now);
           osc.frequency.exponentialRampToValueAtTime(780, now + 0.09);
-          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.setValueAtTime(0.12, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
           osc.start(now);
           osc.stop(now + 0.14);
@@ -2193,7 +2194,7 @@
           osc.type = 'sine';
           osc.frequency.setValueAtTime(540, now);
           osc.frequency.exponentialRampToValueAtTime(340, now + 0.09);
-          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.setValueAtTime(0.10, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
           osc.start(now);
           osc.stop(now + 0.12);
@@ -2201,7 +2202,7 @@
           osc.type = 'triangle';
           osc.frequency.setValueAtTime(420, now);
           osc.frequency.exponentialRampToValueAtTime(560, now + 0.06);
-          gain.gain.setValueAtTime(0.045, now);
+          gain.gain.setValueAtTime(0.095, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
           osc.start(now);
           osc.stop(now + 0.08);
@@ -2209,10 +2210,10 @@
           osc.type = 'sine';
           osc.frequency.setValueAtTime(640, now);
           osc.frequency.exponentialRampToValueAtTime(480, now + 0.045);
-          gain.gain.setValueAtTime(0.035, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          gain.gain.setValueAtTime(0.085, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
           osc.start(now);
-          osc.stop(now + 0.05);
+          osc.stop(now + 0.055);
         }
       } catch (_) {}
     }
