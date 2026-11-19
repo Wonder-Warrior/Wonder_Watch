@@ -111,7 +111,10 @@ public final class SplashOverlayView extends FrameLayout {
         dismissed = true;
         animate()
             .alpha(0f)
-            .setDuration(260)
+            .scaleX(1.04f)
+            .scaleY(1.04f)
+            .setDuration(280)
+            .setInterpolator(new android.view.animation.DecelerateInterpolator())
             .setListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {

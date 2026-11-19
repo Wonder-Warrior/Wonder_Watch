@@ -342,14 +342,21 @@ namespace WonderWatchDesktop
             }
         }
 
+        private static void ApplyAppWebViewSettings(CoreWebView2Settings settings)
+        {
+            if (settings == null) return;
+            settings.IsStatusBarEnabled = false;
+            settings.AreDefaultContextMenusEnabled = false;
+            settings.AreDevToolsEnabled = false;
+            settings.IsZoomControlEnabled = false;
+            settings.AreBrowserAcceleratorKeysEnabled = false;
+            settings.IsBuiltInErrorPageEnabled = true;
+        }
+
         private void ConfigureWebViewSettings()
         {
             CoreWebView2Settings settings = webView.CoreWebView2.Settings;
-            settings.IsStatusBarEnabled = false;
-            settings.AreDefaultContextMenusEnabled = true;
-            settings.AreDevToolsEnabled = true;
-            settings.IsZoomControlEnabled = true;
-            settings.IsBuiltInErrorPageEnabled = true;
+            ApplyAppWebViewSettings(settings);
             try
             {
                 if (!string.IsNullOrEmpty(settings.UserAgent) && settings.UserAgent.IndexOf("WonderWatchDesktop", StringComparison.OrdinalIgnoreCase) < 0)
@@ -398,6 +405,10 @@ namespace WonderWatchDesktop
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
+            if (keyData == Keys.F12 || keyData == (Keys.Control | Keys.Shift | Keys.I) || keyData == (Keys.Control | Keys.Shift | Keys.J))
+            {
+                return true;
+            }
             if (keyData == Keys.F11)
             {
                 ToggleFullscreen();
@@ -531,6 +542,7 @@ namespace WonderWatchDesktop
             try
             {
                 await popupWebView.EnsureCoreWebView2Async(sharedEnvironment);
+                ApplyAppWebViewSettings(popupWebView.CoreWebView2.Settings);
                 popupWebView.CoreWebView2.WindowCloseRequested += delegate { popup.Close(); };
                 return popupWebView.CoreWebView2;
             }
@@ -713,6 +725,7 @@ namespace WonderWatchDesktop
                 try
                 {
                     await dashView.EnsureCoreWebView2Async(sharedEnvironment);
+                    ApplyAppWebViewSettings(dashView.CoreWebView2.Settings);
                     dashView.CoreWebView2.Navigate(dashboardUrl);
                 }
                 catch { }

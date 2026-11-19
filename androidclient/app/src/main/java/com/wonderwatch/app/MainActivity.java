@@ -76,6 +76,9 @@ public final class MainActivity extends Activity {
         webView.setBackgroundColor(BG_DARK);
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        webView.setVerticalScrollBarEnabled(false);
+        webView.setHorizontalScrollBarEnabled(false);
+        webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
         configureWebSettings(webView.getSettings());
 
         CookieManager cookies = CookieManager.getInstance();
@@ -180,6 +183,7 @@ public final class MainActivity extends Activity {
 
     private void configureSystemBars() {
         Window window = getWindow();
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
         window.setStatusBarColor(BG_DARK);
         window.setNavigationBarColor(BG_DARK);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

@@ -35,6 +35,13 @@ public final class AdShieldEngine {
         "googleapis.com",
         "gstatic.com",
         "accounts.google.com",
+        "accounts.youtube.com",
+        "apis.google.com",
+        "consent.google.com",
+        "myaccount.google.com",
+        "gds.google.com",
+        "www.google.com",
+        "googleusercontent.com",
         "cdn.tailwindcss.com",
         "cdnjs.cloudflare.com",
         "thetvdb.com",
@@ -178,14 +185,16 @@ public final class AdShieldEngine {
             if (lower.startsWith("accounts.google.") ||
                 lower.equals("accounts.youtube.com") ||
                 lower.startsWith("myaccount.google.") ||
+                lower.startsWith("consent.google.") ||
                 lower.equals("gds.google.com") ||
+                lower.equals("apis.google.com") ||
                 lower.endsWith(".googleapis.com") ||
                 lower.endsWith(".gstatic.com")) {
                 return true;
             }
             if (lower.endsWith(".google.com") && uri.getPath() != null) {
                 String path = uri.getPath().toLowerCase(Locale.US);
-                if (path.contains("oauth") || path.contains("signin") || path.contains("servicelogin") || path.contains("account")) {
+                if (path.contains("oauth") || path.contains("signin") || path.contains("servicelogin") || path.contains("account") || path.contains("consent")) {
                     return true;
                 }
             }
@@ -208,6 +217,9 @@ public final class AdShieldEngine {
     }
 
     private static boolean isEssentialHost(String lowerHost) {
+        if (lowerHost.startsWith("accounts.google.") || lowerHost.startsWith("consent.google.") || lowerHost.startsWith("myaccount.google.")) {
+            return true;
+        }
         for (String safe : ESSENTIAL_HOSTS) {
             if (lowerHost.equals(safe) || lowerHost.endsWith("." + safe)) {
                 return true;

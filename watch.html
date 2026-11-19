@@ -65,25 +65,44 @@
       user-select: text;
       -webkit-touch-callout: default;
     }
+    html {
+      scroll-behavior: smooth;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: contain;
+    }
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-overflow-scrolling: touch;
+      touch-action: manipulation;
+    }
+    .overflow-x-auto, .overflow-y-auto {
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
     }
     h1, h2, h3, h4, .font-heading {
       font-family: 'Outfit', sans-serif;
     }
     @keyframes wwFadeUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translate3d(0, 12px, 0); }
+      to { opacity: 1; transform: translate3d(0, 0, 0); }
     }
     @keyframes wwPopIn {
-      from { opacity: 0; transform: translateY(-6px) scale(0.96); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from { opacity: 0; transform: translate3d(0, -6px, 0) scale(0.96); }
+      to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
     }
     .ww-fade-in {
       animation: wwFadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+      will-change: transform, opacity;
     }
     .ww-dropdown-open {
       animation: wwPopIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+      will-change: transform, opacity;
+    }
+    button, a {
+      transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    button:active {
+      transform: scale(0.97);
     }
     ::-webkit-scrollbar {
       width: 6px;
