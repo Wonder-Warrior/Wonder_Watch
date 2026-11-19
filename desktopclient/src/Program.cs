@@ -16,8 +16,7 @@ using Microsoft.Web.WebView2.WinForms;
 [assembly: AssemblyTitle("WonderWatch Desktop")]
 [assembly: AssemblyDescription("WonderWatch Desktop Client")]
 [assembly: AssemblyProduct("WonderWatch Desktop")]
-[assembly: AssemblyVersion("2.4.0.0")]
-[assembly: AssemblyFileVersion("2.4.0.0")]
+
 
 namespace WonderWatchDesktop
 {
@@ -114,6 +113,71 @@ namespace WonderWatchDesktop
             return DefaultHomeUrl;
         }
 
+        private void CheckForUpdatesAsync()
+        {
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+                    using (var wc = new System.Net.WebClient())
+                    {
+                        wc.Headers.Add("User-Agent", "WonderWatchDesktop");
+                        string json = wc.DownloadString("https://raw.githubusercontent.com/wonder-warrior/Wonder-Watch/main/version.json?t=" + DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                        var verMatch = System.Text.RegularExpressions.Regex.Match(json, @"""desktop""\s*:\s*\{[^}]*""version""\s*:\s*""([0-9]+\.[0-9]+\.[0-9]+)""");
+                        var urlMatch = System.Text.RegularExpressions.Regex.Match(json, @"""desktop""\s*:\s*\{[^}]*""exeUrl""\s*:\s*""([^""]+)""");
+                        if (!verMatch.Success || !urlMatch.Success) return;
+
+                        Version remoteVer = new Version(verMatch.Groups[1].Value);
+                        Version localVer = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+                        Version local3 = new Version(localVer.Major, localVer.Minor, Math.Max(0, localVer.Build));
+                        if (remoteVer <= local3) return;
+
+                        string exeUrl = urlMatch.Groups[1].Value;
+                        BeginInvoke((Action)(() =>
+                        {
+                            var res = MessageBox.Show(
+                                this,
+                                "A new version of WonderWatch Desktop (v" + remoteVer.ToString(3) + ") is available!\n\nYou are currently on v" + local3.ToString(3) + ".\nWould you like to update now?",
+                                "WonderWatch Update Available",
+                                MessageBoxButtons.YesNo,
+                                MessageBoxIcon.Information
+                            );
+                            if (res != DialogResult.Yes) return;
+
+                            System.Threading.Tasks.Task.Run(() =>
+                            {
+                                try
+                                {
+                                    string currentExe = Application.ExecutablePath;
+                                    string newExe = currentExe + ".new";
+                                    using (var dl = new System.Net.WebClient())
+                                    {
+                                        dl.Headers.Add("User-Agent", "WonderWatchDesktop");
+                                        dl.DownloadFile(exeUrl, newExe);
+                                    }
+                                    if (!File.Exists(newExe) || new FileInfo(newExe).Length < 100000) return;
+
+                                    string cmd = "/c ping 127.0.0.1 -n 2 > nul & move /y \"" + newExe + "\" \"" + currentExe + "\" & start \"\" \"" + currentExe + "\"";
+                                    Process.Start(new ProcessStartInfo("cmd.exe", cmd)
+                                    {
+                                        CreateNoWindow = true,
+                                        UseShellExecute = false
+                                    });
+                                    BeginInvoke((Action)(() => Application.Exit()));
+                                }
+                                catch (Exception ex)
+                                {
+                                    BeginInvoke((Action)(() => MessageBox.Show(this, "Update failed: " + ex.Message, "WonderWatch Update", MessageBoxButtons.OK, MessageBoxIcon.Warning)));
+                                }
+                            });
+                        }));
+                    }
+                }
+                catch { }
+            });
+        }
+
         public MainForm(string initialUrl, string customProfileDir, string smokeLogPath)
         {
             startUrl = SanitizeStartUrl(initialUrl);
@@ -127,6 +191,10 @@ namespace WonderWatchDesktop
             {
                 ShowInTaskbar = false;
                 Opacity = 0;
+            }
+            else
+            {
+                Shown += (s, e) => CheckForUpdatesAsync();
             }
 
             Text = "WonderWatch";

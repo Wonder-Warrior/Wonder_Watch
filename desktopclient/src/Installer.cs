@@ -13,8 +13,7 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("WonderWatch Desktop Installer")]
 [assembly: AssemblyDescription("WonderWatch Desktop Setup")]
 [assembly: AssemblyProduct("WonderWatch Desktop")]
-[assembly: AssemblyVersion("2.4.0.0")]
-[assembly: AssemblyFileVersion("2.4.0.0")]
+
 
 namespace WonderWatchInstaller
 {
@@ -306,8 +305,9 @@ namespace WonderWatchInstaller
             watchLbl.MouseDown += OnDragMouseDown;
             headerPanel.Controls.Add(watchLbl);
 
+            string appVer = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
             Label subTitle = new Label();
-            subTitle.Text = "Desktop Installer • v2.4.0 (Windows x64) • Built-in Shield";
+            subTitle.Text = "Desktop Installer • v" + appVer + " (Windows x64) • Built-in Shield";
             subTitle.Font = new Font("Segoe UI", 9f, FontStyle.Regular);
             subTitle.ForeColor = TextMuted;
             subTitle.SetBounds(94, 54, 355, 20);
@@ -628,7 +628,7 @@ namespace WonderWatchInstaller
                 {
                     if (key == null) return;
                     key.SetValue("DisplayName", "WonderWatch Desktop");
-                    key.SetValue("DisplayVersion", "2.4.0");
+                    key.SetValue("DisplayVersion", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3));
                     key.SetValue("Publisher", "WonderWatch");
                     key.SetValue("DisplayIcon", exePath);
                     key.SetValue("InstallLocation", installDir);
