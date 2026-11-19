@@ -1712,9 +1712,9 @@
       }
     }
 
-    function loadPlayer() {
+    async function loadPlayer() {
       if (document.fullscreenElement && document.exitFullscreen) {
-        document.exitFullscreen().catch(() => {});
+        try { await document.exitFullscreen(); } catch (_) {}
       }
       syncAudioControlVisibility();
       document.getElementById('animeSubInfo').innerText = currentServer === 'zoko_mal'
