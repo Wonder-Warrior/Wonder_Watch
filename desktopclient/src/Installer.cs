@@ -236,7 +236,8 @@ namespace WonderWatchInstaller
         private readonly RoundedButton installBtn;
         private readonly RoundedButton cancelBtn;
         private readonly RoundedButton closeXBtn;
-        private readonly string installDir;
+        private RoundedButton browseBtn;
+        private string installDir;
         private bool isInstalling;
 
         public InstallerForm()
@@ -323,8 +324,36 @@ namespace WonderWatchInstaller
             pathLabel.ForeColor = TextMuted;
             pathLabel.BackColor = CardDark;
             pathLabel.AutoEllipsis = true;
-            pathLabel.SetBounds(20, 18, 412, 20);
+            pathLabel.SetBounds(20, 18, 324, 20);
             optionsCard.Controls.Add(pathLabel);
+
+            browseBtn = new RoundedButton();
+            browseBtn.Text = "Browse...";
+            browseBtn.Font = new Font("Segoe UI", 8.5f, FontStyle.Bold);
+            browseBtn.FillColor = Color.FromArgb(255, 34, 42, 38);
+            browseBtn.ForeColor = Color.White;
+            browseBtn.CornerRadius = 8;
+            browseBtn.SetBounds(352, 14, 80, 26);
+            browseBtn.Click += delegate
+            {
+                if (isInstalling) return;
+                using (FolderBrowserDialog dlg = new FolderBrowserDialog())
+                {
+                    dlg.Description = "Choose where to install WonderWatch";
+                    dlg.SelectedPath = Directory.Exists(installDir) ? installDir : Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                    if (dlg.ShowDialog(this) == DialogResult.OK && !string.IsNullOrWhiteSpace(dlg.SelectedPath))
+                    {
+                        string chosen = dlg.SelectedPath.TrimEnd('\\', '/');
+                        if (!chosen.EndsWith("WonderWatch", StringComparison.OrdinalIgnoreCase))
+                        {
+                            chosen = Path.Combine(chosen, "WonderWatch");
+                        }
+                        installDir = chosen;
+                        pathLabel.Text = "Destination:  " + installDir;
+                    }
+                }
+            };
+            optionsCard.Controls.Add(browseBtn);
 
             desktopShortcutBox = new CheckBox();
             desktopShortcutBox.Text = "Create Desktop shortcut";
@@ -650,7 +679,11 @@ namespace WonderWatchInstaller
             }
             catch { }
 
-            string installDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "WonderWatch");
+            string installDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\', '/');
+            if (string.IsNullOrWhiteSpace(installDir) || !File.Exists(Path.Combine(installDir, "WonderWatch.exe")))
+            {
+                installDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "WonderWatch");
+            }
             try
             {
                 if (Directory.Exists(installDir))
