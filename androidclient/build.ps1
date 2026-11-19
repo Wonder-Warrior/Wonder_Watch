@@ -1,6 +1,31 @@
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $scriptDir
+$versionJsonPath = Join-Path $repoRoot "version.json"
+$buildGradlePath = Join-Path $scriptDir "app\build.gradle"
+
+if (Test-Path $versionJsonPath) {
+    $verData = Get-Content $versionJsonPath -Raw | ConvertFrom-Json
+    if ($verData.android -and $verData.android.version) {
+        $parts = $verData.android.version.Split('.')
+        if ($parts.Length -eq 3) {
+            $newVer = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
+            $verData.android.version = $newVer
+            $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+            [System.IO.File]::WriteAllText($versionJsonPath, ($verData | ConvertTo-Json -Depth 4), $utf8NoBom)
+            $vCode = ([int]$parts[0] * 10000) + ([int]$parts[1] * 100) + ([int]$parts[2] + 1)
+            if (Test-Path $buildGradlePath) {
+                $gradleTxt = [System.IO.File]::ReadAllText($buildGradlePath).TrimStart([char]0xFEFF)
+                $gradleTxt = $gradleTxt -replace 'versionCode\s+\d+', "versionCode $vCode"
+                $gradleTxt = $gradleTxt -replace 'versionName\s+"[^"]+"', "versionName `"$newVer`""
+                [System.IO.File]::WriteAllText($buildGradlePath, $gradleTxt, $utf8NoBom)
+            }
+            Write-Host "Android version auto-incremented to v$newVer (code $vCode)"
+        }
+    }
+}
+
 $javaHome = "C:\Program Files\Android\Android Studio\jbr"
 $sdkDir = Join-Path $env:LOCALAPPDATA "Android\Sdk"
 

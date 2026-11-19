@@ -141,7 +141,7 @@ namespace WonderWatchDesktop
                     using (var wc = new System.Net.WebClient())
                     {
                         wc.Headers.Add("User-Agent", "WonderWatchDesktop");
-                        string json = wc.DownloadString("https://wonder-warrior.github.io/Wonder-Watch/version.json?t=" + DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                        string json = wc.DownloadString("https://wonder-warrior.github.io/Wonder_Watch/version.json?t=" + DateTimeOffset.UtcNow.ToUnixTimeSeconds());
                         var verMatch = System.Text.RegularExpressions.Regex.Match(json, @"""desktop""\s*:\s*\{[^}]*""version""\s*:\s*""([0-9]+\.[0-9]+\.[0-9]+)""");
                         var urlMatch = System.Text.RegularExpressions.Regex.Match(json, @"""desktop""\s*:\s*\{[^}]*""exeUrl""\s*:\s*""([^""]+)""");
                         Version localVer = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
@@ -516,13 +516,20 @@ namespace WonderWatchDesktop
             webView.CoreWebView2.ContainsFullScreenElementChanged += delegate
             {
                 isElementFullscreen = webView.CoreWebView2.ContainsFullScreenElement;
-                System.Threading.Tasks.Task.Delay(60).ContinueWith(_ =>
+                if (!isElementFullscreen)
                 {
-                    if (!IsDisposed)
+                    SetFullscreen(isAppFullscreen);
+                }
+                else
+                {
+                    System.Threading.Tasks.Task.Delay(50).ContinueWith(_ =>
                     {
-                        BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen)));
-                    }
-                });
+                        if (!IsDisposed)
+                        {
+                            BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen)));
+                        }
+                    });
+                }
             };
             webView.CoreWebView2.DocumentTitleChanged += delegate
             {
@@ -920,11 +927,11 @@ namespace WonderWatchDesktop
                 prevBorderStyle = FormBorderStyle;
                 prevBounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
 
+                FormBorderStyle = FormBorderStyle.None;
                 if (WindowState == FormWindowState.Maximized)
                 {
                     WindowState = FormWindowState.Normal;
                 }
-                FormBorderStyle = FormBorderStyle.None;
                 Bounds = Screen.FromControl(this).Bounds;
             }
             else

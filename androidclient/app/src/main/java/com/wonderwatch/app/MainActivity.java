@@ -384,7 +384,7 @@ public final class MainActivity extends Activity {
         customFullscreenView = null;
         customViewCallback = null;
         webView.setVisibility(View.VISIBLE);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setImmersiveSystemBars(false);
     }
 
@@ -450,7 +450,7 @@ public final class MainActivity extends Activity {
                 final String localVer = currentVer;
 
                 try {
-                    java.net.URL url = new java.net.URL("https://wonder-warrior.github.io/Wonder-Watch/version.json?t=" + System.currentTimeMillis());
+                    java.net.URL url = new java.net.URL(HOME_URL + "version.json?t=" + System.currentTimeMillis());
                     java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                     conn.setConnectTimeout(8000);
                     conn.setReadTimeout(8000);
@@ -464,7 +464,7 @@ public final class MainActivity extends Activity {
                     org.json.JSONObject androidObj = root.optJSONObject("android");
                     final String remoteVer = androidObj != null ? androidObj.optString("version", localVer) : localVer;
                     final String apkUrl = androidObj != null ? androidObj.optString("apkUrl", "") : "";
-                    final boolean hasUpdate = !remoteVer.equals(localVer) && !apkUrl.isEmpty();
+                    final boolean hasUpdate = isNewerVersion(remoteVer, localVer) && !apkUrl.isEmpty();
 
                     runOnUiThread(() -> {
                         android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(MainActivity.this);
@@ -487,6 +487,21 @@ public final class MainActivity extends Activity {
                 }
             }).start();
         }
+        private boolean isNewerVersion(String remote, String local) {
+            try {
+                String[] r = remote.split("\\.");
+                String[] l = local.split("\\.");
+                int len = Math.max(r.length, l.length);
+                for (int i = 0; i < len; i++) {
+                    int rv = i < r.length ? Integer.parseInt(r[i].replaceAll("[^0-9]", "")) : 0;
+                    int lv = i < l.length ? Integer.parseInt(l[i].replaceAll("[^0-9]", "")) : 0;
+                    if (rv > lv) return true;
+                    if (rv < lv) return false;
+                }
+            } catch (Exception ignored) {}
+            return false;
+        }
+
         private void downloadAndInstallApk(String apkUrl) {
             try {
                 android.app.DownloadManager dm = (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);

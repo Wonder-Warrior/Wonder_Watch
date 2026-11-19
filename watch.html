@@ -1713,8 +1713,13 @@
     }
 
     async function loadPlayer() {
-      if (document.fullscreenElement && document.exitFullscreen) {
-        try { await document.exitFullscreen(); } catch (_) {}
+      const wasFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      if (wasFullscreen) {
+        try {
+          if (document.exitFullscreen) await document.exitFullscreen();
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        } catch (_) {}
+        await new Promise(r => setTimeout(r, 150));
       }
       syncAudioControlVisibility();
       document.getElementById('animeSubInfo').innerText = currentServer === 'zoko_mal'
@@ -1940,7 +1945,7 @@
               autoSaveProgress(savedResumeTime);
             }
           }
-          if ((data.name === 'ended' || data.name === 'next') && currentServer !== 'aniembed_se') {
+          if (data.name === 'ended' || data.name === 'next') {
             handleNextEpisode();
           }
           return;
@@ -1977,7 +1982,7 @@
         }
         
         // Auto-advance on episode end
-        if ((eventType === 'aniembed:ended' || eventType === 'ended' || eventType === 'complete') && currentServer !== 'aniembed_se') {
+        if (eventType === 'aniembed:ended' || eventType === 'ended' || eventType === 'complete') {
           handleNextEpisode();
         }
       } catch (e) {
