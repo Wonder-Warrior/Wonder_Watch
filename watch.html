@@ -1923,7 +1923,7 @@
           const d = data.data || {};
           if (typeof d.currentTime === 'number' && d.currentTime > 0) {
             savedResumeTime = Math.floor(d.currentTime);
-            if (Math.abs(d.currentTime - lastSavedTime) >= 5) {
+            if (Math.abs(d.currentTime - lastSavedTime) >= 2) {
               lastSavedTime = d.currentTime;
               autoSaveProgress(savedResumeTime);
             }
@@ -1958,7 +1958,7 @@
 
         if (currentTime !== null && currentTime > 0) {
           savedResumeTime = Math.floor(currentTime);
-          if (Math.abs(currentTime - lastSavedTime) >= 5) {
+          if (Math.abs(currentTime - lastSavedTime) >= 2) {
             lastSavedTime = currentTime;
             autoSaveProgress(savedResumeTime);
           }
@@ -1976,6 +1976,17 @@
     setInterval(() => {
       autoSaveProgress();
     }, 30000);
+
+    function flushProgressOnExit() {
+      if (savedResumeTime > 0) {
+        autoSaveProgress(savedResumeTime);
+      }
+    }
+    window.addEventListener('pagehide', flushProgressOnExit);
+    window.addEventListener('beforeunload', flushProgressOnExit);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushProgressOnExit();
+    });
 
     function autoSaveProgress(timestamp) {
       const imgUrl = animeMetadata?.coverImage?.extraLarge || animeMetadata?.coverImage?.large || '';
@@ -2468,6 +2479,7 @@
           }
         }`;
 
+        let completedCleanly = true;
         try {
           let rounds = 0;
           while (frontier.length > 0 && rounds < 6 && nodesById.size < 36) {
@@ -2481,7 +2493,10 @@
               headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
               body: JSON.stringify({ query: q, variables: { ids: batch } })
             });
-            if (!res.ok) break;
+            if (!res.ok) {
+              completedCleanly = false;
+              break;
+            }
             const json = await res.json();
             const list = json?.data?.Page?.media || [];
             const nextFrontier = [];
@@ -2505,8 +2520,14 @@
             });
             frontier = nextFrontier;
           }
-        } catch (_) {}
-        franchiseGraphState.expanded = true;
+        } catch (_) {
+          completedCleanly = false;
+        }
+        if (completedCleanly) {
+          franchiseGraphState.expanded = true;
+        } else {
+          franchiseGraphState.expandPromise = null;
+        }
       })();
 
       return franchiseGraphState.expandPromise;
