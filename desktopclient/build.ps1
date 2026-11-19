@@ -10,7 +10,14 @@ $appVersion = "2.4.1"
 if (Test-Path $versionJsonPath) {
     $verData = Get-Content $versionJsonPath -Raw | ConvertFrom-Json
     if ($verData.desktop -and $verData.desktop.version) {
-        $appVersion = $verData.desktop.version
+        $parts = $verData.desktop.version.Split('.')
+        if ($parts.Length -eq 3) {
+            $appVersion = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
+            $verData.desktop.version = $appVersion
+            $verData | ConvertTo-Json -Depth 4 | Set-Content -Path $versionJsonPath -Encoding UTF8
+        } else {
+            $appVersion = $verData.desktop.version
+        }
     }
 }
 Set-Content -Path $versionSrcFile -Value @"

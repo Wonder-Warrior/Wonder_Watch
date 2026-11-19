@@ -854,18 +854,19 @@ namespace WonderWatchDesktop
             if (isFullscreen == enable) return;
             isFullscreen = enable;
 
+            SuspendLayout();
             if (enable)
             {
                 prevWindowState = WindowState;
                 prevBorderStyle = FormBorderStyle;
-                prevBounds = Bounds;
+                prevBounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
 
                 if (WindowState == FormWindowState.Maximized)
                 {
                     WindowState = FormWindowState.Normal;
                 }
                 FormBorderStyle = FormBorderStyle.None;
-                WindowState = FormWindowState.Maximized;
+                Bounds = Screen.FromControl(this).Bounds;
             }
             else
             {
@@ -877,6 +878,7 @@ namespace WonderWatchDesktop
                 }
                 NativeMethods.ApplyDarkTitleBar(Handle);
             }
+            ResumeLayout(true);
         }
 
         private void UpdateSplashStatus(string text)

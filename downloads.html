@@ -197,7 +197,7 @@
             <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black text-2xl shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
               <i class="fa-solid fa-desktop"></i>
             </div>
-            <span class="text-[10px] uppercase font-black px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30">v2.4.0 • Latest</span>
+            <span id="desktopVersionBadge" class="text-[10px] uppercase font-black px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30">v2.4.1 • Latest</span>
           </div>
 
           <div class="space-y-1.5">
@@ -244,7 +244,7 @@
             <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black text-2xl shadow-lg shadow-brand-500/20 group-hover:scale-105 transition">
               <i class="fa-brands fa-android"></i>
             </div>
-            <span class="text-[10px] uppercase font-black px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30">v2.4.0 • Latest</span>
+            <span id="androidVersionBadge" class="text-[10px] uppercase font-black px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30">v2.4.1 • Latest</span>
           </div>
 
           <div class="space-y-1.5">
@@ -444,6 +444,19 @@
         showToast(`<i class="fa-solid fa-clock text-brand-400"></i> ${flavor.toUpperCase()} desktop build coming soon — Windows x64 is ready now!`);
       }
     }
+
+    (function syncVersions() {
+      fetch('./version.json?t=' + Date.now())
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data) return;
+          const dBadge = document.getElementById('desktopVersionBadge');
+          const aBadge = document.getElementById('androidVersionBadge');
+          if (dBadge && data.desktop?.version) dBadge.textContent = `v${data.desktop.version} • Latest`;
+          if (aBadge && data.android?.version) aBadge.textContent = `v${data.android.version} • Latest`;
+        })
+        .catch(() => {});
+    })();
   </script>
 </body>
 </html>
