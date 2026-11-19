@@ -516,7 +516,13 @@ namespace WonderWatchDesktop
             webView.CoreWebView2.ContainsFullScreenElementChanged += delegate
             {
                 isElementFullscreen = webView.CoreWebView2.ContainsFullScreenElement;
-                SetFullscreen(isAppFullscreen || isElementFullscreen);
+                System.Threading.Tasks.Task.Delay(60).ContinueWith(_ =>
+                {
+                    if (!IsDisposed)
+                    {
+                        BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen)));
+                    }
+                });
             };
             webView.CoreWebView2.DocumentTitleChanged += delegate
             {
