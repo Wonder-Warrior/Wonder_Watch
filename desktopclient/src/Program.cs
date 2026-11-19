@@ -491,11 +491,7 @@ namespace WonderWatchDesktop
                 UpdateDiscordPresence();
             };
 
-            webView.CoreWebView2.ContainsFullScreenElementChanged += delegate
-            {
-                isElementFullscreen = webView.CoreWebView2.ContainsFullScreenElement;
-                SetFullscreen(isAppFullscreen || isElementFullscreen);
-            };
+
 
             webView.CoreWebView2.NewWindowRequested += OnNewWindowRequested;
         }
