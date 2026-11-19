@@ -184,6 +184,37 @@
     .cat-pill:active, button:active {
       transform: scale(0.97);
     }
+    @media (max-width: 767px) {
+      .ww-sticky-header,
+      #mobileNavDrawer,
+      #heroSection .backdrop-blur-md {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+      .ww-sticky-header {
+        background-color: rgba(5, 6, 8, 0.98) !important;
+      }
+      #heroSection.ww-fade-in {
+        animation: none !important;
+      }
+      #heroSection .shadow-2xl,
+      #heroSection .shadow-lg {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45) !important;
+      }
+    }
+    @media (hover: none), (pointer: coarse) {
+      .group:hover img,
+      .group:hover [class*="group-hover:scale-"],
+      [class*="hover:scale-"]:hover {
+        transform: none !important;
+      }
+      [class*="hover:"]:hover {
+        transition: none !important;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #1f212a !important;
+      }
+    }
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -295,13 +326,8 @@
         </nav>
       </div>
 
-      <!-- Right Header Navigation: Sound Toggle, Search Shortcut, Log In / User State, Mobile Toggle -->
+      <!-- Right Header Navigation: Search Shortcut, Log In / User State, Mobile Toggle -->
       <div class="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
-        <!-- Sound Cues Toggle -->
-        <button id="soundToggleBtn" onclick="toggleSoundCues()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-brand-500/50 text-brand-400 hover:text-brand-300 flex items-center justify-center text-xs transition">
-          <i id="soundToggleIcon" class="fa-solid fa-volume-high"></i>
-        </button>
-
         <!-- Quick Focus Search Button -->
         <button onclick="playSoundCue('click'); focusMainSearch()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-brand-500/50 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition" title="Search anime">
           <i class="fa-solid fa-magnifying-glass"></i>
@@ -966,6 +992,22 @@
       renderUserPersonalizedSections();
       playSoundCue('unfav');
       showToast('<i class="fa-solid fa-trash-can text-red-400"></i> Watch history cleared');
+    }
+
+    async function removeHistoryItem(id) {
+      userDataCache.history = userDataCache.history.filter(item => String(item.id) !== String(id));
+      localStorage.setItem(LS_HISTORY, JSON.stringify(userDataCache.history));
+
+      if (currentUser) {
+        try {
+          await userDoc('history').doc(String(id)).delete();
+        } catch (e) {
+          console.warn('Firestore history item delete failed:', e);
+        }
+      }
+      renderUserPersonalizedSections();
+      playSoundCue('unfav');
+      showToast('<i class="fa-solid fa-xmark text-zinc-300"></i> Removed from watch history');
     }
 
     // --- FAVORITES ---
@@ -1819,6 +1861,9 @@
               <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-transparent to-transparent opacity-80"></div>
               
               <span class="absolute top-2 left-2 bg-brand-500 text-black text-[10px] font-black uppercase px-2 py-0.5 rounded-md">EP ${escapeHtml(item.episode || 1)}</span>
+              <button type="button" onclick="event.stopPropagation(); removeHistoryItem(${item.id})" class="absolute top-2 right-2 w-6 h-6 rounded-lg bg-black/75 border border-zinc-700/80 text-zinc-300 hover:text-red-400 hover:border-red-500/50 flex items-center justify-center text-[11px] transition z-10" title="Remove from history" aria-label="Remove from history">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
               <span class="absolute bottom-2 left-2 bg-surface-950/90 text-brand-400 text-[10px] font-bold px-2 py-0.5 rounded-md border border-zinc-800">
                 <i class="fa-solid fa-clock text-[9px]"></i> ${timeStr}
               </span>
