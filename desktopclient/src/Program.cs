@@ -502,6 +502,17 @@ namespace WonderWatchDesktop
 
         private void WireWebViewEvents()
         {
+            webView.CoreWebView2.WebMessageReceived += delegate(object s, CoreWebView2WebMessageReceivedEventArgs args)
+            {
+                try
+                {
+                    if (args.TryGetWebMessageAsString() == "ww:check_updates")
+                    {
+                        CheckForUpdatesAsync(true);
+                    }
+                }
+                catch { }
+            };
             webView.CoreWebView2.ContainsFullScreenElementChanged += delegate
             {
                 isElementFullscreen = webView.CoreWebView2.ContainsFullScreenElement;
