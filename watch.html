@@ -442,28 +442,42 @@
   </main>
 
   <!-- Fullscreen Franchise Skill Tree Modal -->
-  <div id="franchiseTreeModal" class="fixed inset-0 z-[80] hidden flex-col bg-[#040507]/98 backdrop-blur-xl">
+  <div id="franchiseTreeModal" class="fixed inset-0 z-[80] hidden flex-col bg-[#050608]">
     <!-- Top Skill Tree Header -->
-    <div class="flex items-center justify-between gap-3 px-4 sm:px-8 py-3.5 border-b border-zinc-800/90 bg-surface-950/90 flex-shrink-0">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="w-9 h-9 rounded-xl bg-brand-500/15 border border-brand-500/35 text-brand-400 flex items-center justify-center flex-shrink-0">
-          <i class="fa-solid fa-diagram-project text-sm"></i>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 sm:px-8 py-3 border-b border-zinc-800/90 bg-surface-950 flex-shrink-0">
+      <div class="flex items-center justify-between gap-3 min-w-0">
+        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-brand-500/15 border border-brand-500/35 text-brand-400 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-diagram-project text-xs sm:text-sm"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 class="text-xs sm:text-base font-heading font-black text-white truncate" id="skillTreeModalTitle">Franchise Skill Tree</h3>
+            <p class="text-[10px] sm:text-[11px] text-zinc-400 truncate">Chronological main story &amp; connected entries</p>
+          </div>
         </div>
-        <div class="min-w-0">
-          <h3 class="text-sm sm:text-base font-heading font-black text-white truncate" id="skillTreeModalTitle">Franchise Roadmap</h3>
-          <p class="text-[11px] text-zinc-400 truncate">Chronological main story &amp; connected branches • Tap a node to watch</p>
-        </div>
+        <button type="button" onclick="closeFranchiseTreeModal()" class="sm:hidden w-8 h-8 rounded-xl bg-surface-850 hover:bg-surface-750 border border-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center text-xs transition flex-shrink-0" title="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
-      <button type="button" onclick="closeFranchiseTreeModal()" class="w-9 h-9 rounded-xl bg-surface-850 hover:bg-surface-750 border border-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center text-sm transition flex-shrink-0" title="Close">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+
+      <div class="flex items-center justify-between sm:justify-end gap-2">
+        <div id="skillTreeFilterBar" class="flex items-center gap-1 bg-surface-900 border border-zinc-800 p-1 rounded-xl overflow-x-auto no-scrollbar">
+          <button type="button" data-tree-filter="all" onclick="setSkillTreeFilter('all')" class="ww-st-filter px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-brand-500 text-black transition whitespace-nowrap">All</button>
+          <button type="button" data-tree-filter="main" onclick="setSkillTreeFilter('main')" class="ww-st-filter px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-semibold text-zinc-400 hover:text-white transition whitespace-nowrap">Main Story</button>
+          <button type="button" data-tree-filter="movies" onclick="setSkillTreeFilter('movies')" class="ww-st-filter px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-semibold text-zinc-400 hover:text-white transition whitespace-nowrap">Movies</button>
+          <button type="button" data-tree-filter="specials" onclick="setSkillTreeFilter('specials')" class="ww-st-filter px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-semibold text-zinc-400 hover:text-white transition whitespace-nowrap">Specials</button>
+        </div>
+        <button type="button" onclick="closeFranchiseTreeModal()" class="hidden sm:flex w-9 h-9 rounded-xl bg-surface-850 hover:bg-surface-750 border border-zinc-800 text-zinc-300 hover:text-white items-center justify-center text-sm transition flex-shrink-0" title="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
     </div>
 
     <!-- Scrollable Skill Tree Viewport -->
-    <div id="franchiseTreeViewport" class="relative flex-1 overflow-auto p-5 sm:p-10" style="background-image: radial-gradient(rgba(59,255,83,0.11) 1px, transparent 1px); background-size: 24px 24px;">
-      <div id="franchiseTreeStage" class="relative mx-auto w-max min-w-full pb-12">
+    <div id="franchiseTreeViewport" class="relative flex-1 overflow-y-auto overflow-x-hidden md:overflow-x-auto p-4 sm:p-8" style="background-image: radial-gradient(rgba(59,255,83,0.10) 1px, transparent 1px); background-size: 22px 22px;">
+      <div id="franchiseTreeStage" class="relative mx-auto w-full md:w-max md:min-w-full pb-12">
         <svg id="franchiseTreeSvg" class="absolute inset-0 pointer-events-none overflow-visible" style="z-index: 1;"></svg>
-        <div id="franchiseTreeNodes" class="relative flex flex-col gap-7 sm:gap-9" style="z-index: 2;"></div>
+        <div id="franchiseTreeNodes" class="relative flex flex-col gap-5 sm:gap-8" style="z-index: 2;"></div>
       </div>
     </div>
   </div>
@@ -2279,11 +2293,19 @@
     function isSafeFranchiseEdge(edge, currentMedia) {
       if (!edge?.node || edge.node.type !== 'ANIME') return false;
       if (!ALLOWED_RELATIONS_SET.has(edge.relationType)) return false;
-      if (edge.node.status === 'NOT_YET_RELEASED') return false;
+      if (edge.node.status === 'NOT_YET_RELEASED' || edge.node.status === 'CANCELLED') return false;
+      // Exclude unplayable music videos, missing-MAL promo entries, and commercial specials
+      if (edge.node.format === 'MUSIC') return false;
+      if (!edge.node.idMal) return false;
+      if (edge.relationType === 'OTHER') return false;
+      if (edge.relationType === 'CHARACTER' && edge.node.format === 'SPECIAL') return false;
+      const epsVal = edge.node.episodes ?? (edge.node.nextAiringEpisode?.episode > 1 ? edge.node.nextAiringEpisode.episode - 1 : null);
+      if (epsVal === 0) return false;
       const currentTitleLower = (currentMedia.title?.english || currentMedia.title?.romaji || '').toLowerCase();
       const relTitleLower = ((edge.node.title?.english || '') + ' ' + (edge.node.title?.romaji || '')).toLowerCase();
       if (!currentTitleLower.includes('dragon ball') && relTitleLower.includes('dragon ball')) return false;
       if (!currentTitleLower.includes('toriko') && relTitleLower.includes('toriko')) return false;
+      if (!currentTitleLower.includes('trap coaster') && relTitleLower.includes('trap coaster')) return false;
       return true;
     }
 
@@ -2506,33 +2528,59 @@
       if (e.key === 'Escape') closeFranchiseTreeModal();
     });
 
+    let lastTreeWasMobile = window.innerWidth < 768;
     window.addEventListener('resize', () => {
       const modal = document.getElementById('franchiseTreeModal');
       if (modal && !modal.classList.contains('hidden')) {
-        drawSkillTreeConnectors();
+        const nowMobile = window.innerWidth < 768;
+        if (nowMobile !== lastTreeWasMobile) {
+          lastTreeWasMobile = nowMobile;
+          renderFranchiseSkillTree();
+        } else {
+          drawSkillTreeConnectors();
+        }
       }
     });
 
-    function createSkillTreeCard(node, badgeLabel, isCurrent, isMainline) {
+    let skillTreeFilter = 'all';
+
+    function setSkillTreeFilter(filter) {
+      playSoundCue('click');
+      skillTreeFilter = filter;
+      document.querySelectorAll('.ww-st-filter').forEach(btn => {
+        const active = btn.dataset.treeFilter === filter;
+        btn.className = `ww-st-filter px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] transition whitespace-nowrap ${
+          active ? 'font-bold bg-brand-500 text-black' : 'font-semibold text-zinc-400 hover:text-white'
+        }`;
+      });
+      renderFranchiseSkillTree();
+    }
+
+    function createSkillTreeCard(node, badgeLabel, isCurrent, isMainline, compact = false) {
       const displayTitle = normalizeSeasonTitle(node.title?.english || node.title?.romaji || 'Anime');
       const img = node.coverImage?.large || node.coverImage?.medium || '';
       const year = node.startDate?.year || '';
       const eps = resolveNodePlayableEps(node);
       const format = node.format || 'TV';
 
+      const widthCls = compact
+        ? 'w-full md:w-[235px]'
+        : 'w-full md:w-[290px]';
+
       const card = document.createElement('button');
       card.type = 'button';
       card.dataset.nodeId = String(node.id);
-      card.className = `relative flex items-center gap-3 p-2.5 rounded-2xl border text-left transition-all duration-200 group w-[255px] sm:w-[290px] flex-shrink-0 ${
+      card.style.contain = 'layout style paint';
+      card.className = `relative flex items-center gap-2.5 sm:gap-3 p-2.5 rounded-2xl border text-left transition-colors duration-150 group flex-shrink-0 ${widthCls} ${
         isCurrent
           ? 'bg-gradient-to-br from-brand-500/20 to-surface-900 border-brand-500 shadow-[0_0_24px_-4px_rgba(59,255,83,0.45)] ring-1 ring-brand-400/50'
           : (isMainline
-              ? 'bg-surface-900/95 hover:bg-surface-800 border-zinc-700/80 hover:border-brand-500/70 shadow-xl'
-              : 'bg-surface-950/95 hover:bg-surface-850 border-zinc-800/90 hover:border-zinc-600 shadow-lg')
+              ? 'bg-surface-900 hover:bg-surface-800 border-zinc-700/80 hover:border-brand-500/70 shadow-lg'
+              : 'bg-surface-950 hover:bg-surface-850 border-zinc-800/90 hover:border-zinc-600 shadow-md')
       }`;
 
       card.innerHTML = `
-        <div class="relative w-11 h-14 rounded-xl overflow-hidden bg-surface-950 flex-shrink-0 border ${isCurrent ? 'border-brand-500/60' : 'border-zinc-800'}">
+        <div class="relative ${compact ? 'w-9 h-12' : 'w-11 h-14'} rounded-xl overflow-hidden bg-surface-950 flex-shrink-0 border ${isCurrent ? 'border-brand-500/60' : 'border-zinc-800'}">
           ${img ? `<img src="${escapeHtml(img)}" loading="lazy" decoding="async" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-zinc-600"><i class="fa-solid fa-tv text-xs"></i></div>`}
         </div>
         <div class="flex-1 min-w-0">
@@ -2546,8 +2594,8 @@
             }">${escapeHtml(badgeLabel)}</span>
             <span class="text-[10px] text-zinc-400 font-semibold">${escapeHtml(format)}${year ? ' • ' + year : ''}</span>
           </div>
-          <h4 class="text-xs font-heading font-bold ${isCurrent ? 'text-white' : 'text-zinc-200 group-hover:text-brand-400'} line-clamp-2 leading-snug mt-1 transition">${escapeHtml(displayTitle)}</h4>
-          <p class="text-[10px] text-zinc-500 mt-0.5">${eps} Episodes</p>
+          <h4 class="text-xs font-heading font-bold ${isCurrent ? 'text-white' : 'text-zinc-200 group-hover:text-brand-400'} line-clamp-2 leading-snug mt-0.5 transition-colors">${escapeHtml(displayTitle)}</h4>
+          <p class="text-[10px] text-zinc-500 mt-0.5">${eps} ${eps === 1 ? 'Episode' : 'Episodes'}</p>
         </div>
       `;
 
@@ -2569,6 +2617,8 @@
       const nodesHost = document.getElementById('franchiseTreeNodes');
       if (!nodesHost) return;
       nodesHost.innerHTML = '';
+
+      const isMobile = window.innerWidth < 768;
 
       // Identify mainline chain (reachable via SEQUEL / PREQUEL / PARENT)
       const mainlineIds = new Set([currentMedia.id]);
@@ -2601,7 +2651,6 @@
           return (a.id || 0) - (b.id || 0);
         });
 
-      // Attach side branches (CHARACTER, SIDE_STORY, SPIN_OFF, SUMMARY, ALTERNATIVE, etc.) to their parent mainline node
       const branchesByParent = new Map();
       const placedBranchIds = new Set();
       mainlineNodes.forEach(m => branchesByParent.set(m.id, []));
@@ -2624,6 +2673,9 @@
 
       candidateBranches.forEach(b => {
         if (placedBranchIds.has(b.node.id)) return;
+        if (skillTreeFilter === 'main') return;
+        if (skillTreeFilter === 'movies' && b.node.format !== 'MOVIE') return;
+        if (skillTreeFilter === 'specials' && b.node.format === 'MOVIE') return;
         placedBranchIds.add(b.node.id);
         if (!branchesByParent.has(b.parentId)) branchesByParent.set(b.parentId, []);
         branchesByParent.get(b.parentId).push(b);
@@ -2634,12 +2686,13 @@
       mainlineNodes.forEach((mNode, idx) => {
         const isCurrent = mNode.id === currentMedia.id;
         const row = document.createElement('div');
-        row.className = 'flex items-center gap-10 sm:gap-14';
+        row.className = isMobile
+          ? 'flex flex-col gap-3 w-full max-w-md mx-auto'
+          : 'flex items-start gap-10 lg:gap-14';
 
         const trunkCol = document.createElement('div');
-        trunkCol.className = 'flex items-center gap-3 flex-shrink-0';
+        trunkCol.className = 'flex items-center gap-2.5 sm:gap-3 flex-shrink-0 w-full md:w-auto';
 
-        // Node step socket pill
         const stepBadge = document.createElement('div');
         stepBadge.className = `w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-heading font-black flex-shrink-0 border ${
           isCurrent
@@ -2650,7 +2703,8 @@
         trunkCol.appendChild(stepBadge);
 
         const label = isCurrent ? 'NOW PLAYING' : (idx === 0 ? 'ORIGIN' : `PART ${idx + 1}`);
-        const cardEl = createSkillTreeCard(mNode, label, isCurrent, true);
+        const cardEl = createSkillTreeCard(mNode, label, isCurrent, true, false);
+        if (isMobile) cardEl.classList.add('flex-1');
         trunkCol.appendChild(cardEl);
         row.appendChild(trunkCol);
 
@@ -2664,23 +2718,57 @@
 
         const branches = branchesByParent.get(mNode.id) || [];
         if (branches.length > 0) {
-          const branchCol = document.createElement('div');
-          branchCol.className = 'flex flex-col gap-3 flex-shrink-0';
-          branches.forEach(br => {
-            const brCard = createSkillTreeCard(
-              br.node,
-              br.relationType.replace(/_/g, ' '),
-              br.node.id === currentMedia.id,
-              false
-            );
-            branchCol.appendChild(brCard);
+          const isMany = branches.length > 4;
+          const branchWrap = document.createElement('div');
+
+          if (isMany) {
+            // Compact multi-column skill branch cluster so huge franchises (One Piece) stay scannable on all screens
+            branchWrap.dataset.clusterParent = String(mNode.id);
+            branchWrap.className = isMobile
+              ? 'ml-6 pl-3 border-l-2 border-zinc-800 grid grid-cols-1 gap-2'
+              : 'p-3.5 rounded-2xl bg-surface-900/50 border border-zinc-800/80 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2.5';
+
+            branches.forEach(br => {
+              const brCard = createSkillTreeCard(
+                br.node,
+                br.relationType.replace(/_/g, ' '),
+                br.node.id === currentMedia.id,
+                false,
+                true
+              );
+              branchWrap.appendChild(brCard);
+            });
+
             window.__wwSkillTreeLinks.push({
               fromId: mNode.id,
-              toId: br.node.id,
+              toClusterParentId: mNode.id,
               kind: 'branch'
             });
-          });
-          row.appendChild(branchCol);
+          } else {
+            branchWrap.className = isMobile
+              ? 'ml-6 pl-3 border-l border-zinc-800 flex flex-col gap-2.5'
+              : 'flex flex-col gap-3 flex-shrink-0';
+
+            branches.forEach(br => {
+              const brCard = createSkillTreeCard(
+                br.node,
+                br.relationType.replace(/_/g, ' '),
+                br.node.id === currentMedia.id,
+                false,
+                false
+              );
+              branchWrap.appendChild(brCard);
+              if (!isMobile) {
+                window.__wwSkillTreeLinks.push({
+                  fromId: mNode.id,
+                  toId: br.node.id,
+                  kind: 'branch'
+                });
+              }
+            });
+          }
+
+          row.appendChild(branchWrap);
         }
 
         nodesHost.appendChild(row);
@@ -2690,7 +2778,7 @@
         drawSkillTreeConnectors();
         const activeCard = nodesHost.querySelector(`[data-node-id="${currentMedia.id}"]`);
         if (activeCard) {
-          activeCard.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+          activeCard.scrollIntoView({ block: 'center', inline: 'nearest' });
         }
       });
     }
@@ -2716,9 +2804,13 @@
       `;
       svg.appendChild(defs);
 
+      const isMobile = window.innerWidth < 768;
+
       window.__wwSkillTreeLinks.forEach(link => {
         const fromEl = stage.querySelector(`[data-node-id="${link.fromId}"]`);
-        const toEl = stage.querySelector(`[data-node-id="${link.toId}"]`);
+        const toEl = link.toClusterParentId
+          ? stage.querySelector(`[data-cluster-parent="${link.toClusterParentId}"]`)
+          : stage.querySelector(`[data-node-id="${link.toId}"]`);
         if (!fromEl || !toEl) return;
 
         const r1 = fromEl.getBoundingClientRect();
@@ -2737,11 +2829,11 @@
           path.setAttribute('stroke-opacity', '0.65');
           path.setAttribute('stroke-width', '2.5');
           path.setAttribute('marker-end', 'url(#ww-arrow-main)');
-        } else {
+        } else if (!isMobile) {
           const x1 = r1.right - stageRect.left;
           const y1 = r1.top - stageRect.top + r1.height * 0.5;
           const x2 = r2.left - stageRect.left - 4;
-          const y2 = r2.top - stageRect.top + r2.height * 0.5;
+          const y2 = r2.top - stageRect.top + Math.min(r2.height * 0.5, 48);
           const cx = (x1 + x2) / 2;
           d = `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`;
           path.setAttribute('stroke', '#52525b');
@@ -2750,9 +2842,11 @@
           path.setAttribute('marker-end', 'url(#ww-arrow-branch)');
         }
 
-        path.setAttribute('d', d);
-        path.setAttribute('fill', 'none');
-        svg.appendChild(path);
+        if (d) {
+          path.setAttribute('d', d);
+          path.setAttribute('fill', 'none');
+          svg.appendChild(path);
+        }
       });
     }
 
