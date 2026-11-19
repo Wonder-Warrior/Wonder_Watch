@@ -2522,7 +2522,7 @@
                   edgeKeys.add(key);
                   directedEdges.push({ fromId: item.id, toId: e.node.id, relationType: e.relationType });
                 }
-                if (isNew && MAINLINE_RELATIONS_SET.has(e.relationType)) {
+                if (!visited.has(e.node.id) && MAINLINE_RELATIONS_SET.has(e.relationType)) {
                   nextFrontier.push(e.node.id);
                 }
               });
