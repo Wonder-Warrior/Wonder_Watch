@@ -1397,6 +1397,18 @@
       }
     }
 
+    function stripOverviewSources(text) {
+      if (!text) return '';
+      return text
+        .replace(/<br\s*[\/]?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/\(\s*Source:\s*[^)]+\)/gi, '')
+        .replace(/\[\s*Written by[^\]]+\]/gi, '')
+        .replace(/\bSource:\s*[^\n]+/gi, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
     async function fetchAniZipEpisodes(anilistId) {
       if (!anilistId) return;
       try {
@@ -1412,7 +1424,7 @@
           const num = parseInt(ep?.episodeNumber || ep?.episode || key, 10);
           if (!num || isNaN(num) || num <= 0) return;
           const enTitle = ep.title?.en || ep.title?.['x-jat'] || ep.title?.ja || '';
-          const summary = (ep.summary || ep.overview || '').replace(/\s+/g, ' ').trim();
+          const summary = stripOverviewSources(ep.summary || ep.overview || '').replace(/\s+/g, ' ').trim();
           episodeMetadataMap[num] = {
             ...(episodeMetadataMap[num] || {}),
             title: enTitle || episodeMetadataMap[num]?.title || '',
@@ -1445,7 +1457,7 @@
             episodeMetadataMap[num] = {
               ...(episodeMetadataMap[num] || {}),
               title: episodeMetadataMap[num]?.title || ep.title || ep.title_romanji || '',
-              synopsis: episodeMetadataMap[num]?.synopsis || (ep.synopsis ? ep.synopsis.split('\n')[0].trim() : ''),
+              synopsis: episodeMetadataMap[num]?.synopsis || (ep.synopsis ? stripOverviewSources(ep.synopsis).split('\n')[0].trim() : ''),
               aired: episodeMetadataMap[num]?.aired || ep.aired || '',
               filler: Boolean(ep.filler),
               recap: Boolean(ep.recap)
@@ -2062,10 +2074,8 @@
           if (descSkel) descSkel.classList.add('hidden');
           const descEl = document.getElementById('animeDescription');
           if (descEl) {
-            let cleanDesc = media.description || 'No overview available for this anime.';
-            // Clean up basic HTML tags if any returned by API
-            cleanDesc = cleanDesc.replace(/<br\s*[\/]?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
-            descEl.innerText = cleanDesc || 'No overview available for this anime.';
+            const cleanDesc = stripOverviewSources(media.description || '') || 'No overview available for this anime.';
+            descEl.innerText = cleanDesc;
             descEl.classList.remove('hidden');
           }
 
@@ -2172,106 +2182,103 @@
       return aired > 0 ? aired : '?';
     }
 
-    function renderSeriesRelations(edges, currentMedia, skipChainExpand = false) {
+    function renderSeriesRelations(edges, currentMedia) {
       const container = document.getElementById('seriesGroupList');
       container.innerHTML = '';
 
-      const MAINLINE_RELATIONS = new Set(['SEQUEL', 'PREQUEL', 'PARENT']);
-      const currentTitleLower = (currentMedia.title.english || currentMedia.title.romaji || '').toLowerCase();
-
-      const isSafeAnimeNode = (edge) => {
-        if (!edge?.node || edge.node.type !== 'ANIME') return false;
-        if (!MAINLINE_RELATIONS.has(edge.relationType)) return false;
-        if (edge.node.status === 'NOT_YET_RELEASED') return false;
-        const relTitleLower = ((edge.node.title?.english || '') + ' ' + (edge.node.title?.romaji || '')).toLowerCase();
-        if (!currentTitleLower.includes('dragon ball') && relTitleLower.includes('dragon ball')) return false;
-        if (!currentTitleLower.includes('toriko') && relTitleLower.includes('toriko')) return false;
-        return true;
+      const RELATION_PRIORITY = {
+        'SEQUEL': 1,
+        'PREQUEL': 2,
+        'PARENT': 3,
+        'CHARACTER': 4,
+        'SIDE_STORY': 5,
+        'SPIN_OFF': 6,
+        'SUMMARY': 7,
+        'ALTERNATIVE': 8,
+        'COMPILATION': 9,
+        'OTHER': 10
       };
 
-      const nodeMap = new Map();
-      nodeMap.set(currentMedia.id, currentMedia);
+      const ALLOWED_RELATIONS = new Set(Object.keys(RELATION_PRIORITY));
+      const currentTitleLower = (currentMedia.title.english || currentMedia.title.romaji || '').toLowerCase();
 
-      const frontierIds = new Set();
+      const validRelations = [];
+      const seenIds = new Set([currentMedia.id]);
+
       (edges || []).forEach(edge => {
-        if (!isSafeAnimeNode(edge)) return;
-        if (!nodeMap.has(edge.node.id)) {
-          nodeMap.set(edge.node.id, edge.node);
-        }
-        const subEdges = edge.node.relations?.edges || [];
-        subEdges.forEach(subEdge => {
-          if (!isSafeAnimeNode(subEdge)) return;
-          if (!nodeMap.has(subEdge.node.id)) {
-            nodeMap.set(subEdge.node.id, subEdge.node);
-            frontierIds.add(subEdge.node.id);
-          }
-        });
+        if (!edge?.node || edge.node.type !== 'ANIME') return;
+        if (!ALLOWED_RELATIONS.has(edge.relationType)) return;
+        if (edge.node.status === 'NOT_YET_RELEASED') return;
+        if (seenIds.has(edge.node.id)) return;
+        const relTitleLower = ((edge.node.title?.english || '') + ' ' + (edge.node.title?.romaji || '')).toLowerCase();
+        if (!currentTitleLower.includes('dragon ball') && relTitleLower.includes('dragon ball')) return;
+        if (!currentTitleLower.includes('toriko') && relTitleLower.includes('toriko')) return;
+        seenIds.add(edge.node.id);
+        validRelations.push({ relationType: edge.relationType, node: edge.node });
       });
 
-      const allEntries = Array.from(nodeMap.values());
-      if (allEntries.length <= 1) {
-        container.innerHTML = `<div class="py-4 text-center text-zinc-500 text-xs">Standalone anime (No other seasons or parts).</div>`;
+      validRelations.sort((a, b) => {
+        const pA = RELATION_PRIORITY[a.relationType] || 99;
+        const pB = RELATION_PRIORITY[b.relationType] || 99;
+        if (pA !== pB) return pA - pB;
+        const yearA = a.node.startDate?.year || 9999;
+        const yearB = b.node.startDate?.year || 9999;
+        if (yearA !== yearB) return yearA - yearB;
+        return (a.node.id || 0) - (b.node.id || 0);
+      });
+
+      if (validRelations.length === 0) {
+        container.innerHTML = `<div class="py-4 text-center text-zinc-500 text-xs">Standalone anime (No other seasons or spinoffs).</div>`;
         return;
       }
 
-      allEntries.sort((a, b) => {
-        const yearA = a.startDate?.year || 9999;
-        const yearB = b.startDate?.year || 9999;
-        if (yearA !== yearB) return yearA - yearB;
-        return (a.id || 0) - (b.id || 0);
-      });
+      const currentTitle = normalizeSeasonTitle(currentMedia.title.english || currentMedia.title.romaji);
+      const currentEpsDisplay = resolveNodePlayableEps(currentMedia);
+      const currentYear = currentMedia.startDate?.year || '';
+      const currentCard = document.createElement('div');
+      currentCard.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/40 text-left';
+      currentCard.innerHTML = `
+        <div class="w-8 h-10 rounded-lg bg-brand-500 flex items-center justify-center text-black font-black text-xs flex-shrink-0">
+          <i class="fa-solid fa-circle-play"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-[9px] font-black uppercase tracking-wider text-brand-400 bg-brand-500/20 px-1.5 py-0.5 rounded">NOW PLAYING</span>
+            <span class="text-[10px] text-zinc-400 font-medium">${escapeHtml(currentMedia.format || 'TV')} • ${currentEpsDisplay} eps${currentYear ? ' • ' + currentYear : ''}</span>
+          </div>
+          <h4 class="text-xs font-heading font-bold text-white line-clamp-2 leading-snug mt-0.5">${escapeHtml(currentTitle)}</h4>
+        </div>
+      `;
+      container.appendChild(currentCard);
 
-      allEntries.forEach((node, idx) => {
-        const isCurrent = node.id === currentMedia.id;
-        const rawTitle = node.title?.english || node.title?.romaji || 'Related Title';
-        const displayTitle = normalizeSeasonTitle(rawTitle);
+      validRelations.forEach(edge => {
+        const node = edge.node;
+        const relType = edge.relationType.replace(/_/g, ' ');
+        const displayTitle = normalizeSeasonTitle(node.title.english || node.title.romaji || 'Related Title');
         const relImg = node.coverImage?.large || node.coverImage?.medium || '';
         const relYear = node.startDate?.year || '';
         const relEps = resolveNodePlayableEps(node);
-        const partTag = `Part ${idx + 1}`;
 
-        if (isCurrent) {
-          const currentCard = document.createElement('div');
-          currentCard.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/40 text-left';
-          currentCard.innerHTML = `
-            <div class="w-8 h-10 rounded-lg bg-brand-500 flex items-center justify-center text-black font-black text-xs flex-shrink-0">
-              <i class="fa-solid fa-circle-play"></i>
+        const card = document.createElement('div');
+        card.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-surface-800 border border-zinc-700/50 hover:border-brand-500/50 hover:bg-surface-750 cursor-pointer transition text-left group';
+        card.innerHTML = `
+          <img src="${escapeHtml(relImg)}" loading="lazy" decoding="async" class="w-8 h-11 object-cover rounded-lg bg-surface-950 flex-shrink-0">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-brand-400 bg-brand-500/15 border border-brand-500/25 px-1.5 py-0.5 rounded">${escapeHtml(relType)}</span>
+              <span class="text-[10px] text-zinc-400 font-medium">${escapeHtml(node.format || 'TV')} • ${relEps} eps${relYear ? ' • ' + relYear : ''}</span>
             </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-[9px] font-black uppercase tracking-wider text-brand-400 bg-brand-500/20 px-1.5 py-0.5 rounded">${partTag} • NOW PLAYING</span>
-                <span class="text-[10px] text-zinc-400 font-medium">${escapeHtml(node.format || 'TV')} • ${relEps} eps${relYear ? ' • ' + relYear : ''}</span>
-              </div>
-              <h4 class="text-xs font-heading font-bold text-white line-clamp-2 leading-snug mt-0.5">${escapeHtml(displayTitle)}</h4>
-            </div>
-          `;
-          container.appendChild(currentCard);
-        } else {
-          const card = document.createElement('div');
-          card.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-surface-800 border border-zinc-700/50 hover:border-brand-500/50 hover:bg-surface-750 cursor-pointer transition text-left group';
-          card.innerHTML = `
-            <img src="${escapeHtml(relImg)}" loading="lazy" decoding="async" class="w-8 h-11 object-cover rounded-lg bg-surface-950 flex-shrink-0 group-hover:scale-105 transition">
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-[9px] font-bold uppercase tracking-wider text-brand-400 bg-brand-500/15 border border-brand-500/25 px-1.5 py-0.5 rounded">${partTag}</span>
-                <span class="text-[10px] text-zinc-400 font-medium">${escapeHtml(node.format || 'TV')} • ${relEps} eps${relYear ? ' • ' + relYear : ''}</span>
-              </div>
-              <h4 class="text-xs font-heading font-bold text-zinc-200 group-hover:text-brand-400 line-clamp-2 leading-snug mt-0.5 transition">${escapeHtml(displayTitle)}</h4>
-            </div>
-            <i class="fa-solid fa-play text-zinc-600 group-hover:text-brand-400 text-xs pr-1 transition"></i>
-          `;
-          card.onclick = () => {
-            playSoundCue('open');
-            window.location.href = `watch.html?id=${node.id}&malId=${node.idMal || node.id}&title=${encodeURIComponent(displayTitle)}&eps=${relEps}`;
-          };
-          container.appendChild(card);
-        }
+            <h4 class="text-xs font-heading font-bold text-zinc-200 group-hover:text-brand-400 line-clamp-2 leading-snug mt-0.5 transition">${escapeHtml(displayTitle)}</h4>
+          </div>
+          <i class="fa-solid fa-play text-zinc-600 group-hover:text-brand-400 text-xs pr-1 transition"></i>
+        `;
+
+        card.onclick = () => {
+          playSoundCue('open');
+          window.location.href = `watch.html?id=${node.id}&malId=${node.idMal || node.id}&title=${encodeURIComponent(displayTitle)}&eps=${relEps}`;
+        };
+        container.appendChild(card);
       });
-
-      // Walk any remaining SEQUEL/PREQUEL frontier nodes so long franchises (JoJo, AoT, etc.) show all parts
-      if (!skipChainExpand && frontierIds.size > 0 && nodeMap.size < 18) {
-        expandFranchiseChain(Array.from(frontierIds), nodeMap, currentMedia);
-      }
     }
 
     async function expandFranchiseChain(frontierIds, nodeMap, currentMedia) {

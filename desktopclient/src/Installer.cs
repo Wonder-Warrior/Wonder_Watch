@@ -43,18 +43,126 @@ namespace WonderWatchInstaller
         }
     }
 
+    internal sealed class NeonProgressBar : Control
+    {
+        private int progressValue;
+        public int Value
+        {
+            get { return progressValue; }
+            set
+            {
+                int clamped = Math.Max(0, Math.Min(100, value));
+                if (progressValue != clamped)
+                {
+                    progressValue = clamped;
+                    Invalidate();
+                }
+            }
+        }
+
+        public NeonProgressBar()
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
+            BackColor = Color.FromArgb(255, 5, 6, 8);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            Graphics g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            g.Clear(BackColor);
+
+            RectangleF track = new RectangleF(0f, 0f, Width - 1f, Height - 1f);
+            float radius = track.Height / 2f;
+            using (GraphicsPath trackPath = CreateCapsule(track, radius))
+            using (SolidBrush trackBrush = new SolidBrush(Color.FromArgb(255, 23, 24, 33)))
+            using (Pen borderPen = new Pen(Color.FromArgb(255, 36, 39, 52), 1f))
+            {
+                g.FillPath(trackBrush, trackPath);
+                g.DrawPath(borderPen, trackPath);
+            }
+
+            if (progressValue > 0)
+            {
+                float fillW = Math.Max(track.Height, (track.Width * progressValue) / 100f);
+                RectangleF fillRect = new RectangleF(0f, 0f, Math.Min(track.Width, fillW), track.Height);
+                using (GraphicsPath fillPath = CreateCapsule(fillRect, radius))
+                using (LinearGradientBrush fillBrush = new LinearGradientBrush(
+                    new PointF(0f, 0f),
+                    new PointF(Math.Max(1f, fillRect.Width), 0f),
+                    Color.FromArgb(255, 34, 204, 55),
+                    Color.FromArgb(255, 158, 255, 171)))
+                {
+                    g.FillPath(fillBrush, fillPath);
+                }
+            }
+        }
+
+        private static GraphicsPath CreateCapsule(RectangleF bounds, float radius)
+        {
+            float d = Math.Min(bounds.Width, Math.Min(bounds.Height, radius * 2f));
+            GraphicsPath path = new GraphicsPath();
+            if (d <= 0.5f)
+            {
+                path.AddRectangle(bounds);
+                return path;
+            }
+            path.AddArc(bounds.X, bounds.Y, d, d, 180f, 90f);
+            path.AddArc(bounds.Right - d, bounds.Y, d, d, 270f, 90f);
+            path.AddArc(bounds.Right - d, bounds.Bottom - d, d, d, 0f, 90f);
+            path.AddArc(bounds.X, bounds.Bottom - d, d, d, 90f, 90f);
+            path.CloseFigure();
+            return path;
+        }
+    }
+
+    internal sealed class RoundedCardPanel : Panel
+    {
+        public RoundedCardPanel()
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
+            BackColor = Color.FromArgb(255, 11, 12, 16);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.Clear(Color.FromArgb(255, 5, 6, 8));
+
+            RectangleF rect = new RectangleF(0.5f, 0.5f, Width - 2f, Height - 2f);
+            float d = 24f;
+            using (GraphicsPath path = new GraphicsPath())
+            using (SolidBrush bg = new SolidBrush(Color.FromArgb(255, 13, 14, 20)))
+            using (Pen border = new Pen(Color.FromArgb(255, 34, 37, 48), 1f))
+            {
+                path.AddArc(rect.X, rect.Y, d, d, 180f, 90f);
+                path.AddArc(rect.Right - d, rect.Y, d, d, 270f, 90f);
+                path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0f, 90f);
+                path.AddArc(rect.X, rect.Bottom - d, d, d, 90f, 90f);
+                path.CloseFigure();
+                g.FillPath(bg, path);
+                g.DrawPath(border, path);
+            }
+        }
+    }
+
     internal sealed class InstallerForm : Form
     {
         private static readonly Color BgDark = Color.FromArgb(255, 5, 6, 8);
-        private static readonly Color SurfaceDark = Color.FromArgb(255, 17, 18, 24);
+        private static readonly Color CardDark = Color.FromArgb(255, 13, 14, 20);
+        private static readonly Color SurfaceDark = Color.FromArgb(255, 23, 24, 33);
         private static readonly Color BrandLime = Color.FromArgb(255, 59, 255, 83);
         private static readonly Color TextMuted = Color.FromArgb(255, 161, 161, 170);
 
         private readonly CheckBox desktopShortcutBox;
         private readonly CheckBox startMenuShortcutBox;
         private readonly CheckBox launchAfterBox;
-        private readonly ProgressBar progressBar;
+        private readonly NeonProgressBar progressBar;
         private readonly Label statusLabel;
+        private readonly Label percentLabel;
         private readonly Button installBtn;
         private readonly Button cancelBtn;
         private readonly string installDir;
@@ -65,7 +173,7 @@ namespace WonderWatchInstaller
             installDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "WonderWatch");
 
             Text = "WonderWatch Desktop Setup";
-            Size = new Size(480, 360);
+            ClientSize = new Size(496, 376);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
@@ -79,85 +187,114 @@ namespace WonderWatchInstaller
             }
             catch { }
 
+            Panel accentBar = new Panel();
+            accentBar.SetBounds(0, 0, 496, 3);
+            accentBar.BackColor = BrandLime;
+            Controls.Add(accentBar);
+
             Panel headerPanel = new Panel();
-            headerPanel.SetBounds(0, 0, 480, 92);
-            headerPanel.BackColor = SurfaceDark;
+            headerPanel.SetBounds(0, 3, 496, 94);
+            headerPanel.BackColor = Color.FromArgb(255, 10, 11, 15);
             Controls.Add(headerPanel);
 
             PictureBox badge = new PictureBox();
-            badge.SetBounds(24, 22, 48, 48);
-            badge.Image = CreatePlayBadgeBitmap(48);
+            badge.SetBounds(28, 22, 50, 50);
+            badge.Image = CreatePlayBadgeBitmap(50);
             badge.SizeMode = PictureBoxSizeMode.Normal;
             headerPanel.Controls.Add(badge);
 
-            Label title = new Label();
-            title.Text = "WONDERWATCH";
-            title.Font = new Font("Segoe UI", 14f, FontStyle.Bold);
-            title.ForeColor = Color.White;
-            title.SetBounds(84, 22, 340, 26);
-            headerPanel.Controls.Add(title);
+            Label wonderLbl = new Label();
+            wonderLbl.Text = "WONDER";
+            wonderLbl.Font = new Font("Segoe UI", 15f, FontStyle.Bold);
+            wonderLbl.ForeColor = Color.White;
+            wonderLbl.AutoSize = true;
+            wonderLbl.Location = new Point(92, 22);
+            headerPanel.Controls.Add(wonderLbl);
+
+            Label watchLbl = new Label();
+            watchLbl.Text = "WATCH";
+            watchLbl.Font = new Font("Segoe UI", 15f, FontStyle.Bold);
+            watchLbl.ForeColor = BrandLime;
+            watchLbl.AutoSize = true;
+            watchLbl.Location = new Point(188, 22);
+            headerPanel.Controls.Add(watchLbl);
 
             Label subTitle = new Label();
-            subTitle.Text = "Desktop Client v2.4.0 • Windows x64";
+            subTitle.Text = "Desktop Installer • v2.4.0 (Windows x64) • Built-in Shield";
             subTitle.Font = new Font("Segoe UI", 9f, FontStyle.Regular);
-            subTitle.ForeColor = BrandLime;
-            subTitle.SetBounds(86, 48, 340, 20);
+            subTitle.ForeColor = TextMuted;
+            subTitle.SetBounds(94, 51, 370, 20);
             headerPanel.Controls.Add(subTitle);
 
+            RoundedCardPanel optionsCard = new RoundedCardPanel();
+            optionsCard.SetBounds(24, 112, 448, 138);
+            Controls.Add(optionsCard);
+
             Label pathLabel = new Label();
-            pathLabel.Text = "Install location: " + installDir;
+            pathLabel.Text = "Destination:  " + installDir;
             pathLabel.Font = new Font("Segoe UI", 8.5f, FontStyle.Regular);
             pathLabel.ForeColor = TextMuted;
+            pathLabel.BackColor = CardDark;
             pathLabel.AutoEllipsis = true;
-            pathLabel.SetBounds(24, 108, 420, 20);
-            Controls.Add(pathLabel);
+            pathLabel.SetBounds(18, 16, 412, 20);
+            optionsCard.Controls.Add(pathLabel);
 
             desktopShortcutBox = new CheckBox();
             desktopShortcutBox.Text = "Create Desktop shortcut";
             desktopShortcutBox.Checked = true;
+            desktopShortcutBox.BackColor = CardDark;
             desktopShortcutBox.ForeColor = Color.White;
             desktopShortcutBox.Font = new Font("Segoe UI", 9.5f);
-            desktopShortcutBox.SetBounds(26, 138, 300, 24);
-            Controls.Add(desktopShortcutBox);
+            desktopShortcutBox.SetBounds(18, 44, 340, 26);
+            optionsCard.Controls.Add(desktopShortcutBox);
 
             startMenuShortcutBox = new CheckBox();
-            startMenuShortcutBox.Text = "Create Start Menu shortcut";
+            startMenuShortcutBox.Text = "Add to Windows Start Menu";
             startMenuShortcutBox.Checked = true;
+            startMenuShortcutBox.BackColor = CardDark;
             startMenuShortcutBox.ForeColor = Color.White;
             startMenuShortcutBox.Font = new Font("Segoe UI", 9.5f);
-            startMenuShortcutBox.SetBounds(26, 166, 300, 24);
-            Controls.Add(startMenuShortcutBox);
+            startMenuShortcutBox.SetBounds(18, 72, 340, 26);
+            optionsCard.Controls.Add(startMenuShortcutBox);
 
             launchAfterBox = new CheckBox();
             launchAfterBox.Text = "Launch WonderWatch after installation";
             launchAfterBox.Checked = true;
+            launchAfterBox.BackColor = CardDark;
             launchAfterBox.ForeColor = Color.White;
             launchAfterBox.Font = new Font("Segoe UI", 9.5f);
-            launchAfterBox.SetBounds(26, 194, 320, 24);
-            Controls.Add(launchAfterBox);
+            launchAfterBox.SetBounds(18, 100, 340, 26);
+            optionsCard.Controls.Add(launchAfterBox);
 
             statusLabel = new Label();
             statusLabel.Text = "Ready to install WonderWatch Desktop.";
             statusLabel.ForeColor = TextMuted;
             statusLabel.Font = new Font("Segoe UI", 8.5f);
-            statusLabel.SetBounds(24, 228, 420, 20);
+            statusLabel.SetBounds(26, 266, 360, 20);
             Controls.Add(statusLabel);
 
-            progressBar = new ProgressBar();
-            progressBar.SetBounds(24, 250, 418, 10);
-            progressBar.Style = ProgressBarStyle.Continuous;
-            progressBar.Minimum = 0;
-            progressBar.Maximum = 100;
+            percentLabel = new Label();
+            percentLabel.Text = "0%";
+            percentLabel.ForeColor = BrandLime;
+            percentLabel.Font = new Font("Segoe UI", 8.5f, FontStyle.Bold);
+            percentLabel.TextAlign = ContentAlignment.MiddleRight;
+            percentLabel.SetBounds(400, 266, 70, 20);
+            Controls.Add(percentLabel);
+
+            progressBar = new NeonProgressBar();
+            progressBar.SetBounds(26, 290, 444, 10);
             Controls.Add(progressBar);
 
             cancelBtn = new Button();
             cancelBtn.Text = "Cancel";
             cancelBtn.FlatStyle = FlatStyle.Flat;
-            cancelBtn.FlatAppearance.BorderColor = Color.FromArgb(255, 45, 48, 60);
+            cancelBtn.FlatAppearance.BorderColor = Color.FromArgb(255, 42, 46, 58);
+            cancelBtn.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 32, 34, 44);
             cancelBtn.BackColor = SurfaceDark;
             cancelBtn.ForeColor = TextMuted;
             cancelBtn.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-            cancelBtn.SetBounds(238, 274, 92, 34);
+            cancelBtn.Cursor = Cursors.Hand;
+            cancelBtn.SetBounds(244, 318, 98, 38);
             cancelBtn.Click += delegate { if (!isInstalling) Close(); };
             Controls.Add(cancelBtn);
 
@@ -165,10 +302,12 @@ namespace WonderWatchInstaller
             installBtn.Text = "Install";
             installBtn.FlatStyle = FlatStyle.Flat;
             installBtn.FlatAppearance.BorderSize = 0;
+            installBtn.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 106, 255, 127);
             installBtn.BackColor = BrandLime;
             installBtn.ForeColor = Color.Black;
             installBtn.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-            installBtn.SetBounds(340, 274, 102, 34);
+            installBtn.Cursor = Cursors.Hand;
+            installBtn.SetBounds(352, 318, 118, 38);
             installBtn.Click += async delegate { await RunInstallAsync(); };
             Controls.Add(installBtn);
         }
@@ -197,6 +336,7 @@ namespace WonderWatchInstaller
             {
                 statusLabel.Text = "Preparing installation folder...";
                 progressBar.Value = 15;
+                percentLabel.Text = "15%";
 
                 await Task.Run(delegate
                 {
@@ -204,13 +344,16 @@ namespace WonderWatchInstaller
                     {
                         BeginInvoke(new Action(delegate
                         {
-                            progressBar.Value = Math.Min(100, Math.Max(0, pct));
+                            int clamped = Math.Min(100, Math.Max(0, pct));
+                            progressBar.Value = clamped;
+                            percentLabel.Text = clamped + "%";
                             statusLabel.Text = msg;
                         }));
                     });
                 });
 
                 progressBar.Value = 100;
+                percentLabel.Text = "100%";
                 statusLabel.Text = "Installation complete!";
 
                 if (launchAfter)
