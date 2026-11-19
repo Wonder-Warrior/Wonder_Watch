@@ -439,9 +439,9 @@
 
   </main>
 
-  <!-- uBlock Recommendation Modal -->
+  <!-- uBlock / Client Recommendation Modal -->
   <div id="uBlockModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] hidden items-center justify-center p-4">
-    <div class="relative w-full max-w-md bg-surface-900 border border-brand-500/40 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-4 text-center">
+    <div class="ww-modal-card relative w-full max-w-md bg-gradient-to-b from-surface-900 to-surface-950 border border-brand-500/40 rounded-[28px] p-6 sm:p-7 shadow-2xl space-y-4 text-center">
       <button type="button" onclick="dismissUBlockModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-surface-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition" title="Dismiss">
         <i class="fa-solid fa-xmark"></i>
       </button>
@@ -451,19 +451,24 @@
       </div>
 
       <div class="space-y-1.5">
-        <h3 class="text-lg sm:text-xl font-heading font-black text-white">Ad Blocker Recommended</h3>
-        <p class="text-xs text-zinc-300 leading-relaxed">
-          Enable <span class="text-brand-400 font-semibold">uBlock Origin</span> in your browser for a cleaner, uninterrupted viewing experience without popups or redirects.
+        <h3 id="uBlockModalTitle" class="text-lg sm:text-xl font-heading font-black text-white">Ad-Free Viewing Recommended</h3>
+        <p id="uBlockModalDesc" class="text-xs text-zinc-300 leading-relaxed">
+          Use the <span class="text-brand-400 font-semibold">WonderWatch App</span> (built-in shield) or enable <span class="text-brand-400 font-semibold">uBlock Origin</span> in your browser.
         </p>
       </div>
 
-      <div class="pt-2 flex flex-col sm:flex-row items-center gap-2.5">
-        <a id="uBlockInstallLink" href="https://chromewebstore.google.com/detail/ublock-origin-lite/ddkjiahejlhfcafbddmgiahcphecmpfh?hl=en" target="_blank" rel="noopener noreferrer" onclick="dismissUBlockModal()" class="w-full sm:flex-1 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2">
-          <i id="uBlockBrowserIcon" class="fa-brands fa-chrome text-sm"></i> <span id="uBlockInstallText">Get uBlock Origin Lite</span>
+      <div class="pt-2 flex flex-col gap-2.5">
+        <a id="uBlockClientLink" href="downloads.html" onclick="dismissUBlockModal()" class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2">
+          <i id="uBlockClientIcon" class="fa-solid fa-download text-sm"></i> <span id="uBlockClientText">Get WonderWatch App</span>
         </a>
-        <button type="button" onclick="dismissUBlockModal()" class="w-full sm:w-auto bg-surface-800 hover:bg-surface-750 text-zinc-300 hover:text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition border border-zinc-700/60">
-          Got It
-        </button>
+        <div class="flex flex-col sm:flex-row items-center gap-2">
+          <a id="uBlockInstallLink" href="https://chromewebstore.google.com/detail/ublock-origin-lite/ddkjiahejlhfcafbddmgiahcphecmpfh?hl=en" target="_blank" rel="noopener noreferrer" onclick="dismissUBlockModal()" class="w-full sm:flex-1 bg-surface-800 hover:bg-surface-750 text-zinc-200 hover:text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition border border-zinc-700/60 flex items-center justify-center gap-2">
+            <i id="uBlockBrowserIcon" class="fa-brands fa-chrome text-sm"></i> <span id="uBlockInstallText">Get uBlock Origin Lite</span>
+          </a>
+          <button type="button" onclick="dismissUBlockModal()" class="w-full sm:w-auto bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition border border-zinc-800">
+            Got It
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1555,23 +1560,54 @@
     }
 
     function checkUBlockPrompt() {
-      // Do not display inside app clients (desktop app, upcoming mobile app, or installed PWA)
+      // Do not display inside app clients (desktop app, mobile app, or installed PWA)
       if (isAppEnvironment()) return;
-      // Do not display to mobile users (browser extensions are desktop browser only)
-      if (isMobileDevice()) return;
 
       const modal = document.getElementById('uBlockModal');
       if (!modal) return;
-      // Show once on desktop across streaming servers — persisted in localStorage
       if (!localStorage.getItem(UBLOCK_DISMISSED_KEY)) {
-        // Dynamically tailor recommendation to user's browser (Firefox, Edge, Chrome)
-        const info = detectBrowserUBlockInfo();
-        const linkEl = document.getElementById('uBlockInstallLink');
+        const ua = navigator.userAgent || '';
+        const isMobile = isMobileDevice();
+        const isAndroid = /Android/i.test(ua);
+        const isWindows = /Windows/i.test(ua);
+
+        const titleEl = document.getElementById('uBlockModalTitle');
+        const descEl = document.getElementById('uBlockModalDesc');
+        const clientLink = document.getElementById('uBlockClientLink');
+        const clientIcon = document.getElementById('uBlockClientIcon');
+        const clientText = document.getElementById('uBlockClientText');
+        const extLink = document.getElementById('uBlockInstallLink');
         const iconEl = document.getElementById('uBlockBrowserIcon');
         const textEl = document.getElementById('uBlockInstallText');
-        if (linkEl) linkEl.href = info.url;
-        if (iconEl) iconEl.className = `${info.icon} text-sm`;
-        if (textEl) textEl.innerText = info.label;
+
+        if (isMobile) {
+          if (titleEl) titleEl.innerText = 'Use the WonderWatch Mobile App';
+          if (descEl) descEl.innerHTML = 'For instant ad-free streaming without popups or redirects, download the <span class="text-brand-400 font-semibold">WonderWatch Android App</span> with built-in shielding.';
+          if (clientLink) {
+            clientLink.href = isAndroid ? './androidclient/WonderWatch-Android.apk' : 'downloads.html';
+            if (isAndroid) clientLink.setAttribute('download', 'WonderWatch-Android.apk');
+          }
+          if (clientIcon) clientIcon.className = isAndroid ? 'fa-brands fa-android text-sm' : 'fa-solid fa-mobile-screen-button text-sm';
+          if (clientText) clientText.innerText = isAndroid ? 'Download Android App (.APK)' : 'View Mobile & Desktop Apps';
+          if (extLink) extLink.classList.add('hidden');
+        } else {
+          if (titleEl) titleEl.innerText = 'Ad-Free Viewing Recommended';
+          if (descEl) descEl.innerHTML = 'Use the <span class="text-brand-400 font-semibold">WonderWatch Desktop App</span> (built-in shield) or add <span class="text-brand-400 font-semibold">uBlock Origin</span> to your browser for zero popups.';
+          if (clientLink) {
+            clientLink.href = isWindows ? './desktopclient/WonderWatch-Setup-win-x64.exe' : 'downloads.html';
+            if (isWindows) clientLink.setAttribute('download', 'WonderWatch-Setup-win-x64.exe');
+          }
+          if (clientIcon) clientIcon.className = isWindows ? 'fa-brands fa-windows text-sm' : 'fa-solid fa-desktop text-sm';
+          if (clientText) clientText.innerText = isWindows ? 'Get WonderWatch Desktop Installer' : 'Get WonderWatch Desktop App';
+
+          const info = detectBrowserUBlockInfo();
+          if (extLink) {
+            extLink.classList.remove('hidden');
+            extLink.href = info.url;
+          }
+          if (iconEl) iconEl.className = `${info.icon} text-sm`;
+          if (textEl) textEl.innerText = info.label;
+        }
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -2114,120 +2150,182 @@
       }
     }
 
-    function renderSeriesRelations(edges, currentMedia) {
+    function normalizeSeasonTitle(rawTitle) {
+      if (!rawTitle) return 'Related Title';
+      let cleaned = rawTitle.replace(/\s*\(TV\)\s*$/i, '').trim();
+      // Normalize ALL-CAPS words (e.g. STONE OCEAN, STEEL BALL RUN) to Title Case while keeping short acronyms (TV, OVA, II, III)
+      cleaned = cleaned.replace(/\b([A-Z]{3,})\b/g, (w) => {
+        if (/^(OVA|ONA|TV|III|IV|VI|VII|VIII|IX|DX|HD|II)$/.test(w)) return w;
+        return w.charAt(0) + w.slice(1).toLowerCase();
+      });
+      return cleaned;
+    }
+
+    function resolveNodePlayableEps(node) {
+      if (!node) return '?';
+      if (node.status === 'NOT_YET_RELEASED') return 0;
+      const aired = (node.nextAiringEpisode?.episode && node.nextAiringEpisode.episode > 1)
+        ? node.nextAiringEpisode.episode - 1
+        : 0;
+      if (node.status === 'RELEASING' && aired > 0) return aired;
+      if (node.episodes && node.episodes > 0) return node.episodes;
+      return aired > 0 ? aired : '?';
+    }
+
+    function renderSeriesRelations(edges, currentMedia, skipChainExpand = false) {
       const container = document.getElementById('seriesGroupList');
       container.innerHTML = '';
 
-      // Priority ordering requested: SEQUEL, PREQUAL, CHARACTER, SIDE_STORY, SUMMARY, then remaining
-      const RELATION_PRIORITY = {
-        'SEQUEL': 1,
-        'PREQUEL': 2,
-        'CHARACTER': 3,
-        'SIDE_STORY': 4,
-        'SUMMARY': 5,
-        'PARENT': 6,
-        'SPIN_OFF': 7,
-        'ALTERNATIVE': 8,
-        'COMPILATION': 9,
-        'OTHER': 10
-      };
-
-      const ALLOWED_RELATIONS = new Set(Object.keys(RELATION_PRIORITY));
-      const CHAIN_HOP_RELATIONS = new Set(['SEQUEL', 'PREQUEL', 'PARENT', 'SIDE_STORY']);
+      const MAINLINE_RELATIONS = new Set(['SEQUEL', 'PREQUEL', 'PARENT']);
       const currentTitleLower = (currentMedia.title.english || currentMedia.title.romaji || '').toLowerCase();
 
-      const isSafeRelationNode = (edge) => {
+      const isSafeAnimeNode = (edge) => {
         if (!edge?.node || edge.node.type !== 'ANIME') return false;
-        if (!ALLOWED_RELATIONS.has(edge.relationType)) return false;
+        if (!MAINLINE_RELATIONS.has(edge.relationType)) return false;
+        if (edge.node.status === 'NOT_YET_RELEASED') return false;
         const relTitleLower = ((edge.node.title?.english || '') + ' ' + (edge.node.title?.romaji || '')).toLowerCase();
-        // Guard against crossover specials linking another completely separate franchise (e.g. Toriko / DBZ)
         if (!currentTitleLower.includes('dragon ball') && relTitleLower.includes('dragon ball')) return false;
         if (!currentTitleLower.includes('toriko') && relTitleLower.includes('toriko')) return false;
         return true;
       };
 
-      const seenIds = new Set([currentMedia.id]);
-      const validRelations = [];
-      (edges || []).forEach(edge => {
-        if (!isSafeRelationNode(edge) || seenIds.has(edge.node.id)) return;
-        seenIds.add(edge.node.id);
-        validRelations.push({ relationType: edge.relationType, node: edge.node, hop: 1 });
+      const nodeMap = new Map();
+      nodeMap.set(currentMedia.id, currentMedia);
 
-        // Include 2nd-hop sequels/prequels so multi-part series (e.g. JoJo Parts 1-3+) appear together
+      const frontierIds = new Set();
+      (edges || []).forEach(edge => {
+        if (!isSafeAnimeNode(edge)) return;
+        if (!nodeMap.has(edge.node.id)) {
+          nodeMap.set(edge.node.id, edge.node);
+        }
         const subEdges = edge.node.relations?.edges || [];
         subEdges.forEach(subEdge => {
-          if (!CHAIN_HOP_RELATIONS.has(subEdge.relationType)) return;
-          if (!isSafeRelationNode(subEdge) || seenIds.has(subEdge.node.id)) return;
-          seenIds.add(subEdge.node.id);
-          validRelations.push({ relationType: subEdge.relationType, node: subEdge.node, hop: 2 });
+          if (!isSafeAnimeNode(subEdge)) return;
+          if (!nodeMap.has(subEdge.node.id)) {
+            nodeMap.set(subEdge.node.id, subEdge.node);
+            frontierIds.add(subEdge.node.id);
+          }
         });
       });
 
-      validRelations.sort((a, b) => {
-        const yearA = a.node.startDate?.year || 9999;
-        const yearB = b.node.startDate?.year || 9999;
-        if (yearA !== yearB) return yearA - yearB;
-        const pA = RELATION_PRIORITY[a.relationType] || 99;
-        const pB = RELATION_PRIORITY[b.relationType] || 99;
-        if (pA !== pB) return pA - pB;
-        return (a.node.id || 0) - (b.node.id || 0);
-      });
-
-      if (validRelations.length === 0) {
-        container.innerHTML = `<div class="py-4 text-center text-zinc-500 text-xs">Standalone anime (No other seasons or spinoffs).</div>`;
+      const allEntries = Array.from(nodeMap.values());
+      if (allEntries.length <= 1) {
+        container.innerHTML = `<div class="py-4 text-center text-zinc-500 text-xs">Standalone anime (No other seasons or parts).</div>`;
         return;
       }
 
-      const currentTitle = currentMedia.title.english || currentMedia.title.romaji;
-      const currentEpsDisplay = currentMedia.episodes || (currentMedia.nextAiringEpisode?.episode > 1 ? currentMedia.nextAiringEpisode.episode - 1 : '?');
-      const currentCard = document.createElement('div');
-      currentCard.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/40 text-left';
-      currentCard.innerHTML = `
-        <div class="w-8 h-10 rounded-lg bg-brand-500 flex items-center justify-center text-black font-black text-xs flex-shrink-0">
-          <i class="fa-solid fa-circle-play"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-1.5">
-            <span class="text-[9px] font-black uppercase tracking-wider text-brand-400 bg-brand-500/20 px-1.5 py-0.5 rounded">NOW PLAYING</span>
-            <span class="text-[10px] text-zinc-400 font-medium">${currentEpsDisplay} eps</span>
-          </div>
-          <h4 class="text-xs font-heading font-bold text-white truncate mt-0.5">${escapeHtml(currentTitle)}</h4>
-        </div>
-      `;
-      container.appendChild(currentCard);
+      allEntries.sort((a, b) => {
+        const yearA = a.startDate?.year || 9999;
+        const yearB = b.startDate?.year || 9999;
+        if (yearA !== yearB) return yearA - yearB;
+        return (a.id || 0) - (b.id || 0);
+      });
 
-      validRelations.forEach(edge => {
-        const node = edge.node;
-        const relType = edge.relationType.replace(/_/g, ' ');
-        const relTitle = node.title.english || node.title.romaji || 'Related Title';
+      allEntries.forEach((node, idx) => {
+        const isCurrent = node.id === currentMedia.id;
+        const rawTitle = node.title?.english || node.title?.romaji || 'Related Title';
+        const displayTitle = normalizeSeasonTitle(rawTitle);
         const relImg = node.coverImage?.large || node.coverImage?.medium || '';
         const relYear = node.startDate?.year || '';
-        const relAired = (node.nextAiringEpisode?.episode && node.nextAiringEpisode.episode > 1) ? node.nextAiringEpisode.episode - 1 : 0;
-        const relEps = (node.status === 'RELEASING' && relAired > 0)
-          ? relAired
-          : (node.episodes || (relAired > 0 ? relAired : '?'));
+        const relEps = resolveNodePlayableEps(node);
+        const partTag = `Part ${idx + 1}`;
 
-        const card = document.createElement('div');
-        card.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-surface-800 border border-zinc-700/50 hover:border-brand-500/50 hover:bg-surface-750 cursor-pointer transition text-left group';
-        card.innerHTML = `
-          <img src="${escapeHtml(relImg)}" loading="lazy" decoding="async" class="w-8 h-11 object-cover rounded-lg bg-surface-950 flex-shrink-0 group-hover:scale-105 transition">
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-[9px] font-bold uppercase tracking-wider text-brand-400 bg-brand-500/15 border border-brand-500/25 px-1.5 py-0.5 rounded">${escapeHtml(relType)}</span>
-              <span class="text-[10px] text-zinc-400 font-medium">${escapeHtml(node.format || 'TV')} • ${relEps} eps</span>
-              ${relYear ? `<span class="text-[10px] text-zinc-500">• ${relYear}</span>` : ''}
+        if (isCurrent) {
+          const currentCard = document.createElement('div');
+          currentCard.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/40 text-left';
+          currentCard.innerHTML = `
+            <div class="w-8 h-10 rounded-lg bg-brand-500 flex items-center justify-center text-black font-black text-xs flex-shrink-0">
+              <i class="fa-solid fa-circle-play"></i>
             </div>
-            <h4 class="text-xs font-heading font-bold text-zinc-200 group-hover:text-brand-400 line-clamp-2 leading-snug mt-0.5 transition">${escapeHtml(relTitle)}</h4>
-          </div>
-          <i class="fa-solid fa-play text-zinc-600 group-hover:text-brand-400 text-xs pr-1 transition"></i>
-        `;
-
-        card.onclick = () => {
-          playSoundCue('open');
-          window.location.href = `watch.html?id=${node.id}&malId=${node.idMal || node.id}&title=${encodeURIComponent(relTitle)}&eps=${relEps}`;
-        };
-        container.appendChild(card);
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[9px] font-black uppercase tracking-wider text-brand-400 bg-brand-500/20 px-1.5 py-0.5 rounded">${partTag} • NOW PLAYING</span>
+                <span class="text-[10px] text-zinc-400 font-medium">${escapeHtml(node.format || 'TV')} • ${relEps} eps${relYear ? ' • ' + relYear : ''}</span>
+              </div>
+              <h4 class="text-xs font-heading font-bold text-white line-clamp-2 leading-snug mt-0.5">${escapeHtml(displayTitle)}</h4>
+            </div>
+          `;
+          container.appendChild(currentCard);
+        } else {
+          const card = document.createElement('div');
+          card.className = 'flex items-center gap-3 p-2.5 rounded-xl bg-surface-800 border border-zinc-700/50 hover:border-brand-500/50 hover:bg-surface-750 cursor-pointer transition text-left group';
+          card.innerHTML = `
+            <img src="${escapeHtml(relImg)}" loading="lazy" decoding="async" class="w-8 h-11 object-cover rounded-lg bg-surface-950 flex-shrink-0 group-hover:scale-105 transition">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[9px] font-bold uppercase tracking-wider text-brand-400 bg-brand-500/15 border border-brand-500/25 px-1.5 py-0.5 rounded">${partTag}</span>
+                <span class="text-[10px] text-zinc-400 font-medium">${escapeHtml(node.format || 'TV')} • ${relEps} eps${relYear ? ' • ' + relYear : ''}</span>
+              </div>
+              <h4 class="text-xs font-heading font-bold text-zinc-200 group-hover:text-brand-400 line-clamp-2 leading-snug mt-0.5 transition">${escapeHtml(displayTitle)}</h4>
+            </div>
+            <i class="fa-solid fa-play text-zinc-600 group-hover:text-brand-400 text-xs pr-1 transition"></i>
+          `;
+          card.onclick = () => {
+            playSoundCue('open');
+            window.location.href = `watch.html?id=${node.id}&malId=${node.idMal || node.id}&title=${encodeURIComponent(displayTitle)}&eps=${relEps}`;
+          };
+          container.appendChild(card);
+        }
       });
+
+      // Walk any remaining SEQUEL/PREQUEL frontier nodes so long franchises (JoJo, AoT, etc.) show all parts
+      if (!skipChainExpand && frontierIds.size > 0 && nodeMap.size < 18) {
+        expandFranchiseChain(Array.from(frontierIds), nodeMap, currentMedia);
+      }
+    }
+
+    async function expandFranchiseChain(frontierIds, nodeMap, currentMedia) {
+      try {
+        const q = `query ($ids: [Int]) {
+          Page(perPage: 15) {
+            media(id_in: $ids, type: ANIME) {
+              id
+              relations {
+                edges {
+                  relationType
+                  node {
+                    id idMal title { romaji english } format status episodes nextAiringEpisode { episode } type coverImage { large medium } startDate { year }
+                  }
+                }
+              }
+            }
+          }
+        }`;
+        let queue = frontierIds.slice(0, 6);
+        let rounds = 0;
+        let addedAny = false;
+        while (queue.length > 0 && rounds < 4 && nodeMap.size < 20) {
+          rounds++;
+          const res = await fetch('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ query: q, variables: { ids: queue } })
+          });
+          if (!res.ok) break;
+          const json = await res.json();
+          const list = json?.data?.Page?.media || [];
+          const nextQueue = [];
+          list.forEach(item => {
+            (item.relations?.edges || []).forEach(e => {
+              if (!e?.node || e.node.type !== 'ANIME') return;
+              if (e.relationType !== 'SEQUEL' && e.relationType !== 'PREQUEL' && e.relationType !== 'PARENT') return;
+              if (e.node.status === 'NOT_YET_RELEASED') return;
+              if (!nodeMap.has(e.node.id)) {
+                nodeMap.set(e.node.id, e.node);
+                nextQueue.push(e.node.id);
+                addedAny = true;
+              }
+            });
+          });
+          queue = nextQueue.slice(0, 6);
+        }
+        if (addedAny) {
+          const syntheticEdges = Array.from(nodeMap.values())
+            .filter(n => n.id !== currentMedia.id)
+            .map(n => ({ relationType: 'SEQUEL', node: n }));
+          renderSeriesRelations(syntheticEdges, currentMedia, true);
+        }
+      } catch (_) {}
     }
 
     // Typing sound feedback on all text inputs

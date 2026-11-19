@@ -280,7 +280,7 @@ namespace WonderWatchDesktop
 
                 CoreWebView2EnvironmentOptions options = new CoreWebView2EnvironmentOptions();
                 options.AreBrowserExtensionsEnabled = true;
-                options.AdditionalBrowserArguments = "--autoplay-policy=no-user-gesture-required";
+                options.AdditionalBrowserArguments = "--autoplay-policy=no-user-gesture-required --disable-features=OverscrollHistoryNavigation";
 
                 sharedEnvironment = await CoreWebView2Environment.CreateAsync(null, userDataDir, options);
                 await webView.EnsureCoreWebView2Async(sharedEnvironment);
@@ -294,6 +294,11 @@ namespace WonderWatchDesktop
                 await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(
                     "(function(){" +
                     "window.__WONDERWATCH_DESKTOP__=true;" +
+                    "try{" +
+                    "var g=document.createElement('style');" +
+                    "g.textContent='html,body{overscroll-behavior-x:none!important;}';" +
+                    "(document.head||document.documentElement).appendChild(g);" +
+                    "}catch(e){}" +
                     "try{if(location.hostname.indexOf('github.io')!==-1||location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.protocol==='file:'){" +
                     "localStorage.setItem('wonderwatch_ublock_dismissed','true');localStorage.setItem('uBlockPromptDismissed','true');" +
                     "var s=document.createElement('style');" +
@@ -350,6 +355,7 @@ namespace WonderWatchDesktop
             settings.AreDevToolsEnabled = false;
             settings.IsZoomControlEnabled = false;
             settings.AreBrowserAcceleratorKeysEnabled = false;
+            settings.IsSwipeNavigationEnabled = false;
             settings.IsBuiltInErrorPageEnabled = true;
         }
 
