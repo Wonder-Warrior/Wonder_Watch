@@ -86,6 +86,7 @@ public final class MainActivity extends Activity {
         cookies.setAcceptThirdPartyCookies(webView, true);
 
         webView.setWebViewClient(new WonderWebViewClient());
+        webView.addJavascriptInterface(new AndroidBridge(), "WonderWatchAndroid");
         webView.setWebChromeClient(new WonderWebChromeClient());
 
         contentContainer.addView(webView, new FrameLayout.LayoutParams(
@@ -436,6 +437,60 @@ public final class MainActivity extends Activity {
             value,
             getResources().getDisplayMetrics()
         ));
+    }
+
+    private final class AndroidBridge {
+        @android.webkit.JavascriptInterface
+        public void checkForUpdates() {
+            new Thread(() -> {
+                String currentVer = "2.4.0";
+                try {
+                    currentVer = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+                } catch (Exception ignored) {}
+                final String localVer = currentVer;
+
+                try {
+                    java.net.URL url = new java.net.URL("https://raw.githubusercontent.com/wonder-warrior/Wonder-Watch/main/version.json?t=" + System.currentTimeMillis());
+                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                    conn.setConnectTimeout(8000);
+                    conn.setReadTimeout(8000);
+                    java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) sb.append(line);
+                    br.close();
+
+                    org.json.JSONObject root = new org.json.JSONObject(sb.toString());
+                    org.json.JSONObject androidObj = root.optJSONObject("android");
+                    final String remoteVer = androidObj != null ? androidObj.optString("version", localVer) : localVer;
+                    final String apkUrl = androidObj != null ? androidObj.optString("apkUrl", "") : "";
+                    final boolean hasUpdate = !remoteVer.equals(localVer) && !apkUrl.isEmpty();
+
+                    runOnUiThread(() -> {
+                        android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(MainActivity.this);
+                        b.setTitle(hasUpdate ? "Update Available" : "WonderWatch Updates");
+                        b.setMessage("Current version: v" + localVer + "\nLatest version: v" + remoteVer + (hasUpdate ? "\n\nWould you like to download the latest APK?" : "\n\nYou are up to date!"));
+                        if (hasUpdate) {
+                            b.setPositiveButton("Update", (d, w) -> {
+                                try {
+                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl)));
+                                } catch (Exception ignored) {}
+                            });
+                            b.setNegativeButton("Later", null);
+                        } else {
+                            b.setPositiveButton("OK", null);
+                        }
+                        b.show();
+                    });
+                } catch (Exception e) {
+                    runOnUiThread(() -> new android.app.AlertDialog.Builder(MainActivity.this)
+                        .setTitle("WonderWatch Updates")
+                        .setMessage("Current version: v" + localVer + "\n\nUnable to check for updates right now.")
+                        .setPositiveButton("OK", null)
+                        .show());
+                }
+            }).start();
+        }
     }
 
     private final class WonderWebViewClient extends WebViewClient {

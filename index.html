@@ -347,7 +347,7 @@
               <button type="button" onclick="goToSection('favoritesSection', 'No favourites yet. Tap the heart on an anime to save it.')" class="w-full text-left px-4 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-surface-800 transition flex items-center gap-2">
                 <i class="fa-solid fa-heart text-red-500 text-xs"></i> My Favourites
               </button>
-              <button type="button" id="checkUpdatesBtn" onclick="handleCheckForUpdates()" class="w-full text-left px-4 py-2 text-xs font-medium text-brand-400 hover:text-brand-300 hover:bg-surface-800 transition flex items-center gap-2">
+              <button type="button" id="checkUpdatesBtn" onclick="handleCheckForUpdates()" class="hidden w-full text-left px-4 py-2 text-xs font-medium text-brand-400 hover:text-brand-300 hover:bg-surface-800 transition flex items-center gap-2">
                 <i class="fa-solid fa-arrows-rotate text-xs"></i> Check for Updates
               </button>
             </div>
@@ -1489,10 +1489,20 @@
       document.getElementById('userDropdownMenu').classList.add('hidden');
       if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
         window.chrome.webview.postMessage('ww:check_updates');
-      } else {
-        window.location.href = 'downloads.html';
+      } else if (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.checkForUpdates === 'function') {
+        window.WonderWatchAndroid.checkForUpdates();
       }
     }
+
+    (function initClientUpdateButton() {
+      const btn = document.getElementById('checkUpdatesBtn');
+      if (!btn) return;
+      const isDesktop = !!(window.chrome && window.chrome.webview);
+      const isAndroid = !!window.WonderWatchAndroid;
+      if (isDesktop || isAndroid) {
+        btn.classList.remove('hidden');
+      }
+    })();
 
     function toggleMobileNav(e) {
       if (e) e.stopPropagation();
