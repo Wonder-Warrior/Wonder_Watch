@@ -1437,9 +1437,11 @@
           playSoundCue('click');
           currentEpisode = i;
           savedResumeTime = 0;
-          loadPlayer();
-          renderEpisodes();
-          autoSaveProgress();
+          autoSaveProgress(0);
+          const nextUrl = new URL(window.location.href);
+          nextUrl.searchParams.set('ep', String(i));
+          nextUrl.searchParams.delete('time');
+          window.location.replace(nextUrl.toString());
         };
 
         if (isCurrent) activeCardEl = card;

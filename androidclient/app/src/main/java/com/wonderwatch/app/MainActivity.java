@@ -471,11 +471,7 @@ public final class MainActivity extends Activity {
                         b.setTitle(hasUpdate ? "Update Available" : "WonderWatch Updates");
                         b.setMessage("Current version: v" + localVer + "\nLatest version: v" + remoteVer + (hasUpdate ? "\n\nWould you like to download the latest APK?" : "\n\nYou are up to date!"));
                         if (hasUpdate) {
-                            b.setPositiveButton("Update", (d, w) -> {
-                                try {
-                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl)));
-                                } catch (Exception ignored) {}
-                            });
+                            b.setPositiveButton("Update", (d, w) -> downloadAndInstallApk(apkUrl));
                             b.setNegativeButton("Later", null);
                         } else {
                             b.setPositiveButton("OK", null);
@@ -490,6 +486,39 @@ public final class MainActivity extends Activity {
                         .show());
                 }
             }).start();
+        }
+        private void downloadAndInstallApk(String apkUrl) {
+            try {
+                android.app.DownloadManager dm = (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                if (dm == null) return;
+                android.app.DownloadManager.Request req = new android.app.DownloadManager.Request(Uri.parse(apkUrl));
+                req.setTitle("WonderWatch Update");
+                req.setDescription("Downloading latest APK...");
+                req.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                req.setDestinationInExternalFilesDir(MainActivity.this, android.os.Environment.DIRECTORY_DOWNLOADS, "WonderWatch-Update.apk");
+                final long downloadId = dm.enqueue(req);
+
+                android.content.BroadcastReceiver onComplete = new android.content.BroadcastReceiver() {
+                    @Override
+                    public void onReceive(android.content.Context ctx, Intent intent) {
+                        long id = intent.getLongExtra(android.app.DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+                        if (id != downloadId) return;
+                        try { unregisterReceiver(this); } catch (Exception ignored) {}
+                        Uri apkUri = dm.getUriForDownloadedFile(downloadId);
+                        if (apkUri != null) {
+                            Intent install = new Intent(Intent.ACTION_VIEW);
+                            install.setDataAndType(apkUri, "application/vnd.android.package-archive");
+                            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                            try { startActivity(install); } catch (Exception ignored) {}
+                        }
+                    }
+                };
+                if (Build.VERSION.SDK_INT >= 33) {
+                    registerReceiver(onComplete, new android.content.IntentFilter(android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE), android.content.Context.RECEIVER_EXPORTED);
+                } else {
+                    registerReceiver(onComplete, new android.content.IntentFilter(android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+                }
+            } catch (Exception ignored) {}
         }
     }
 
