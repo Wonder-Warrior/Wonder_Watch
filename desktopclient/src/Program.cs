@@ -502,6 +502,11 @@ namespace WonderWatchDesktop
 
         private void WireWebViewEvents()
         {
+            webView.CoreWebView2.ContainsFullScreenElementChanged += delegate
+            {
+                isElementFullscreen = webView.CoreWebView2.ContainsFullScreenElement;
+                SetFullscreen(isAppFullscreen || isElementFullscreen);
+            };
             webView.CoreWebView2.DocumentTitleChanged += delegate
             {
                 string title = webView.CoreWebView2.DocumentTitle;
