@@ -281,8 +281,9 @@ namespace WonderWatchInstaller
 
             PictureBox badge = new PictureBox();
             badge.SetBounds(28, 24, 52, 52);
+            badge.BackColor = Color.Transparent;
             badge.Image = CreatePlayBadgeBitmap(52);
-            badge.SizeMode = PictureBoxSizeMode.Normal;
+            badge.SizeMode = PictureBoxSizeMode.Zoom;
             badge.MouseDown += OnDragMouseDown;
             headerPanel.Controls.Add(badge);
 
@@ -300,7 +301,7 @@ namespace WonderWatchInstaller
             watchLbl.Font = new Font("Segoe UI", 15f, FontStyle.Bold);
             watchLbl.ForeColor = BrandLime;
             watchLbl.AutoSize = true;
-            watchLbl.Location = new Point(188, 24);
+            watchLbl.Location = new Point(wonderLbl.Right + 2, 24);
             watchLbl.MouseDown += OnDragMouseDown;
             headerPanel.Controls.Add(watchLbl);
 
