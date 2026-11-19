@@ -1550,10 +1550,10 @@
     }
 
     function resolveAnimeEpisodes(anime) {
-      if (anime?.episodes && anime.episodes > 0) return anime.episodes;
       if (anime?.nextAiringEpisode?.episode && anime.nextAiringEpisode.episode > 1) {
         return anime.nextAiringEpisode.episode - 1;
       }
+      if (anime?.episodes && anime.episodes > 0) return anime.episodes;
       return '?';
     }
 
@@ -1840,23 +1840,24 @@
           : 'bg-zinc-800 text-zinc-400 border border-zinc-700/60';
 
         const card = document.createElement('div');
-        card.className = 'group relative bg-surface-900 border border-zinc-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/60 hover:shadow-xl hover:shadow-brand-500/10 transition-all duration-300 flex flex-col';
+        card.className = 'group relative bg-surface-900 border border-zinc-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/60 transition-colors duration-200 flex flex-col';
+        card.style.contain = 'layout style paint';
         card.innerHTML = `
           <div class="relative aspect-[3/4.2] overflow-hidden bg-surface-950">
-            <img src="${escapeHtml(imgUrl)}" alt="${safeTitle}" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 group-hover:brightness-105 transition duration-500">
-            <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-surface-950/20 to-transparent opacity-85 group-hover:opacity-40 transition duration-300"></div>
+            <img src="${escapeHtml(imgUrl)}" alt="${safeTitle}" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-surface-950/20 to-transparent opacity-85 group-hover:opacity-40 transition-opacity duration-200"></div>
             
             <div class="absolute top-2 left-2 flex items-center gap-1">
-              <span class="backdrop-blur-md text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${qualityBadgeClass}">${qualityTag}</span>
-              <span class="bg-surface-950/85 backdrop-blur-md text-[10px] font-bold px-1.5 py-0.5 rounded-md text-zinc-300 border border-zinc-800">${escapeHtml(format)}</span>
+              <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${qualityBadgeClass}">${qualityTag}</span>
+              <span class="bg-surface-950/90 text-[10px] font-bold px-1.5 py-0.5 rounded-md text-zinc-300 border border-zinc-800">${escapeHtml(format)}</span>
             </div>
 
-            <span class="absolute top-2 right-2 bg-surface-950/90 backdrop-blur-md text-brand-400 text-xs font-black px-2 py-0.5 rounded-md border border-zinc-800 flex items-center gap-1 shadow-sm">
+            <span class="absolute top-2 right-2 bg-surface-950/90 text-brand-400 text-xs font-black px-2 py-0.5 rounded-md border border-zinc-800 flex items-center gap-1">
               <i class="fa-solid fa-star text-[10px]"></i> ${score}
             </span>
 
             <div class="absolute bottom-2 left-2 right-2 flex justify-between items-center text-[11px] text-zinc-300 font-medium">
-              <span class="bg-surface-900/80 backdrop-blur-sm px-2 py-0.5 rounded-md border border-zinc-800/80">EPS ${eps}</span>
+              <span class="bg-surface-950/90 px-2 py-0.5 rounded-md border border-zinc-800/80">EPS ${eps}</span>
               ${year ? `<span class="text-zinc-400 font-normal">${year}</span>` : ''}
             </div>
           </div>

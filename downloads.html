@@ -66,7 +66,22 @@
     }
     .ww-fade-in { animation: wwFadeUp 0.48s cubic-bezier(0.16, 1, 0.3, 1) both; }
     .ww-fade-in-delay { animation: wwFadeUp 0.56s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both; }
-    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    html {
+      background-color: #050608;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: contain;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #050608;
+      -webkit-overflow-scrolling: touch;
+      touch-action: manipulation;
+    }
+    .ww-sticky-header {
+      background: rgba(5, 6, 8, 0.94);
+      box-shadow: 0 -240px 0 0 rgba(5, 6, 8, 0.98);
+      transform: translateZ(0);
+    }
     h1, h2, h3, h4, .font-heading { font-family: 'Outfit', sans-serif; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #050608; }
@@ -74,10 +89,28 @@
     ::-webkit-scrollbar-thumb:hover { background: #3BFF53; }
     .ww-toast {
       position: fixed;
-      bottom: 2rem;
+      bottom: max(1.35rem, env(safe-area-inset-bottom));
       left: 50%;
       transform: translateX(-50%) translateY(120%) scale(0.96);
-      background: rgba(23, 24, 33, 0.88);
+      background: rgba(15, 16, 22, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(59, 255, 83, 0.32);
+      color: #f4f4f5;
+      padding: 0.7rem 1.25rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      z-index: 999;
+      transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease, border-color 0.3s;
+      opacity: 0;
+      pointer-events: none;
+      box-shadow: 0 14px 36px -8px rgba(0, 0, 0, 0.85), 0 0 22px -6px rgba(59, 255, 83, 0.25);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      max-width: calc(100vw - 2rem);
+    }
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(59, 255, 83, 0.35);
@@ -192,9 +225,9 @@
         </div>
 
         <div class="space-y-3 pt-4 border-t border-zinc-800/80">
-          <a href="./desktopclient/WonderWatch-Desktop-win-x64.zip" download="WonderWatch-Desktop-win-x64.zip" onclick="handleDownload('desktop', 'windows')" class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 group-hover:shadow-brand-500/40">
+          <a href="./desktopclient/WonderWatch-Setup-win-x64.exe" download="WonderWatch-Setup-win-x64.exe" onclick="handleDownload('desktop', 'windows')" class="w-full bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 group-hover:shadow-brand-500/40">
             <i class="fa-brands fa-windows text-base"></i>
-            <span>Download for Windows (x64)</span>
+            <span>Download Installer for Windows (x64)</span>
           </a>
           <div class="flex items-center justify-center gap-4 text-[11px] text-zinc-500">
             <button onclick="handleDownload('desktop', 'mac')" class="hover:text-brand-400 transition flex items-center gap-1"><i class="fa-brands fa-apple"></i> macOS (Soon)</button>
