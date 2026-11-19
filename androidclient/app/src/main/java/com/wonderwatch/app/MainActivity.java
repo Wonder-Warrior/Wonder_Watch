@@ -547,11 +547,11 @@ public final class MainActivity extends Activity {
             LinearLayout header = new LinearLayout(MainActivity.this);
             header.setOrientation(LinearLayout.HORIZONTAL);
             header.setGravity(Gravity.CENTER_VERTICAL);
-            header.setBackgroundColor(Color.parseColor("#0D0F14"));
-            header.setPadding(dp(16), dp(12), dp(12), dp(12));
+            header.setBackgroundColor(Color.parseColor("#0B0C10"));
+            header.setPadding(dp(18), dp(14), dp(14), dp(14));
 
             TextView titleView = new TextView(MainActivity.this);
-            titleView.setText("Account Sign In");
+            titleView.setText("WonderWatch Sign In");
             titleView.setTextColor(Color.WHITE);
             titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
             titleView.setTypeface(Typeface.DEFAULT_BOLD);
@@ -563,12 +563,20 @@ public final class MainActivity extends Activity {
             header.addView(titleView, titleParams);
 
             Button closeBtn = new Button(MainActivity.this);
-            closeBtn.setText("Close");
-            closeBtn.setTextColor(Color.parseColor("#A1A1AA"));
+            closeBtn.setText("Done");
+            closeBtn.setTextColor(Color.BLACK);
             closeBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
+            closeBtn.setTypeface(Typeface.DEFAULT_BOLD);
             closeBtn.setAllCaps(false);
-            closeBtn.setBackgroundColor(Color.TRANSPARENT);
-            closeBtn.setPadding(dp(12), dp(4), dp(12), dp(4));
+            GradientDrawable closeBg = new GradientDrawable();
+            closeBg.setColor(BRAND_LIME);
+            closeBg.setCornerRadius(dp(999));
+            closeBtn.setBackground(closeBg);
+            closeBtn.setMinHeight(0);
+            closeBtn.setMinimumHeight(0);
+            closeBtn.setMinWidth(0);
+            closeBtn.setMinimumWidth(0);
+            closeBtn.setPadding(dp(14), dp(6), dp(14), dp(6));
             header.addView(closeBtn);
 
             dialogRoot.addView(header, new LinearLayout.LayoutParams(

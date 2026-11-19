@@ -66,29 +66,110 @@
       -webkit-touch-callout: default;
     }
     html {
-      scroll-behavior: smooth;
+      background-color: #050608;
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior-y: contain;
     }
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #050608;
       -webkit-overflow-scrolling: touch;
       touch-action: manipulation;
     }
     .overflow-x-auto, .overflow-y-auto {
       -webkit-overflow-scrolling: touch;
-      scroll-behavior: smooth;
+    }
+    /* Infinite seamless top bar extension on overscroll */
+    .ww-sticky-header {
+      background: rgba(5, 6, 8, 0.94);
+      box-shadow: 0 -240px 0 0 rgba(5, 6, 8, 0.98);
+      transform: translateZ(0);
+    }
+    /* Animated hamburger icon */
+    .ww-burger {
+      width: 16px;
+      height: 12px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .ww-burger span {
+      display: block;
+      width: 100%;
+      height: 2px;
+      background: currentColor;
+      border-radius: 9999px;
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, background-color 0.2s ease;
+      transform-origin: center;
+    }
+    .ww-burger.is-open span {
+      background: #3BFF53;
+    }
+    .ww-burger.is-open span:nth-child(1) {
+      transform: translateY(5px) rotate(45deg);
+    }
+    .ww-burger.is-open span:nth-child(2) {
+      opacity: 0;
+      transform: scaleX(0);
+    }
+    .ww-burger.is-open span:nth-child(3) {
+      transform: translateY(-5px) rotate(-45deg);
+    }
+    /* Animated mobile category drawer */
+    .ww-mobile-drawer {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      pointer-events: none;
+      transition: grid-template-rows 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease;
+    }
+    .ww-mobile-drawer.is-open {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .ww-mobile-drawer-inner {
+      overflow: hidden;
+    }
+    .ww-mobile-drawer .ww-drawer-item {
+      opacity: 0;
+      transform: translate3d(0, -6px, 0);
+      transition: opacity 0.24s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .ww-mobile-drawer.is-open .ww-drawer-item {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+    .ww-mobile-drawer.is-open .ww-drawer-item:nth-child(1) { transition-delay: 0.03s; }
+    .ww-mobile-drawer.is-open .ww-drawer-item:nth-child(2) { transition-delay: 0.06s; }
+    .ww-mobile-drawer.is-open .ww-drawer-item:nth-child(3) { transition-delay: 0.09s; }
+    .ww-mobile-drawer.is-open .ww-drawer-item:nth-child(4) { transition-delay: 0.12s; }
+    .ww-mobile-drawer.is-open .ww-drawer-item:nth-child(5) { transition-delay: 0.15s; }
+    .ww-mobile-drawer.is-open .ww-drawer-item:nth-child(6) { transition-delay: 0.18s; }
+    .ww-mobile-drawer.is-open .ww-drawer-item:nth-child(7) { transition-delay: 0.21s; }
+    /* Modal & popup entrance */
+    @keyframes wwPopModalIn {
+      from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.96); }
+      to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+    }
+    .ww-modal-card {
+      animation: wwPopModalIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    /* High-refresh-rate scroll optimization for anime sections & cards */
+    main > section {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 420px;
     }
     h1, h2, h3, h4, .font-heading {
       font-family: 'Outfit', sans-serif;
     }
     @keyframes wwFadeUp {
-      from { opacity: 0; transform: translate3d(0, 10px, 0); }
+      from { opacity: 0; transform: translate3d(0, 8px, 0); }
       to { opacity: 1; transform: translate3d(0, 0, 0); }
     }
     .ww-fade-in {
-      animation: wwFadeUp 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
-      will-change: transform, opacity;
+      animation: wwFadeUp 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
     .cat-pill, button, a {
       transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
@@ -120,27 +201,27 @@
     /* Toast notification / Flyout */
     .ww-toast {
       position: fixed;
-      bottom: 2rem;
+      bottom: max(1.35rem, env(safe-area-inset-bottom));
       left: 50%;
       transform: translateX(-50%) translateY(120%) scale(0.96);
-      background: rgba(23, 24, 33, 0.88);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(59, 255, 83, 0.35);
+      background: rgba(15, 16, 22, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(59, 255, 83, 0.32);
       color: #f4f4f5;
-      padding: 0.75rem 1.4rem;
-      border-radius: 1.25rem;
-      font-size: 0.825rem;
+      padding: 0.7rem 1.25rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
       font-weight: 600;
       z-index: 999;
-      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease, border-color 0.3s;
+      transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease, border-color 0.3s;
       opacity: 0;
       pointer-events: none;
-      box-shadow: 0 14px 40px -8px rgba(0, 0, 0, 0.8), 0 0 25px -5px rgba(59, 255, 83, 0.25);
+      box-shadow: 0 14px 36px -8px rgba(0, 0, 0, 0.85), 0 0 22px -6px rgba(59, 255, 83, 0.25);
       display: inline-flex;
       align-items: center;
-      gap: 0.6rem;
-      max-width: 90vw;
+      gap: 0.55rem;
+      max-width: calc(100vw - 2rem);
     }
     .ww-toast.show {
       transform: translateX(-50%) translateY(0) scale(1);
@@ -183,7 +264,7 @@
   <div id="toastNotif" class="ww-toast"></div>
 
   <!-- Header / Navigation Bar -->
-  <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
+  <header class="ww-sticky-header border-b border-zinc-900/90 backdrop-blur-md sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full">
       <div class="flex items-center gap-4 lg:gap-8 min-w-0 flex-shrink">
         <a href="index.html" onclick="playSoundCue('logo')" class="flex items-center gap-2 group flex-shrink-0">
@@ -269,36 +350,38 @@
         </div>
 
         <!-- Mobile Menu Toggle Button -->
-        <button onclick="toggleMobileNav(event)" class="md:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center text-xs sm:text-sm transition flex-shrink-0" title="Menu">
-          <i class="fa-solid fa-bars" id="mobileMenuIcon"></i>
+        <button onclick="toggleMobileNav(event)" class="md:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center text-xs sm:text-sm transition flex-shrink-0" title="Menu" aria-label="Toggle navigation menu">
+          <span class="ww-burger" id="mobileMenuIcon" aria-hidden="true"><span></span><span></span><span></span></span>
         </button>
       </div>
     </div>
   </header>
 
   <!-- Mobile Collapsible Navigation Drawer -->
-  <div id="mobileNavDrawer" class="hidden md:hidden bg-surface-950/98 border-b border-zinc-900 px-4 py-3 space-y-1 backdrop-blur-2xl sticky top-[53px] z-40 w-full">
-    <button type="button" onclick="smoothScrollToCategory('trending'); closeMobileNav();" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
-      <i class="fa-solid fa-fire text-amber-500 text-xs w-4"></i> Trending
-    </button>
-    <button type="button" onclick="smoothScrollToCategory('airing'); closeMobileNav();" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
-      <i class="fa-solid fa-tower-broadcast text-brand-400 text-xs w-4"></i> Airing
-    </button>
-    <button type="button" onclick="smoothScrollToCategory('popular'); closeMobileNav();" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
-      <i class="fa-solid fa-star text-yellow-400 text-xs w-4"></i> Popular
-    </button>
-    <button type="button" onclick="smoothScrollToCategory('movies'); closeMobileNav();" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
-      <i class="fa-solid fa-film text-brand-400 text-xs w-4"></i> Movies
-    </button>
-    <button type="button" onclick="smoothScrollToCategory('genresSection'); closeMobileNav();" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
-      <i class="fa-solid fa-shapes text-zinc-400 text-xs w-4"></i> Browse Genres
-    </button>
-    <button type="button" onclick="smoothScrollToCategory('favoritesSection'); closeMobileNav();" id="mobileNavFavoritesLink" class="hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
-      <i class="fa-solid fa-heart text-red-500 text-xs w-4"></i> My Favourites
-    </button>
-    <a id="mobileNavAppsLink" href="downloads.html" onclick="playSoundCue('nav')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-brand-400 hover:text-brand-300 hover:bg-surface-900 text-xs font-semibold transition text-left">
-      <i class="fa-solid fa-download text-brand-400 text-xs w-4"></i> Download Apps
-    </a>
+  <div id="mobileNavDrawer" class="ww-mobile-drawer md:hidden bg-surface-950/96 border-b border-zinc-900 backdrop-blur-md sticky top-[53px] z-40 w-full">
+    <div class="ww-mobile-drawer-inner px-4 py-2.5 space-y-1">
+      <button type="button" onclick="smoothScrollToCategory('trending'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+        <i class="fa-solid fa-fire text-amber-500 text-xs w-4"></i> Trending
+      </button>
+      <button type="button" onclick="smoothScrollToCategory('airing'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+        <i class="fa-solid fa-tower-broadcast text-brand-400 text-xs w-4"></i> Airing
+      </button>
+      <button type="button" onclick="smoothScrollToCategory('popular'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+        <i class="fa-solid fa-star text-yellow-400 text-xs w-4"></i> Popular
+      </button>
+      <button type="button" onclick="smoothScrollToCategory('movies'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+        <i class="fa-solid fa-film text-brand-400 text-xs w-4"></i> Movies
+      </button>
+      <button type="button" onclick="smoothScrollToCategory('genresSection'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+        <i class="fa-solid fa-shapes text-zinc-400 text-xs w-4"></i> Browse Genres
+      </button>
+      <button type="button" onclick="smoothScrollToCategory('favoritesSection'); closeMobileNav();" id="mobileNavFavoritesLink" class="ww-drawer-item hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+        <i class="fa-solid fa-heart text-red-500 text-xs w-4"></i> My Favourites
+      </button>
+      <a id="mobileNavAppsLink" href="downloads.html" onclick="playSoundCue('nav')" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-brand-400 hover:text-brand-300 hover:bg-surface-900 text-xs font-semibold transition text-left">
+        <i class="fa-solid fa-download text-brand-400 text-xs w-4"></i> Download Apps
+      </a>
+    </div>
   </div>
   <script>
     (function() {
@@ -416,11 +499,11 @@
           type="text" 
           id="searchInput" 
           placeholder="Search by anime name, romaji, character, or genre..." 
-          class="w-full bg-surface-900 border-2 border-zinc-800 pl-14 sm:pl-16 pr-28 sm:pr-32 py-4 sm:py-5 rounded-2xl sm:rounded-3xl text-sm sm:text-base font-medium focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition shadow-2xl placeholder-zinc-500 text-zinc-100"
+          class="w-full bg-surface-900 border-2 border-zinc-800 pl-14 sm:pl-16 pr-14 sm:pr-16 py-4 sm:py-5 rounded-2xl sm:rounded-3xl text-sm sm:text-base font-medium focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition shadow-2xl placeholder-zinc-500 text-zinc-100"
           autocomplete="off"
         >
 
-        <!-- Right Side Controls (Separated Clear Button & Live Badge) -->
+        <!-- Right Side Controls (Clear Button) -->
         <div class="absolute right-3.5 sm:right-4 flex items-center gap-2">
           <button 
             id="searchClearBtn" 
@@ -430,11 +513,6 @@
           >
             <i class="fa-solid fa-xmark"></i>
           </button>
-
-          <div class="flex items-center gap-1.5 text-[11px] font-bold text-brand-400 bg-brand-500/15 px-3 py-1.5 rounded-xl border border-brand-500/30 select-none">
-            <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>
-            LIVE
-          </div>
         </div>
       </div>
 
@@ -616,8 +694,8 @@
   </main>
 
   <!-- Auth Modal (Log In / Sign Up / Google Auth) -->
-  <div id="authModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-[60] hidden items-center justify-center p-4 overflow-y-auto">
-    <div id="authModalBox" class="relative w-full max-w-md bg-surface-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 my-auto">
+  <div id="authModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] hidden items-center justify-center p-3.5 sm:p-4 overflow-y-auto">
+    <div id="authModalBox" class="ww-modal-card relative w-full max-w-md bg-gradient-to-b from-surface-900 to-surface-950 border border-zinc-800/90 rounded-[28px] p-5 sm:p-8 shadow-2xl shadow-black/80 space-y-5 my-auto ring-1 ring-white/5">
       
       <!-- Close button -->
       <button type="button" onclick="closeAuthModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-surface-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition" title="Close">
@@ -1402,17 +1480,17 @@
       const drawer = document.getElementById('mobileNavDrawer');
       const icon = document.getElementById('mobileMenuIcon');
       if (!drawer) return;
-      const isHidden = drawer.classList.toggle('hidden');
+      const isOpen = drawer.classList.toggle('is-open');
       if (icon) {
-        icon.className = isHidden ? 'fa-solid fa-bars' : 'fa-solid fa-xmark text-brand-400';
+        icon.classList.toggle('is-open', isOpen);
       }
     }
 
     function closeMobileNav() {
       const drawer = document.getElementById('mobileNavDrawer');
       const icon = document.getElementById('mobileMenuIcon');
-      if (drawer) drawer.classList.add('hidden');
-      if (icon) icon.className = 'fa-solid fa-bars';
+      if (drawer) drawer.classList.remove('is-open');
+      if (icon) icon.classList.remove('is-open');
     }
 
     function focusMainSearch() {

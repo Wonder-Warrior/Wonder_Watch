@@ -892,6 +892,7 @@ namespace WonderWatchDesktop
                 base.OnPaint(e);
                 Graphics g = e.Graphics;
                 g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
                 g.Clear(BgDark);
 
                 double secs = clock.Elapsed.TotalSeconds;
@@ -930,19 +931,14 @@ namespace WonderWatchDesktop
                     g.DrawArc(arcPen, ringRect, angle - 90f, 250f);
                 }
 
-                // Pulsing WonderWatch lime badge
+                // Pulsing WonderWatch lime badge (sub-pixel float geometry to prevent 1px snapping jitter)
                 float badgeSize = (w * 0.58f) * pulseScale;
                 float left = cx - badgeSize / 2f;
                 float top = cy - badgeSize / 2f;
-                Rectangle rect = new Rectangle(
-                    (int)Math.Round(left),
-                    (int)Math.Round(top),
-                    (int)Math.Round(badgeSize),
-                    (int)Math.Round(badgeSize)
-                );
-                int cornerRadius = Math.Max(4, (int)(badgeSize * 0.27f));
+                RectangleF rect = new RectangleF(left, top, badgeSize, badgeSize);
+                float cornerRadius = Math.Max(4f, badgeSize * 0.27f);
 
-                using (GraphicsPath path = CreateRoundedRect(rect, cornerRadius))
+                using (GraphicsPath path = CreateRoundedRectF(rect, cornerRadius))
                 using (LinearGradientBrush badgeBrush = new LinearGradientBrush(
                     new PointF(left, top + badgeSize),
                     new PointF(left + badgeSize, top),
@@ -1034,12 +1030,17 @@ namespace WonderWatchDesktop
 
         private static GraphicsPath CreateRoundedRect(Rectangle bounds, int radius)
         {
-            int d = radius * 2;
+            return CreateRoundedRectF(bounds, radius);
+        }
+
+        private static GraphicsPath CreateRoundedRectF(RectangleF bounds, float radius)
+        {
+            float d = radius * 2f;
             GraphicsPath path = new GraphicsPath();
-            path.AddArc(bounds.X, bounds.Y, d, d, 180, 90);
-            path.AddArc(bounds.Right - d, bounds.Y, d, d, 270, 90);
-            path.AddArc(bounds.Right - d, bounds.Bottom - d, d, d, 0, 90);
-            path.AddArc(bounds.X, bounds.Bottom - d, d, d, 90, 90);
+            path.AddArc(bounds.X, bounds.Y, d, d, 180f, 90f);
+            path.AddArc(bounds.Right - d, bounds.Y, d, d, 270f, 90f);
+            path.AddArc(bounds.Right - d, bounds.Bottom - d, d, d, 0f, 90f);
+            path.AddArc(bounds.X, bounds.Bottom - d, d, d, 90f, 90f);
             path.CloseFigure();
             return path;
         }
