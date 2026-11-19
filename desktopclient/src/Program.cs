@@ -115,6 +115,21 @@ namespace WonderWatchDesktop
             return DefaultHomeUrl;
         }
 
+        private static void EnsureHighPerformanceGpuPreference()
+        {
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\DirectX\UserGpuPreferences"))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue(Application.ExecutablePath, "GpuPreference=2;", Microsoft.Win32.RegistryValueKind.String);
+                    }
+                }
+            }
+            catch { }
+        }
+
         private void CheckForUpdatesAsync()
         {
             System.Threading.Tasks.Task.Run(() =>
@@ -196,6 +211,7 @@ namespace WonderWatchDesktop
             }
             else
             {
+                EnsureHighPerformanceGpuPreference();
                 Shown += (s, e) => CheckForUpdatesAsync();
             }
 
@@ -370,7 +386,7 @@ namespace WonderWatchDesktop
 
                 CoreWebView2EnvironmentOptions options = new CoreWebView2EnvironmentOptions();
                 options.AreBrowserExtensionsEnabled = true;
-                options.AdditionalBrowserArguments = "--autoplay-policy=no-user-gesture-required --disable-features=OverscrollHistoryNavigation";
+                options.AdditionalBrowserArguments = "--autoplay-policy=no-user-gesture-required --disable-features=OverscrollHistoryNavigation --force_high_performance_gpu";
 
                 sharedEnvironment = await CoreWebView2Environment.CreateAsync(null, userDataDir, options);
                 await webView.EnsureCoreWebView2Async(sharedEnvironment);
