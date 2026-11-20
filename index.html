@@ -1632,8 +1632,10 @@
     function handleCheckForUpdates() {
       document.getElementById('userDropdownMenu').classList.add('hidden');
       if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
+        showToast('<i class="fa-solid fa-arrows-rotate fa-spin text-brand-400"></i> Checking for updates...', 2500);
         window.chrome.webview.postMessage('ww:check_updates');
       } else if (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.checkForUpdates === 'function') {
+        showToast('<i class="fa-solid fa-arrows-rotate fa-spin text-brand-400"></i> Checking for updates...', 2500);
         window.WonderWatchAndroid.checkForUpdates();
       }
     }

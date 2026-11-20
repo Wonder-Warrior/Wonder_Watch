@@ -135,37 +135,74 @@ namespace WonderWatchDesktop
         {
             System.Threading.Tasks.Task.Run(() =>
             {
+                Version localVer = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+                Version local3 = new Version(localVer.Major, localVer.Minor, Math.Max(0, localVer.Build));
                 try
                 {
-                    System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
-                    using (var wc = new System.Net.WebClient())
+                    try { System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12 | (System.Net.SecurityProtocolType)12288; }
+                    catch { System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12; }
+
+                    string json = null;
+                    Exception lastErr = null;
+                    string ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                    string[] urls = new string[]
                     {
-                        wc.Headers.Add("User-Agent", "WonderWatchDesktop");
-                        string json = wc.DownloadString("https://wonder-warrior.github.io/Wonder_Watch/version.json?t=" + DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-                        var verMatch = System.Text.RegularExpressions.Regex.Match(json, @"""desktop""\s*:\s*\{[^}]*""version""\s*:\s*""([0-9]+\.[0-9]+\.[0-9]+)""");
-                        var urlMatch = System.Text.RegularExpressions.Regex.Match(json, @"""desktop""\s*:\s*\{[^}]*""exeUrl""\s*:\s*""([^""]+)""");
-                        Version localVer = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-                        Version local3 = new Version(localVer.Major, localVer.Minor, Math.Max(0, localVer.Build));
-                        if (!verMatch.Success || !urlMatch.Success)
+                        "https://wonder-warrior.github.io/Wonder_Watch/version.json?t=" + ts,
+                        "https://raw.githubusercontent.com/wonder-warrior/Wonder_Watch/main/version.json?t=" + ts
+                    };
+                    foreach (string url in urls)
+                    {
+                        try
                         {
-                            if (manual)
+                            using (var wc = new System.Net.WebClient())
                             {
-                                BeginInvoke((Action)(() => MessageBox.Show(this, "Current version: v" + local3.ToString(3) + "\nLatest version: Unable to read version.json", "WonderWatch Updates", MessageBoxButtons.OK, MessageBoxIcon.Information)));
+                                wc.Encoding = System.Text.Encoding.UTF8;
+                                wc.Headers.Add("User-Agent", "WonderWatchDesktop");
+                                wc.Headers.Add("Cache-Control", "no-cache");
+                                json = wc.DownloadString(url);
+                                if (!string.IsNullOrWhiteSpace(json)) break;
                             }
-                            return;
                         }
-
-                        Version remoteVer = new Version(verMatch.Groups[1].Value);
-                        if (remoteVer <= local3)
+                        catch (Exception ex)
                         {
-                            if (manual)
-                            {
-                                BeginInvoke((Action)(() => MessageBox.Show(this, "You are up to date!\n\nCurrent version: v" + local3.ToString(3) + "\nLatest version: v" + remoteVer.ToString(3), "WonderWatch Updates", MessageBoxButtons.OK, MessageBoxIcon.Information)));
-                            }
-                            return;
+                            lastErr = ex;
                         }
+                    }
 
-                        string exeUrl = urlMatch.Groups[1].Value;
+                    if (string.IsNullOrWhiteSpace(json))
+                    {
+                        if (manual && !IsDisposed)
+                        {
+                            string errText = lastErr != null ? lastErr.Message : "Network error";
+                            BeginInvoke((Action)(() => MessageBox.Show(this, "Unable to check for updates right now.\n\nCurrent version: v" + local3.ToString(3) + "\nError: " + errText, "WonderWatch Updates", MessageBoxButtons.OK, MessageBoxIcon.Warning)));
+                        }
+                        return;
+                    }
+
+                    var verMatch = System.Text.RegularExpressions.Regex.Match(json, @"""desktop""\s*:\s*\{[^}]*""version""\s*:\s*""([0-9]+\.[0-9]+\.[0-9]+)""");
+                    var urlMatch = System.Text.RegularExpressions.Regex.Match(json, @"""desktop""\s*:\s*\{[^}]*""exeUrl""\s*:\s*""([^""]+)""");
+                    if (!verMatch.Success || !urlMatch.Success)
+                    {
+                        if (manual && !IsDisposed)
+                        {
+                            BeginInvoke((Action)(() => MessageBox.Show(this, "Current version: v" + local3.ToString(3) + "\nLatest version: Unable to read version.json", "WonderWatch Updates", MessageBoxButtons.OK, MessageBoxIcon.Information)));
+                        }
+                        return;
+                    }
+
+                    Version remoteVer = new Version(verMatch.Groups[1].Value);
+                    if (remoteVer <= local3)
+                    {
+                        if (manual && !IsDisposed)
+                        {
+                            BeginInvoke((Action)(() => MessageBox.Show(this, "You are up to date!\n\nCurrent version: v" + local3.ToString(3) + "\nLatest version: v" + remoteVer.ToString(3), "WonderWatch Updates", MessageBoxButtons.OK, MessageBoxIcon.Information)));
+                        }
+                        return;
+                    }
+
+                    string exeUrl = urlMatch.Groups[1].Value;
+                    if (!IsDisposed)
+                    {
                         BeginInvoke((Action)(() =>
                         {
                             var res = MessageBox.Show(
@@ -188,7 +225,14 @@ namespace WonderWatchDesktop
                                         dl.Headers.Add("User-Agent", "WonderWatchDesktop");
                                         dl.DownloadFile(exeUrl, newExe);
                                     }
-                                    if (!File.Exists(newExe) || new FileInfo(newExe).Length < 100000) return;
+                                    if (!File.Exists(newExe) || new FileInfo(newExe).Length < 50000)
+                                    {
+                                        if (!IsDisposed)
+                                        {
+                                            BeginInvoke((Action)(() => MessageBox.Show(this, "Downloaded update file was incomplete. Please try again.", "WonderWatch Update", MessageBoxButtons.OK, MessageBoxIcon.Warning)));
+                                        }
+                                        return;
+                                    }
 
                                     string cmd = "/c ping 127.0.0.1 -n 2 > nul & move /y \"" + newExe + "\" \"" + currentExe + "\" & start \"\" \"" + currentExe + "\"";
                                     Process.Start(new ProcessStartInfo("cmd.exe", cmd)
@@ -200,13 +244,22 @@ namespace WonderWatchDesktop
                                 }
                                 catch (Exception ex)
                                 {
-                                    BeginInvoke((Action)(() => MessageBox.Show(this, "Update failed: " + ex.Message, "WonderWatch Update", MessageBoxButtons.OK, MessageBoxIcon.Warning)));
+                                    if (!IsDisposed)
+                                    {
+                                        BeginInvoke((Action)(() => MessageBox.Show(this, "Update failed: " + ex.Message, "WonderWatch Update", MessageBoxButtons.OK, MessageBoxIcon.Warning)));
+                                    }
                                 }
                             });
                         }));
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    if (manual && !IsDisposed)
+                    {
+                        BeginInvoke((Action)(() => MessageBox.Show(this, "Unable to check for updates right now.\n\nCurrent version: v" + local3.ToString(3) + "\nError: " + ex.Message, "WonderWatch Updates", MessageBoxButtons.OK, MessageBoxIcon.Warning)));
+                    }
+                }
             });
         }
 
@@ -484,6 +537,7 @@ namespace WonderWatchDesktop
             settings.AreBrowserAcceleratorKeysEnabled = false;
             settings.IsSwipeNavigationEnabled = false;
             settings.IsBuiltInErrorPageEnabled = true;
+            settings.IsWebMessageEnabled = true;
         }
 
         private void ConfigureWebViewSettings()
@@ -506,7 +560,9 @@ namespace WonderWatchDesktop
             {
                 try
                 {
-                    if (args.TryGetWebMessageAsString() == "ww:check_updates")
+                    string msg = null;
+                    try { msg = args.TryGetWebMessageAsString(); } catch { }
+                    if (msg == "ww:check_updates" || (args.WebMessageAsJson != null && args.WebMessageAsJson.IndexOf("ww:check_updates", StringComparison.OrdinalIgnoreCase) >= 0))
                     {
                         CheckForUpdatesAsync(true);
                     }
