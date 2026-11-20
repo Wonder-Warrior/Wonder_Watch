@@ -314,12 +314,12 @@
 
         <!-- Desktop Nav -->
         <nav id="desktopCategoryNav" class="hidden md:flex items-center gap-1 bg-surface-900/90 border border-zinc-800/80 p-1 rounded-2xl backdrop-blur-md shadow-inner">
+          <button type="button" data-cat="favoritesSection" onclick="smoothScrollToCategory('favoritesSection', this)" id="navFavoritesLink" class="cat-pill hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-heart text-red-500 text-[11px]"></i> Favourites</button>
           <button type="button" data-cat="trending" onclick="smoothScrollToCategory('trending', this)" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-fire text-amber-400 text-[11px]"></i> Trending</button>
           <button type="button" data-cat="airing" onclick="smoothScrollToCategory('airing', this)" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-tower-broadcast text-brand-400 text-[11px]"></i> Airing</button>
           <button type="button" data-cat="popular" onclick="smoothScrollToCategory('popular', this)" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-star text-yellow-400 text-[11px]"></i> Popular</button>
           <button type="button" data-cat="movies" onclick="smoothScrollToCategory('movies', this)" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-film text-sky-400 text-[11px]"></i> Movies</button>
           <button type="button" data-cat="genresSection" onclick="smoothScrollToCategory('genresSection', this)" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-shapes text-purple-400 text-[11px]"></i> Genres</button>
-          <button type="button" data-cat="favoritesSection" onclick="smoothScrollToCategory('favoritesSection', this)" id="navFavoritesLink" class="cat-pill hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-heart text-red-500 text-[11px]"></i> Favourites</button>
           <a id="navAppsLink" href="downloads.html" onclick="playSoundCue('nav')" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-brand-400 hover:text-brand-300 hover:bg-brand-500/10 transition flex items-center gap-1.5 whitespace-nowrap border border-brand-500/20" title="Download Desktop & Android Apps">
             <i class="fa-solid fa-download text-[11px]"></i> Apps
           </a>
@@ -396,6 +396,9 @@
   <!-- Mobile Collapsible Navigation Drawer -->
   <div id="mobileNavDrawer" class="ww-mobile-drawer md:hidden bg-surface-950/96 border-b border-zinc-900 backdrop-blur-md sticky top-[53px] z-40 w-full">
     <div class="ww-mobile-drawer-inner px-4 py-2.5 space-y-1">
+      <button type="button" data-cat="favoritesSection" onclick="smoothScrollToCategory('favoritesSection'); closeMobileNav();" id="mobileNavFavoritesLink" class="ww-drawer-item hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+        <i class="fa-solid fa-heart text-red-500 text-xs w-4"></i> My Favourites
+      </button>
       <button type="button" data-cat="trending" onclick="smoothScrollToCategory('trending'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
         <i class="fa-solid fa-fire text-amber-500 text-xs w-4"></i> Trending
       </button>
@@ -410,9 +413,6 @@
       </button>
       <button type="button" data-cat="genresSection" onclick="smoothScrollToCategory('genresSection'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
         <i class="fa-solid fa-shapes text-zinc-400 text-xs w-4"></i> Browse Genres
-      </button>
-      <button type="button" data-cat="favoritesSection" onclick="smoothScrollToCategory('favoritesSection'); closeMobileNav();" id="mobileNavFavoritesLink" class="ww-drawer-item hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
-        <i class="fa-solid fa-heart text-red-500 text-xs w-4"></i> My Favourites
       </button>
       <a id="mobileNavAppsLink" href="downloads.html" onclick="playSoundCue('nav')" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-brand-400 hover:text-brand-300 hover:bg-surface-900 text-xs font-semibold transition text-left">
         <i class="fa-solid fa-download text-brand-400 text-xs w-4"></i> Download Apps

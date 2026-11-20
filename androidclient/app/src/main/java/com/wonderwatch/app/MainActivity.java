@@ -56,6 +56,7 @@ public final class MainActivity extends Activity {
     private boolean initialPageRevealed = false;
     private boolean mainPageFinished = false;
     private int lastLoadProgress = 0;
+    private boolean autoShellFullscreen = false;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -310,6 +311,19 @@ public final class MainActivity extends Activity {
     }
 
     private void handleBackAction() {
+        if (autoShellFullscreen) {
+            autoShellFullscreen = false;
+            if (customFullscreenView != null) {
+                exitVideoFullscreen();
+            } else {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                setImmersiveSystemBars(false);
+            }
+            if (webView != null) {
+                webView.evaluateJavascript("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();", null);
+            }
+            return;
+        }
         if (customFullscreenView != null) {
             if (customViewCallback != null) {
                 customViewCallback.onCustomViewHidden();
@@ -398,6 +412,20 @@ public final class MainActivity extends Activity {
     }
 
     private void enterVideoFullscreen(View view, WebChromeClient.CustomViewCallback callback) {
+        if (autoShellFullscreen) {
+            autoShellFullscreen = false;
+            if (callback != null) {
+                try {
+                    callback.onCustomViewHidden();
+                } catch (Exception ignored) {}
+            }
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            setImmersiveSystemBars(false);
+            if (webView != null) {
+                webView.evaluateJavascript("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();", null);
+            }
+            return;
+        }
         if (customFullscreenView != null) {
             callback.onCustomViewHidden();
             return;
@@ -427,8 +455,10 @@ public final class MainActivity extends Activity {
             } catch (Exception ignored) {}
         }
         webView.setVisibility(View.VISIBLE);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        setImmersiveSystemBars(false);
+        if (!autoShellFullscreen) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            setImmersiveSystemBars(false);
+        }
     }
 
     private void setImmersiveSystemBars(boolean immersive) {
@@ -488,6 +518,7 @@ public final class MainActivity extends Activity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    autoShellFullscreen = true;
                     setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
                     setImmersiveSystemBars(true);
                 }
@@ -499,6 +530,7 @@ public final class MainActivity extends Activity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    autoShellFullscreen = false;
                     if (customFullscreenView != null) {
                         exitVideoFullscreen();
                     } else {
@@ -511,7 +543,7 @@ public final class MainActivity extends Activity {
 
         @android.webkit.JavascriptInterface
         public boolean isFullscreen() {
-            return customFullscreenView != null || getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
+            return autoShellFullscreen || customFullscreenView != null || getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
         }
 
         @android.webkit.JavascriptInterface

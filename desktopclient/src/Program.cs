@@ -92,6 +92,7 @@ namespace WonderWatchDesktop
         private bool isFullscreen;
         private bool isAppFullscreen;
         private bool isElementFullscreen;
+        private bool isWebAutoFullscreen;
         private FormWindowState prevWindowState = FormWindowState.Normal;
         private FormBorderStyle prevBorderStyle = FormBorderStyle.Sizable;
         private Rectangle prevBounds;
@@ -562,9 +563,26 @@ namespace WonderWatchDesktop
                 {
                     string msg = null;
                     try { msg = args.TryGetWebMessageAsString(); } catch { }
-                    if (msg == "ww:check_updates" || (args.WebMessageAsJson != null && args.WebMessageAsJson.IndexOf("ww:check_updates", StringComparison.OrdinalIgnoreCase) >= 0))
+                    string json = args.WebMessageAsJson ?? "";
+                    if (msg == "ww:check_updates" || json.IndexOf("ww:check_updates", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         CheckForUpdatesAsync(true);
+                    }
+                    else if (msg == "ww:enter_fullscreen" || json.IndexOf("ww:enter_fullscreen", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        isWebAutoFullscreen = true;
+                        if (!IsDisposed)
+                        {
+                            BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen)));
+                        }
+                    }
+                    else if (msg == "ww:exit_fullscreen" || json.IndexOf("ww:exit_fullscreen", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        isWebAutoFullscreen = false;
+                        if (!IsDisposed)
+                        {
+                            BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen)));
+                        }
                     }
                 }
                 catch { }
@@ -574,7 +592,7 @@ namespace WonderWatchDesktop
                 isElementFullscreen = webView.CoreWebView2.ContainsFullScreenElement;
                 if (!isElementFullscreen)
                 {
-                    SetFullscreen(isAppFullscreen);
+                    SetFullscreen(isAppFullscreen || isWebAutoFullscreen);
                 }
                 else
                 {
@@ -582,7 +600,7 @@ namespace WonderWatchDesktop
                     {
                         if (!IsDisposed)
                         {
-                            BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen)));
+                            BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen)));
                         }
                     });
                 }
@@ -631,7 +649,23 @@ namespace WonderWatchDesktop
             }
             if (keyData == Keys.Escape && isFullscreen && (webView.CoreWebView2 == null || !webView.CoreWebView2.ContainsFullScreenElement))
             {
-                SetFullscreen(false);
+                if (isWebAutoFullscreen)
+                {
+                    isWebAutoFullscreen = false;
+                    try
+                    {
+                        if (webView.CoreWebView2 != null)
+                        {
+                            webView.CoreWebView2.ExecuteScriptAsync("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();");
+                        }
+                    }
+                    catch { }
+                    SetFullscreen(isAppFullscreen || isElementFullscreen);
+                }
+                else
+                {
+                    SetFullscreen(false);
+                }
                 return true;
             }
             if (keyData == Keys.F5 || keyData == (Keys.Control | Keys.R))
@@ -968,7 +1002,7 @@ namespace WonderWatchDesktop
         private void ToggleFullscreen()
         {
             isAppFullscreen = !isAppFullscreen;
-            SetFullscreen(isAppFullscreen || isElementFullscreen);
+            SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen);
         }
 
         private void SetFullscreen(bool enable)
