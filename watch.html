@@ -1717,9 +1717,17 @@
       }
     }
 
-    async function loadPlayer() {
-      const wasFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
-      if (wasFullscreen) {
+    async function loadPlayer(restoreFullscreen = false) {
+      // Check if player/screen was in fullscreen before changing episode
+      const wasAndroidFs = Boolean(
+        window.WonderWatchAndroid &&
+        typeof window.WonderWatchAndroid.isFullscreen === 'function' &&
+        window.WonderWatchAndroid.isFullscreen()
+      );
+      const wasBrowserFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      const shouldRestore = restoreFullscreen || wasAndroidFs || wasBrowserFs;
+
+      if (wasBrowserFs) {
         try {
           if (document.exitFullscreen) await document.exitFullscreen();
           else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
@@ -1755,7 +1763,21 @@
       const activeFrame = document.getElementById('playerFrame');
       if (activeFrame && activeFrame.parentNode) {
         const freshFrame = activeFrame.cloneNode(false);
-        freshFrame.addEventListener('load', hidePlayerSkeleton);
+        freshFrame.addEventListener('load', () => {
+          hidePlayerSkeleton();
+          if (shouldRestore) {
+            if (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.requestFullscreen === 'function') {
+              window.WonderWatchAndroid.requestFullscreen();
+            } else {
+              const shell = document.querySelector('.ww-player-shell');
+              try {
+                if (shell && shell.requestFullscreen && !document.fullscreenElement) {
+                  shell.requestFullscreen().catch(() => {});
+                }
+              } catch (_) {}
+            }
+          }
+        });
         freshFrame.src = src;
         activeFrame.parentNode.replaceChild(freshFrame, activeFrame);
       }

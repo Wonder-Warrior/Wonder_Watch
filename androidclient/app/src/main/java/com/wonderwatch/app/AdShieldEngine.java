@@ -34,6 +34,8 @@ public final class AdShieldEngine {
         "firebaseio.com",
         "googleapis.com",
         "gstatic.com",
+        "fonts.googleapis.com",
+        "fonts.gstatic.com",
         "accounts.google.com",
         "accounts.youtube.com",
         "apis.google.com",

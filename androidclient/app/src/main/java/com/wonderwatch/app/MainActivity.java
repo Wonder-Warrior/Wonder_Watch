@@ -158,6 +158,7 @@ public final class MainActivity extends Activity {
     @SuppressLint("SetJavaScriptEnabled")
     private void configureWebSettings(WebSettings settings) {
         settings.setJavaScriptEnabled(true);
+        settings.setDefaultTextEncodingName("UTF-8");
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
@@ -278,9 +279,8 @@ public final class MainActivity extends Activity {
                                                     errorOverlay.setVisibility(View.GONE);
                                                     errorOverlay.setAlpha(1f);
                                                     v.setEnabled(true);
-                                                    // Reset WebView to clean blank page to eliminate any Chromium error page artifacts
+                                                    // Stop any stalled loading and reload the clean URL directly
                                                     webView.stopLoading();
-                                                    webView.loadUrl("about:blank");
                                                     webView.loadUrl(HOME_URL);
                                                 }
                                             })
@@ -478,6 +478,37 @@ public final class MainActivity extends Activity {
 
     private final class AndroidBridge {
         @android.webkit.JavascriptInterface
+        public void requestFullscreen() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                    setImmersiveSystemBars(true);
+                }
+            });
+        }
+
+        @android.webkit.JavascriptInterface
+        public void exitFullscreen() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (customFullscreenView != null) {
+                        exitVideoFullscreen();
+                    } else {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                        setImmersiveSystemBars(false);
+                    }
+                }
+            });
+        }
+
+        @android.webkit.JavascriptInterface
+        public boolean isFullscreen() {
+            return customFullscreenView != null || getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
+        }
+
+        @android.webkit.JavascriptInterface
         public void checkForUpdates() {
             new Thread(() -> {
                 String currentVer = "2.4.0";
@@ -643,8 +674,8 @@ public final class MainActivity extends Activity {
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
             super.onReceivedError(view, request, error);
             if (request != null && request.isForMainFrame()) {
-                // Clear the default Chromium "Webpage not available" error view (which displays the Android logo)
-                view.loadUrl("about:blank");
+                // Clear the default Chromium "Webpage not available" error view (which displays the Android logo) with UTF-8 blank HTML
+                view.loadDataWithBaseURL("https://wonder-warrior.github.io/Wonder_Watch/", "<html><head><meta charset='UTF-8'></head><body style='background:#050608;'></body></html>", "text/html", "UTF-8", null);
                 splashOverlay.dismissAnimated();
                 errorOverlay.setVisibility(View.VISIBLE);
             }
