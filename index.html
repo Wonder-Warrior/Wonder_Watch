@@ -1809,10 +1809,6 @@
       startAutoSlide();
     }
 
-    const heroCard = document.getElementById('heroCard');
-    heroCard.addEventListener('mouseenter', () => stopAutoSlide());
-    heroCard.addEventListener('mouseleave', () => startAutoSlide());
-
     // --- FAVORITES & CONTINUED WATCHING (User State) ---
     async function toggleSpotlightFavorite() {
       if (spotlightList.length === 0) return;
