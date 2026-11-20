@@ -1083,6 +1083,50 @@
         };
         walkEdges(media.relations?.edges, true);
 
+        // Expand multi-hop mainline relations so franchises with 3+ seasons include all IDs and find the true root parent
+        const visited = new Set([Number(media.id)]);
+        let frontier = Array.from(mainlineNodes.keys()).filter(id => !visited.has(id));
+        const expandQuery = `
+          query ($ids: [Int]) {
+            Page(perPage: 15) {
+              media(id_in: $ids, type: ANIME) {
+                id
+                relations {
+                  edges {
+                    relationType
+                    node {
+                      id idMal type format status title { romaji english }
+                      coverImage { extraLarge large medium }
+                      episodes averageScore genres startDate { year }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        `;
+        let rounds = 0;
+        while (frontier.length > 0 && rounds < 6 && allNodes.size < 36) {
+          rounds++;
+          const batch = frontier.filter(id => !visited.has(id)).slice(0, 10);
+          batch.forEach(id => visited.add(id));
+          if (!batch.length) break;
+          const expandData = await fetchAniList(expandQuery, { ids: batch }).catch(() => null);
+          const list = expandData?.Page?.media || [];
+          const nextFrontier = [];
+          list.forEach(item => {
+            (item.relations?.edges || []).forEach(e => {
+              if (!e?.node || e.node.type !== 'ANIME' || !allowed.has(e.relationType)) return;
+              const isMain = mainline.has(e.relationType);
+              addNode(e.node, isMain);
+              if (isMain && !visited.has(Number(e.node.id))) {
+                nextFrontier.push(Number(e.node.id));
+              }
+            });
+          });
+          frontier = nextFrontier;
+        }
+
         // Pick earliest mainline entry (Parent / Season 1) as the visible favorite card
         const candidates = Array.from(mainlineNodes.values());
         candidates.sort((a, b) => {

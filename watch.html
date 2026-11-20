@@ -2222,6 +2222,32 @@
       };
       walkEdges(animeMetadata.relations?.edges, true);
 
+      // Include all nodes discovered by the multi-hop franchise graph expansion
+      if (franchiseGraphState && franchiseGraphState.nodesById) {
+        const adj = new Map();
+        (franchiseGraphState.directedEdges || []).forEach(edge => {
+          if (!mainline.has(edge.relationType)) return;
+          if (!adj.has(edge.fromId)) adj.set(edge.fromId, []);
+          adj.get(edge.fromId).push(edge.toId);
+        });
+
+        const queue = [animeMetadata.id];
+        const visitedMain = new Set([animeMetadata.id]);
+        while (queue.length > 0) {
+          const cur = queue.shift();
+          const curNode = franchiseGraphState.nodesById.get(cur);
+          if (curNode) addNode(curNode, true);
+          for (const nextId of (adj.get(cur) || [])) {
+            if (!visitedMain.has(nextId)) {
+              visitedMain.add(nextId);
+              queue.push(nextId);
+            }
+          }
+        }
+
+        franchiseGraphState.nodesById.forEach(n => addNode(n, false));
+      }
+
       const candidates = Array.from(mainlineNodes.values());
       candidates.sort((a, b) => {
         const yA = a.startDate?.year || 9999;
@@ -2260,11 +2286,41 @@
       }
     }
 
+    async function syncFranchiseFavoriteIdsIfNeeded() {
+      const currentId = parseInt(animeId);
+      const franchiseIds = getCurrentFranchiseIds();
+      const match = findMatchingFavorite(currentId, franchiseIds);
+      if (!match) return;
+
+      const existingIds = new Set(
+        [Number(match.id), ...(Array.isArray(match.franchiseIds) ? match.franchiseIds.map(Number) : [])]
+      );
+      const missingAny = franchiseIds.some(fid => !existingIds.has(Number(fid)));
+      if (!missingAny) return;
+
+      const mergedIds = Array.from(new Set([...existingIds, ...franchiseIds.map(Number)]));
+      const favs = getLocalFavorites().map(f =>
+        Number(f.id) === Number(match.id) ? { ...f, franchiseIds: mergedIds } : f
+      );
+      localStorage.setItem(LS_FAVORITES, JSON.stringify(favs));
+
+      if (currentUser) {
+        try {
+          await userDoc('favorites').doc(String(match.id)).set({ franchiseIds: mergedIds }, { merge: true });
+        } catch (_) {}
+      }
+    }
+
     async function toggleWatchFavorite() {
       const id = parseInt(animeId);
       const alreadyFav = isAnimeFavorite(id);
       playSoundCue(alreadyFav ? 'unfav' : 'fav');
-      if (alreadyFav) {
+
+      if (franchiseGraphState && !franchiseGraphState.expanded) {
+        try { await ensureFullFranchiseGraphExpanded(); } catch (_) {}
+      }
+
+      if (isAnimeFavorite(id)) {
         await removeFavorite(id);
         showToast('<i class="fa-regular fa-heart text-zinc-400"></i> Removed from favourites');
       } else {
@@ -2706,7 +2762,7 @@
                 edges {
                   relationType
                   node {
-                    id idMal title { romaji english } format status episodes nextAiringEpisode { episode } type coverImage { large medium } startDate { year month }
+                    id idMal title { romaji english } format status episodes nextAiringEpisode { episode } type coverImage { extraLarge large medium } averageScore genres startDate { year month }
                   }
                 }
               }
@@ -2763,6 +2819,8 @@
         } else {
           franchiseGraphState.expandPromise = null;
         }
+        updateWatchFavButton();
+        syncFranchiseFavoriteIdsIfNeeded();
       })();
 
       return franchiseGraphState.expandPromise;
