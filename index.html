@@ -305,7 +305,7 @@
   <header class="ww-sticky-header border-b border-zinc-900/90 backdrop-blur-md sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full">
       <div class="flex items-center gap-4 lg:gap-8 min-w-0 flex-shrink">
-        <a href="index.html" onclick="playSoundCue('logo')" class="flex items-center gap-2 group flex-shrink-0">
+        <a href="index.html" onclick="event.preventDefault(); playSoundCue('logo'); setTimeout(() => { window.location.href = 'index.html'; }, 220);" class="flex items-center gap-2 group flex-shrink-0">
           <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-xs shadow-lg shadow-brand-500/25 group-hover:scale-105 transition">
             <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
           </div>
