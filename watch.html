@@ -233,7 +233,7 @@
   <!-- Header / Navigation -->
   <header class="ww-sticky-header border-b border-zinc-900/90 backdrop-blur-md sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full">
-      <a href="index.html" onclick="playSoundCue('logo')" class="flex items-center gap-2 group flex-shrink-0 min-w-0">
+      <a href="index.html" onclick="event.preventDefault(); playSoundCue('logo'); setTimeout(() => { window.location.href = 'index.html'; }, 220);" class="flex items-center gap-2 group flex-shrink-0 min-w-0">
         <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-xs shadow-lg shadow-brand-500/25 group-hover:scale-105 transition flex-shrink-0">
           <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
         </div>
@@ -860,19 +860,39 @@
     // --- FAVORITES ---
     function getLocalFavorites() { return readLocal(LS_FAVORITES); }
 
-    function isAnimeFavorite(id) {
-      return getLocalFavorites().some(item => item.id == id);
+    function findMatchingFavorite(id, extraIds = []) {
+      const lookup = new Set([Number(id), ...extraIds.map(Number)].filter(n => !isNaN(n)));
+      return getLocalFavorites().find(item => {
+        if (lookup.has(Number(item.id))) return true;
+        if (Array.isArray(item.franchiseIds) && item.franchiseIds.some(fid => lookup.has(Number(fid)))) return true;
+        return false;
+      }) || null;
     }
 
-    async function addFavorite(item) {
+    function isAnimeFavorite(id) {
+      const franchiseIds = getCurrentFranchiseIds();
+      return Boolean(findMatchingFavorite(id, franchiseIds));
+    }
+
+    async function addFavorite(item, franchiseIds = null) {
+      const ids = Array.from(new Set([Number(item.id), ...(Array.isArray(franchiseIds) ? franchiseIds.map(Number) : [])]));
+      const idSet = new Set(ids);
       let favs = getLocalFavorites();
-      favs.unshift({ ...item, addedAt: Date.now() });
+      const removedIds = favs
+        .filter(f => idSet.has(Number(f.id)) && Number(f.id) !== Number(item.id))
+        .map(f => f.id);
+      favs = favs.filter(f => !idSet.has(Number(f.id)));
+      const favEntry = { ...item, franchiseIds: ids, addedAt: Date.now() };
+      favs.unshift(favEntry);
       localStorage.setItem(LS_FAVORITES, JSON.stringify(favs));
 
       if (currentUser) {
         try {
+          for (const oldId of removedIds) {
+            await userDoc('favorites').doc(String(oldId)).delete().catch(() => {});
+          }
           await userDoc('favorites').doc(String(item.id)).set({
-            ...item,
+            ...favEntry,
             addedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
         } catch (e) { console.warn('Fav add failed:', e); }
@@ -880,12 +900,19 @@
     }
 
     async function removeFavorite(animeId) {
-      let favs = getLocalFavorites().filter(f => f.id != animeId);
+      const franchiseIds = getCurrentFranchiseIds();
+      const match = findMatchingFavorite(animeId, franchiseIds);
+      const targetId = match ? match.id : animeId;
+      const lookup = new Set([Number(targetId), Number(animeId), ...franchiseIds.map(Number)]);
+      let favs = getLocalFavorites().filter(f =>
+        !lookup.has(Number(f.id)) &&
+        !(Array.isArray(f.franchiseIds) && f.franchiseIds.some(fid => lookup.has(Number(fid))))
+      );
       localStorage.setItem(LS_FAVORITES, JSON.stringify(favs));
 
       if (currentUser) {
         try {
-          await userDoc('favorites').doc(String(animeId)).delete();
+          await userDoc('favorites').doc(String(targetId)).delete();
         } catch (e) { console.warn('Fav remove failed:', e); }
       }
     }
@@ -1730,24 +1757,34 @@
     }
 
     let isAutoShellFullscreen = false;
+    let isExitingAutoFs = false;
+    let pendingAutoRestore = false;
 
     async function exitAllFullscreenLayers() {
-      for (let i = 0; i < 3; i++) {
-        if (!(document.fullscreenElement || document.webkitFullscreenElement)) break;
-        try {
-          if (document.exitFullscreen) await document.exitFullscreen();
-          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        } catch (_) {
-          break;
-        }
-        await new Promise(r => setTimeout(r, 40));
-      }
-      if (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.exitFullscreen === 'function') {
-        try {
-          if (window.WonderWatchAndroid.isFullscreen && window.WonderWatchAndroid.isFullscreen()) {
-            window.WonderWatchAndroid.exitFullscreen();
+      if (isExitingAutoFs) return;
+      isExitingAutoFs = true;
+      pendingAutoRestore = false;
+      isAutoShellFullscreen = false;
+      try {
+        for (let i = 0; i < 3; i++) {
+          if (!(document.fullscreenElement || document.webkitFullscreenElement)) break;
+          try {
+            if (document.exitFullscreen) await document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          } catch (_) {
+            break;
           }
-        } catch (_) {}
+          await new Promise(r => setTimeout(r, 50));
+        }
+        if (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.exitFullscreen === 'function') {
+          try {
+            if (window.WonderWatchAndroid.isFullscreen && window.WonderWatchAndroid.isFullscreen()) {
+              window.WonderWatchAndroid.exitFullscreen();
+            }
+          } catch (_) {}
+        }
+      } finally {
+        isExitingAutoFs = false;
       }
     }
 
@@ -1758,14 +1795,18 @@
 
       if (!fsEl) {
         isAutoShellFullscreen = false;
+        if (!isExitingAutoFs) {
+          pendingAutoRestore = false;
+        }
         return;
       }
+
+      if (isExitingAutoFs) return;
 
       // If auto-fullscreen is active on the outer shell and the user clicks the player's
       // built-in fullscreen button (which tries to enter fullscreen on the iframe because
       // the cross-origin player thinks it isn't fullscreen), treat that click as Exit Fullscreen.
       if (isAutoShellFullscreen && frame && fsEl === frame) {
-        isAutoShellFullscreen = false;
         exitAllFullscreenLayers();
         return;
       }
@@ -1789,6 +1830,7 @@
       );
       const wasBrowserFs = Boolean(currentFsEl);
       const shouldRestore = restoreFullscreen || wasAndroidFs || wasBrowserFs;
+      pendingAutoRestore = shouldRestore;
 
       // Only exit fullscreen before swapping the iframe if the iframe itself was the fullscreen element.
       // If the outer shell is already fullscreen, keep it fullscreen seamlessly across episodes.
@@ -1826,10 +1868,11 @@
       checkUBlockPrompt();
 
       const requestShellFullscreen = () => {
-        if (!shell) return;
+        if (!shell || !pendingAutoRestore) return;
         const activeFs = document.fullscreenElement || document.webkitFullscreenElement;
         if (activeFs === shell) {
           isAutoShellFullscreen = true;
+          pendingAutoRestore = false;
           return;
         }
         try {
@@ -1837,11 +1880,19 @@
             ? shell.requestFullscreen()
             : (shell.webkitRequestFullscreen ? shell.webkitRequestFullscreen() : null);
           if (req && typeof req.then === 'function') {
-            req.then(() => { isAutoShellFullscreen = true; }).catch(() => {});
+            req.then(() => {
+              isAutoShellFullscreen = true;
+              pendingAutoRestore = false;
+            }).catch(() => {
+              isAutoShellFullscreen = false;
+            });
           } else {
             isAutoShellFullscreen = true;
+            pendingAutoRestore = false;
           }
-        } catch (_) {}
+        } catch (_) {
+          isAutoShellFullscreen = false;
+        }
       };
 
       // Replace iframe cleanly to prevent mobile WebView session history clutter when switching streams
@@ -1850,14 +1901,14 @@
         const freshFrame = activeFrame.cloneNode(false);
         freshFrame.addEventListener('load', () => {
           hidePlayerSkeleton();
-          if (shouldRestore && !(document.fullscreenElement || document.webkitFullscreenElement)) {
+          if (pendingAutoRestore && !(document.fullscreenElement || document.webkitFullscreenElement)) {
             requestShellFullscreen();
           }
         });
         freshFrame.src = src;
         activeFrame.parentNode.replaceChild(freshFrame, activeFrame);
 
-        if (shouldRestore) {
+        if (pendingAutoRestore) {
           requestShellFullscreen();
         }
       }
@@ -2129,8 +2180,76 @@
     }
 
     // ============================================================
-    //  FAVOURITE TOGGLE ON WATCH PAGE
+    //  FAVOURITE TOGGLE ON WATCH PAGE (FRANCHISE-AWARE)
     // ============================================================
+    function getCurrentFranchiseInfo() {
+      const currentId = parseInt(animeId);
+      if (!animeMetadata) {
+        return {
+          parent: {
+            id: currentId,
+            idMal: parseInt(malId),
+            title: animeTitle,
+            coverImage: {},
+            episodes: totalEpisodes,
+            averageScore: null,
+            format: null,
+            genres: []
+          },
+          franchiseIds: [currentId]
+        };
+      }
+
+      const allowed = new Set(['PREQUEL', 'SEQUEL', 'PARENT', 'SIDE_STORY', 'SPIN_OFF', 'ALTERNATIVE', 'SUMMARY', 'COMPILATION']);
+      const mainline = new Set(['PREQUEL', 'SEQUEL', 'PARENT']);
+      const allNodes = new Map();
+      const mainlineNodes = new Map();
+
+      const addNode = (n, isMain) => {
+        if (!n || !n.id || n.type === 'MANGA' || n.format === 'MUSIC') return;
+        allNodes.set(Number(n.id), n);
+        if (isMain) mainlineNodes.set(Number(n.id), n);
+      };
+
+      addNode(animeMetadata, true);
+      const walkEdges = (edges, parentIsMain) => {
+        (edges || []).forEach(e => {
+          if (!e?.node || e.node.type !== 'ANIME' || !allowed.has(e.relationType)) return;
+          const isMain = parentIsMain && mainline.has(e.relationType);
+          addNode(e.node, isMain);
+          if (e.node.relations?.edges) walkEdges(e.node.relations.edges, isMain);
+        });
+      };
+      walkEdges(animeMetadata.relations?.edges, true);
+
+      const candidates = Array.from(mainlineNodes.values());
+      candidates.sort((a, b) => {
+        const yA = a.startDate?.year || 9999;
+        const yB = b.startDate?.year || 9999;
+        if (yA !== yB) return yA - yB;
+        return Number(a.id) - Number(b.id);
+      });
+
+      const parentNode = candidates[0] || animeMetadata;
+      return {
+        parent: {
+          id: parentNode.id,
+          idMal: parentNode.idMal || parentNode.id,
+          title: parentNode.title?.english || parentNode.title?.romaji || animeTitle,
+          coverImage: parentNode.coverImage || animeMetadata.coverImage || {},
+          episodes: parentNode.episodes || totalEpisodes,
+          averageScore: parentNode.averageScore || animeMetadata.averageScore || null,
+          format: parentNode.format || animeMetadata.format || null,
+          genres: parentNode.genres || animeMetadata.genres || []
+        },
+        franchiseIds: Array.from(allNodes.keys())
+      };
+    }
+
+    function getCurrentFranchiseIds() {
+      return getCurrentFranchiseInfo().franchiseIds;
+    }
+
     function updateWatchFavButton() {
       const icon = document.getElementById('watchFavIcon');
       if (!icon) return;
@@ -2143,22 +2262,14 @@
 
     async function toggleWatchFavorite() {
       const id = parseInt(animeId);
-      if (isAnimeFavorite(id)) {
+      const alreadyFav = isAnimeFavorite(id);
+      playSoundCue(alreadyFav ? 'unfav' : 'fav');
+      if (alreadyFav) {
         await removeFavorite(id);
-        playSoundCue('unfav');
         showToast('<i class="fa-regular fa-heart text-zinc-400"></i> Removed from favourites');
       } else {
-        await addFavorite({
-          id: id,
-          idMal: parseInt(malId),
-          title: animeTitle,
-          coverImage: animeMetadata?.coverImage || {},
-          episodes: totalEpisodes,
-          averageScore: animeMetadata?.averageScore || null,
-          format: animeMetadata?.format || null,
-          genres: animeMetadata?.genres || []
-        });
-        playSoundCue('fav');
+        const { parent, franchiseIds } = getCurrentFranchiseInfo();
+        await addFavorite(parent, franchiseIds);
         showToast('<i class="fa-solid fa-heart text-red-500"></i> Added to favourites!');
       }
       updateWatchFavButton();

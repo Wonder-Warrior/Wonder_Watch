@@ -1015,11 +1015,94 @@
       return userDataCache.favorites;
     }
 
-    function isAnimeFavorite(id) {
-      return userDataCache.favorites.some(item => item.id == id);
+    function findMatchingFavorite(id) {
+      const numId = Number(id);
+      return userDataCache.favorites.find(item =>
+        Number(item.id) === numId ||
+        (Array.isArray(item.franchiseIds) && item.franchiseIds.some(fid => Number(fid) === numId))
+      ) || null;
     }
 
-    async function addFavorite(anime) {
+    function isAnimeFavorite(id) {
+      return Boolean(findMatchingFavorite(id));
+    }
+
+    async function resolveFranchiseFavoriteTarget(anime) {
+      const fallbackIds = [Number(anime.id)];
+      try {
+        const query = `
+          query ($id: Int) {
+            Media(id: $id, type: ANIME) {
+              id idMal title { romaji english } coverImage { extraLarge large medium }
+              episodes averageScore format genres startDate { year }
+              relations {
+                edges {
+                  relationType
+                  node {
+                    id idMal type format status title { romaji english }
+                    coverImage { extraLarge large medium }
+                    episodes averageScore genres startDate { year }
+                    relations {
+                      edges {
+                        relationType
+                        node {
+                          id idMal type format status title { romaji english }
+                          coverImage { extraLarge large medium }
+                          episodes averageScore genres startDate { year }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        `;
+        const data = await fetchAniList(query, { id: Number(anime.id) });
+        const media = data?.Media;
+        if (!media) return { parent: anime, franchiseIds: fallbackIds };
+
+        const allowed = new Set(['PREQUEL', 'SEQUEL', 'PARENT', 'SIDE_STORY', 'SPIN_OFF', 'ALTERNATIVE', 'SUMMARY', 'COMPILATION']);
+        const mainline = new Set(['PREQUEL', 'SEQUEL', 'PARENT']);
+        const allNodes = new Map();
+        const mainlineNodes = new Map();
+        const addNode = (n, isMain) => {
+          if (!n || !n.id || n.type === 'MANGA' || n.format === 'MUSIC') return;
+          allNodes.set(Number(n.id), n);
+          if (isMain) mainlineNodes.set(Number(n.id), n);
+        };
+        addNode(media, true);
+
+        const walkEdges = (edges, parentIsMain) => {
+          (edges || []).forEach(e => {
+            if (!e?.node || e.node.type !== 'ANIME' || !allowed.has(e.relationType)) return;
+            const isMain = parentIsMain && mainline.has(e.relationType);
+            addNode(e.node, isMain);
+            if (e.node.relations?.edges) walkEdges(e.node.relations.edges, isMain);
+          });
+        };
+        walkEdges(media.relations?.edges, true);
+
+        // Pick earliest mainline entry (Parent / Season 1) as the visible favorite card
+        const candidates = Array.from(mainlineNodes.values());
+        candidates.sort((a, b) => {
+          const yA = a.startDate?.year || 9999;
+          const yB = b.startDate?.year || 9999;
+          if (yA !== yB) return yA - yB;
+          return Number(a.id) - Number(b.id);
+        });
+        const parent = candidates[0] || media;
+        return {
+          parent,
+          franchiseIds: Array.from(allNodes.keys())
+        };
+      } catch (_) {
+        return { parent: anime, franchiseIds: fallbackIds };
+      }
+    }
+
+    async function addFavorite(anime, franchiseIds = null) {
+      const ids = Array.from(new Set([Number(anime.id), ...(Array.isArray(franchiseIds) ? franchiseIds.map(Number) : [])]));
       const favItem = {
         id: anime.id,
         idMal: anime.idMal || anime.id,
@@ -1029,14 +1112,24 @@
         averageScore: anime.averageScore || null,
         format: anime.format || null,
         genres: anime.genres || [],
+        franchiseIds: ids,
         addedAt: Date.now()
       };
-      
+
+      // Remove any existing entries belonging to the same franchise so only the parent is visible
+      const idSet = new Set(ids);
+      const removedIds = userDataCache.favorites
+        .filter(f => idSet.has(Number(f.id)) && Number(f.id) !== Number(favItem.id))
+        .map(f => f.id);
+      userDataCache.favorites = userDataCache.favorites.filter(f => !idSet.has(Number(f.id)));
       userDataCache.favorites.unshift(favItem);
       localStorage.setItem(LS_FAVORITES, JSON.stringify(userDataCache.favorites));
 
       if (currentUser) {
         try {
+          for (const oldId of removedIds) {
+            await userDoc('favorites').doc(String(oldId)).delete().catch(() => {});
+          }
           await userDoc('favorites').doc(String(anime.id)).set({
             ...favItem,
             addedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1048,12 +1141,20 @@
     }
 
     async function removeFavorite(animeId) {
-      userDataCache.favorites = userDataCache.favorites.filter(f => f.id != animeId);
+      const match = findMatchingFavorite(animeId);
+      const targetId = match ? match.id : animeId;
+      const numTarget = Number(targetId);
+      const numQuery = Number(animeId);
+      userDataCache.favorites = userDataCache.favorites.filter(f =>
+        Number(f.id) !== numTarget &&
+        Number(f.id) !== numQuery &&
+        !(Array.isArray(f.franchiseIds) && f.franchiseIds.some(fid => Number(fid) === numQuery))
+      );
       localStorage.setItem(LS_FAVORITES, JSON.stringify(userDataCache.favorites));
 
       if (currentUser) {
         try {
-          await userDoc('favorites').doc(String(animeId)).delete();
+          await userDoc('favorites').doc(String(targetId)).delete();
         } catch (e) {
           console.warn('Firestore favorite remove failed:', e);
         }
@@ -1065,7 +1166,8 @@
       if (isAnimeFavorite(id)) {
         await removeFavorite(id);
       } else {
-        await addFavorite(anime);
+        const resolved = await resolveFranchiseFavoriteTarget(anime);
+        await addFavorite(resolved.parent, resolved.franchiseIds);
       }
       renderUserPersonalizedSections();
     }
@@ -1813,9 +1915,10 @@
     async function toggleSpotlightFavorite() {
       if (spotlightList.length === 0) return;
       const anime = spotlightList[currentSpotlightIdx];
+      const willBeFav = !isAnimeFavorite(anime.id);
+      playSoundCue(willBeFav ? 'fav' : 'unfav');
       await toggleFavorite(anime);
       updateSpotlightFavButton(anime.id);
-      playSoundCue(isAnimeFavorite(anime.id) ? 'fav' : 'unfav');
     }
 
     function updateSpotlightFavButton(animeId) {

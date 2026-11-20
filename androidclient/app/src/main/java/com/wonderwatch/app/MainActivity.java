@@ -416,10 +416,16 @@ public final class MainActivity extends Activity {
 
     private void exitVideoFullscreen() {
         if (customFullscreenView == null) return;
+        WebChromeClient.CustomViewCallback cb = customViewCallback;
         fullscreenContainer.removeAllViews();
         fullscreenContainer.setVisibility(View.GONE);
         customFullscreenView = null;
         customViewCallback = null;
+        if (cb != null) {
+            try {
+                cb.onCustomViewHidden();
+            } catch (Exception ignored) {}
+        }
         webView.setVisibility(View.VISIBLE);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setImmersiveSystemBars(false);

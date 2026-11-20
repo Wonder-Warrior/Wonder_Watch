@@ -153,7 +153,7 @@
   <header class="border-b border-zinc-900/90 bg-surface-950/90 backdrop-blur-2xl sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full">
       <div class="flex items-center gap-4 lg:gap-8 min-w-0 flex-shrink">
-        <a href="index.html" onclick="playSoundCue('logo')" class="flex items-center gap-2 group flex-shrink-0">
+        <a href="index.html" onclick="event.preventDefault(); playSoundCue('logo'); setTimeout(() => { window.location.href = 'index.html'; }, 220);" class="flex items-center gap-2 group flex-shrink-0">
           <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-xs shadow-lg shadow-brand-500/25 group-hover:scale-105 transition">
             <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
           </div>
@@ -358,7 +358,16 @@
         osc.connect(gain);
         gain.connect(ctx.destination);
 
-        if (type === 'logo') {
+        if (type === 'type') {
+          const pitch = 1800 + Math.random() * 450;
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(pitch, now);
+          osc.frequency.exponentialRampToValueAtTime(320, now + 0.022);
+          gain.gain.setValueAtTime(0.038, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.026);
+          osc.start(now);
+          osc.stop(now + 0.026);
+        } else if (type === 'logo') {
           osc.type = 'sine';
           osc.frequency.setValueAtTime(587.33, now);
           osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
@@ -367,6 +376,38 @@
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
           osc.start(now);
           osc.stop(now + 0.22);
+        } else if (type === 'watch') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(660, now + 0.11);
+          gain.gain.setValueAtTime(0.10, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+          osc.start(now);
+          osc.stop(now + 0.16);
+        } else if (type === 'open') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(380, now);
+          osc.frequency.exponentialRampToValueAtTime(740, now + 0.07);
+          gain.gain.setValueAtTime(0.11, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.10);
+          osc.start(now);
+          osc.stop(now + 0.10);
+        } else if (type === 'fav') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(780, now + 0.09);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+          osc.start(now);
+          osc.stop(now + 0.14);
+        } else if (type === 'unfav') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(540, now);
+          osc.frequency.exponentialRampToValueAtTime(340, now + 0.09);
+          gain.gain.setValueAtTime(0.10, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
         } else if (type === 'download') {
           osc.type = 'sine';
           osc.frequency.setValueAtTime(320, now);
@@ -415,7 +456,7 @@
       soundEnabled = !soundEnabled;
       localStorage.setItem(SOUND_KEY, soundEnabled ? 'on' : 'off');
       updateSoundToggleUI();
-      if (soundEnabled) playSoundCue('download');
+      if (soundEnabled) playSoundCue('fav');
       showToast(soundEnabled
         ? '<i class="fa-solid fa-volume-high text-brand-400"></i> Unmuted website navigation'
         : '<i class="fa-solid fa-volume-xmark text-zinc-400"></i> Muted website navigation', 2000);
