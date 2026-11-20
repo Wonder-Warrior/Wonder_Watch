@@ -251,9 +251,46 @@ public final class MainActivity extends Activity {
         retryBtn.setPadding(dp(28), dp(12), dp(28), dp(12));
         retryBtn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                errorOverlay.setVisibility(View.GONE);
-                webView.loadUrl(HOME_URL);
+            public void onClick(final View v) {
+                // Interactive tap bounce & pulse animation
+                v.setEnabled(false);
+                v.animate()
+                    .scaleX(0.90f)
+                    .scaleY(0.90f)
+                    .setDuration(110)
+                    .withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            v.animate()
+                                .scaleX(1.0f)
+                                .scaleY(1.0f)
+                                .setDuration(140)
+                                .withEndAction(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        // Fade out error overlay smoothly to dark background before reloading
+                                        errorOverlay.animate()
+                                            .alpha(0f)
+                                            .setDuration(180)
+                                            .withEndAction(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    errorOverlay.setVisibility(View.GONE);
+                                                    errorOverlay.setAlpha(1f);
+                                                    v.setEnabled(true);
+                                                    // Reset WebView to clean blank page to eliminate any Chromium error page artifacts
+                                                    webView.stopLoading();
+                                                    webView.loadUrl("about:blank");
+                                                    webView.loadUrl(HOME_URL);
+                                                }
+                                            })
+                                            .start();
+                                    }
+                                })
+                                .start();
+                        }
+                    })
+                    .start();
             }
         });
         box.addView(retryBtn);
@@ -606,6 +643,8 @@ public final class MainActivity extends Activity {
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
             super.onReceivedError(view, request, error);
             if (request != null && request.isForMainFrame()) {
+                // Clear the default Chromium "Webpage not available" error view (which displays the Android logo)
+                view.loadUrl("about:blank");
                 splashOverlay.dismissAnimated();
                 errorOverlay.setVisibility(View.VISIBLE);
             }
