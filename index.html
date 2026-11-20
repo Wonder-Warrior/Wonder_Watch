@@ -2394,7 +2394,7 @@
       function evaluateActiveCategory() {
         const header = document.querySelector('.ww-sticky-header');
         const headerBottom = header ? header.getBoundingClientRect().bottom : 55;
-        const focalLine = headerBottom + 100;
+        const focalLine = headerBottom + 140;
 
         let bestCat = null;
         let smallestDistance = Infinity;
@@ -2413,8 +2413,12 @@
           }
         });
 
-        // If user scrolled past hero into categories or right near top
-        if (bestCat) {
+        // If user is scrolled near or at the bottom of the page, ensure the last category (Genres) is highlighted
+        const isNearBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 60);
+
+        if (isNearBottom) {
+          setActiveCategoryHighlight('genresSection');
+        } else if (bestCat) {
           setActiveCategoryHighlight(bestCat);
         } else if (window.scrollY < 260) {
           // At the top hero area, clear active section highlight
