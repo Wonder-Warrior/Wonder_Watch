@@ -108,6 +108,18 @@
     .ww-dropdown-open {
       animation: wwPopIn 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
+    .ww-player-shell:fullscreen,
+    .ww-player-shell:-webkit-full-screen {
+      width: 100vw !important;
+      height: 100vh !important;
+      border-radius: 0 !important;
+      border: none !important;
+      aspect-ratio: auto !important;
+    }
+    .ww-player-shell:fullscreen iframe,
+    .ww-player-shell:-webkit-full-screen iframe {
+      border-radius: 0 !important;
+    }
     button, a {
       transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     }
@@ -1717,23 +1729,77 @@
       }
     }
 
+    let isAutoShellFullscreen = false;
+
+    async function exitAllFullscreenLayers() {
+      for (let i = 0; i < 3; i++) {
+        if (!(document.fullscreenElement || document.webkitFullscreenElement)) break;
+        try {
+          if (document.exitFullscreen) await document.exitFullscreen();
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        } catch (_) {
+          break;
+        }
+        await new Promise(r => setTimeout(r, 40));
+      }
+      if (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.exitFullscreen === 'function') {
+        try {
+          if (window.WonderWatchAndroid.isFullscreen && window.WonderWatchAndroid.isFullscreen()) {
+            window.WonderWatchAndroid.exitFullscreen();
+          }
+        } catch (_) {}
+      }
+    }
+
+    function handleFullscreenSync() {
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      const shell = document.querySelector('.ww-player-shell');
+      const frame = document.getElementById('playerFrame');
+
+      if (!fsEl) {
+        isAutoShellFullscreen = false;
+        return;
+      }
+
+      // If auto-fullscreen is active on the outer shell and the user clicks the player's
+      // built-in fullscreen button (which tries to enter fullscreen on the iframe because
+      // the cross-origin player thinks it isn't fullscreen), treat that click as Exit Fullscreen.
+      if (isAutoShellFullscreen && frame && fsEl === frame) {
+        isAutoShellFullscreen = false;
+        exitAllFullscreenLayers();
+        return;
+      }
+
+      if (fsEl !== shell) {
+        isAutoShellFullscreen = false;
+      }
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenSync);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenSync);
+
     async function loadPlayer(restoreFullscreen = false) {
-      // Check if player/screen was in fullscreen before changing episode
+      const shell = document.querySelector('.ww-player-shell');
+      const currentFsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      const wasShellFs = Boolean(shell && currentFsEl === shell);
       const wasAndroidFs = Boolean(
         window.WonderWatchAndroid &&
         typeof window.WonderWatchAndroid.isFullscreen === 'function' &&
         window.WonderWatchAndroid.isFullscreen()
       );
-      const wasBrowserFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      const wasBrowserFs = Boolean(currentFsEl);
       const shouldRestore = restoreFullscreen || wasAndroidFs || wasBrowserFs;
 
-      if (wasBrowserFs) {
+      // Only exit fullscreen before swapping the iframe if the iframe itself was the fullscreen element.
+      // If the outer shell is already fullscreen, keep it fullscreen seamlessly across episodes.
+      if (wasBrowserFs && !wasShellFs) {
         try {
           if (document.exitFullscreen) await document.exitFullscreen();
           else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
         } catch (_) {}
         await new Promise(r => setTimeout(r, 150));
       }
+
       syncAudioControlVisibility();
       document.getElementById('animeSubInfo').innerText = currentServer === 'zoko_mal'
         ? `Episode ${currentEpisode} • ${currentType.toUpperCase()}`
@@ -1759,27 +1825,41 @@
       // Check ad blocker recommendation state for web browsers
       checkUBlockPrompt();
 
+      const requestShellFullscreen = () => {
+        if (!shell) return;
+        const activeFs = document.fullscreenElement || document.webkitFullscreenElement;
+        if (activeFs === shell) {
+          isAutoShellFullscreen = true;
+          return;
+        }
+        try {
+          const req = shell.requestFullscreen
+            ? shell.requestFullscreen()
+            : (shell.webkitRequestFullscreen ? shell.webkitRequestFullscreen() : null);
+          if (req && typeof req.then === 'function') {
+            req.then(() => { isAutoShellFullscreen = true; }).catch(() => {});
+          } else {
+            isAutoShellFullscreen = true;
+          }
+        } catch (_) {}
+      };
+
       // Replace iframe cleanly to prevent mobile WebView session history clutter when switching streams
       const activeFrame = document.getElementById('playerFrame');
       if (activeFrame && activeFrame.parentNode) {
         const freshFrame = activeFrame.cloneNode(false);
         freshFrame.addEventListener('load', () => {
           hidePlayerSkeleton();
-          if (shouldRestore) {
-            if (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.requestFullscreen === 'function') {
-              window.WonderWatchAndroid.requestFullscreen();
-            } else {
-              const shell = document.querySelector('.ww-player-shell');
-              try {
-                if (shell && shell.requestFullscreen && !document.fullscreenElement) {
-                  shell.requestFullscreen().catch(() => {});
-                }
-              } catch (_) {}
-            }
+          if (shouldRestore && !(document.fullscreenElement || document.webkitFullscreenElement)) {
+            requestShellFullscreen();
           }
         });
         freshFrame.src = src;
         activeFrame.parentNode.replaceChild(freshFrame, activeFrame);
+
+        if (shouldRestore) {
+          requestShellFullscreen();
+        }
       }
     }
 
