@@ -396,22 +396,22 @@
   <!-- Mobile Collapsible Navigation Drawer -->
   <div id="mobileNavDrawer" class="ww-mobile-drawer md:hidden bg-surface-950/96 border-b border-zinc-900 backdrop-blur-md sticky top-[53px] z-40 w-full">
     <div class="ww-mobile-drawer-inner px-4 py-2.5 space-y-1">
-      <button type="button" onclick="smoothScrollToCategory('trending'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+      <button type="button" data-cat="trending" onclick="smoothScrollToCategory('trending'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
         <i class="fa-solid fa-fire text-amber-500 text-xs w-4"></i> Trending
       </button>
-      <button type="button" onclick="smoothScrollToCategory('airing'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+      <button type="button" data-cat="airing" onclick="smoothScrollToCategory('airing'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
         <i class="fa-solid fa-tower-broadcast text-brand-400 text-xs w-4"></i> Airing
       </button>
-      <button type="button" onclick="smoothScrollToCategory('popular'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+      <button type="button" data-cat="popular" onclick="smoothScrollToCategory('popular'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
         <i class="fa-solid fa-star text-yellow-400 text-xs w-4"></i> Popular
       </button>
-      <button type="button" onclick="smoothScrollToCategory('movies'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+      <button type="button" data-cat="movies" onclick="smoothScrollToCategory('movies'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
         <i class="fa-solid fa-film text-brand-400 text-xs w-4"></i> Movies
       </button>
-      <button type="button" onclick="smoothScrollToCategory('genresSection'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+      <button type="button" data-cat="genresSection" onclick="smoothScrollToCategory('genresSection'); closeMobileNav();" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
         <i class="fa-solid fa-shapes text-zinc-400 text-xs w-4"></i> Browse Genres
       </button>
-      <button type="button" onclick="smoothScrollToCategory('favoritesSection'); closeMobileNav();" id="mobileNavFavoritesLink" class="ww-drawer-item hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+      <button type="button" data-cat="favoritesSection" onclick="smoothScrollToCategory('favoritesSection'); closeMobileNav();" id="mobileNavFavoritesLink" class="ww-drawer-item hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
         <i class="fa-solid fa-heart text-red-500 text-xs w-4"></i> My Favourites
       </button>
       <a id="mobileNavAppsLink" href="downloads.html" onclick="playSoundCue('nav')" class="ww-drawer-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-brand-400 hover:text-brand-300 hover:bg-surface-900 text-xs font-semibold transition text-left">
@@ -2342,16 +2342,31 @@
     updateSoundToggleUI();
 
     // Header & Mobile Nav category shortcuts: smooth scroll directly into the middle of the viewport
-    function smoothScrollToCategory(sectionId, btnEl) {
-      playSoundCue('nav');
+    function setActiveCategoryHighlight(activeId) {
       document.querySelectorAll('#desktopCategoryNav .cat-pill').forEach(b => {
-        const isActive = b.dataset.cat === sectionId;
+        if (!b.dataset.cat) return;
+        const isActive = b.dataset.cat === activeId;
         b.classList.toggle('bg-brand-500/15', isActive);
         b.classList.toggle('text-brand-400', isActive);
         b.classList.toggle('border', isActive);
         b.classList.toggle('border-brand-500/30', isActive);
         b.classList.toggle('text-zinc-300', !isActive);
       });
+
+      document.querySelectorAll('#mobileNavDrawer .ww-drawer-item').forEach(b => {
+        if (!b.dataset.cat) return;
+        const isActive = b.dataset.cat === activeId;
+        b.classList.toggle('text-brand-400', isActive);
+        b.classList.toggle('bg-brand-500/10', isActive);
+        b.classList.toggle('font-bold', isActive);
+        b.classList.toggle('text-zinc-300', !isActive);
+        b.classList.toggle('font-medium', !isActive);
+      });
+    }
+
+    function smoothScrollToCategory(sectionId, btnEl) {
+      playSoundCue('nav');
+      setActiveCategoryHighlight(sectionId);
 
       const el = document.getElementById(sectionId);
       if (!el) return;
@@ -2363,6 +2378,60 @@
       }
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+
+    // Scroll spy: automatically highlight the category the user has scrolled to
+    (function initCategoryScrollSpy() {
+      const categorySections = [
+        'favoritesSection',
+        'trending',
+        'airing',
+        'popular',
+        'movies',
+        'genresSection'
+      ];
+
+      let scrollTimeout = null;
+      function evaluateActiveCategory() {
+        const header = document.querySelector('.ww-sticky-header');
+        const headerBottom = header ? header.getBoundingClientRect().bottom : 55;
+        const focalLine = headerBottom + 140;
+
+        let bestCat = null;
+        let smallestDistance = Infinity;
+
+        categorySections.forEach(id => {
+          const el = document.getElementById(id);
+          if (!el || el.classList.contains('hidden')) return;
+          const rect = el.getBoundingClientRect();
+          // Element is visible and spans across or below the focal line
+          if (rect.bottom > focalLine && rect.top < window.innerHeight) {
+            const distance = Math.abs(rect.top - focalLine);
+            if (distance < smallestDistance) {
+              smallestDistance = distance;
+              bestCat = id;
+            }
+          }
+        });
+
+        // If user scrolled past hero into categories or right near top
+        if (bestCat) {
+          setActiveCategoryHighlight(bestCat);
+        } else if (window.scrollY < 260) {
+          // At the top hero area, clear active section highlight
+          setActiveCategoryHighlight(null);
+        }
+      }
+
+      window.addEventListener('scroll', () => {
+        if (scrollTimeout) return;
+        scrollTimeout = requestAnimationFrame(() => {
+          evaluateActiveCategory();
+          scrollTimeout = null;
+        });
+      }, { passive: true });
+
+      window.addEventListener('resize', evaluateActiveCategory, { passive: true });
+    })();
 
     async function loadGenres() {
       try {
