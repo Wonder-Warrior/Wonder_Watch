@@ -92,8 +92,8 @@ namespace WonderWatchDesktop
         private bool isFullscreen;
         private bool isAppFullscreen;
         private bool isElementFullscreen;
-        private bool isWebAutoFullscreen;
-        private DateTime webAutoFsEnteredAt = DateTime.MinValue;
+        private readonly System.Collections.Generic.List<CoreWebView2Frame> childFrames = new System.Collections.Generic.List<CoreWebView2Frame>();
+        private int simFullscreenSeq;
         private int fullscreenEventSeq;
         private FormWindowState prevWindowState = FormWindowState.Normal;
         private FormBorderStyle prevBorderStyle = FormBorderStyle.Sizable;
@@ -321,30 +321,11 @@ namespace WonderWatchDesktop
                     e.Handled = true;
                     return;
                 }
-                if (e.KeyCode == Keys.Escape && isFullscreen)
+                if (e.KeyCode == Keys.Escape && isFullscreen && (webView.CoreWebView2 == null || !webView.CoreWebView2.ContainsFullScreenElement))
                 {
-                    if (isWebAutoFullscreen)
-                    {
-                        fullscreenEventSeq++;
-                        isWebAutoFullscreen = false;
-                        try
-                        {
-                            if (webView.CoreWebView2 != null)
-                            {
-                                webView.CoreWebView2.ExecuteScriptAsync("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();");
-                            }
-                        }
-                        catch { }
-                        isAppFullscreen = false;
-                        SetFullscreen(false);
-                        e.Handled = true;
-                    }
-                    else if (webView.CoreWebView2 == null || !webView.CoreWebView2.ContainsFullScreenElement)
-                    {
-                        isAppFullscreen = false;
-                        SetFullscreen(false);
-                        e.Handled = true;
-                    }
+                    isAppFullscreen = false;
+                    SetFullscreen(false);
+                    e.Handled = true;
                 }
             };
             Controls.Add(webView);
@@ -591,8 +572,170 @@ namespace WonderWatchDesktop
             catch { }
         }
 
+        private void TrackFrame(CoreWebView2Frame frame)
+        {
+            if (frame == null) return;
+            lock (childFrames)
+            {
+                if (!childFrames.Contains(frame)) childFrames.Add(frame);
+            }
+            frame.FrameCreated += delegate(object s, CoreWebView2FrameCreatedEventArgs e)
+            {
+                TrackFrame(e.Frame);
+            };
+            frame.Destroyed += delegate
+            {
+                lock (childFrames)
+                {
+                    childFrames.Remove(frame);
+                }
+            };
+        }
+
+        private async void SimulatePlayerFullscreenAsync()
+        {
+            int seq = ++simFullscreenSeq;
+            const string findFsBtnJs =
+                "(function(){" +
+                "try{" +
+                "if(document.fullscreenElement||document.webkitFullscreenElement)return 'ALREADY';" +
+                "var sels=[" +
+                "'button[aria-label*=\"fullscreen\" i]','[role=\"button\"][aria-label*=\"fullscreen\" i]'," +
+                "'button[title*=\"fullscreen\" i]','[title*=\"fullscreen\" i]'," +
+                "'button[aria-label*=\"full screen\" i]','button[title*=\"full screen\" i]'," +
+                "'[data-plyr=\"fullscreen\"]','.art-control-fullscreen','.jw-icon-fullscreen','.vjs-fullscreen-control','media-fullscreen-button'," +
+                "'button[class*=\"fullscreen\" i]','[class*=\"fullscreen\" i]','[id*=\"fullscreen\" i]'" +
+                "];" +
+                "function isExitLabel(el){" +
+                "var t=((el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||'')+' '+(el.getAttribute('data-tooltip')||'')).toLowerCase();" +
+                "return t.indexOf('exit')!==-1||t.indexOf('leave')!==-1||t.indexOf('minimize')!==-1;" +
+                "}" +
+                "function findBtn(root){" +
+                "for(var i=0;i<sels.length;i++){" +
+                "var list=root.querySelectorAll(sels[i]);" +
+                "for(var j=0;j<list.length;j++){" +
+                "var el=list[j];if(isExitLabel(el))continue;" +
+                "var r=el.getBoundingClientRect();" +
+                "if(r.width>=12&&r.height>=12&&r.width<=140&&r.height<=140){" +
+                "var cs=getComputedStyle(el);" +
+                "if(cs.display!=='none'&&cs.visibility!=='hidden'){" +
+                "return (r.left+r.width/2)+','+(r.top+r.height/2)+','+window.innerWidth+','+window.innerHeight;" +
+                "}" +
+                "}" +
+                "}" +
+                "}" +
+                "var all=root.querySelectorAll('*');" +
+                "for(var k=0;k<all.length;k++){" +
+                "if(all[k].shadowRoot){var res=findBtn(all[k].shadowRoot);if(res)return res;}" +
+                "}" +
+                "return '';" +
+                "}" +
+                "return findBtn(document);" +
+                "}catch(e){return '';}" +
+                "})()";
+
+            int[] delays = new int[] { 550, 650, 750, 850, 900, 900, 1000 };
+            for (int attempt = 0; attempt < delays.Length; attempt++)
+            {
+                await System.Threading.Tasks.Task.Delay(delays[attempt]);
+                if (IsDisposed || webView.CoreWebView2 == null || simFullscreenSeq != seq) return;
+                if (webView.CoreWebView2.ContainsFullScreenElement) return;
+
+                try
+                {
+                    string rectRaw = await webView.CoreWebView2.ExecuteScriptAsync(
+                        "(function(){var f=document.getElementById('playerFrame');if(!f)return '';var r=f.getBoundingClientRect();return r.left+','+r.top+','+r.width+','+r.height;})()"
+                    );
+                    if (string.IsNullOrEmpty(rectRaw)) continue;
+                    rectRaw = rectRaw.Trim('"');
+                    string[] rp = rectRaw.Split(',');
+                    if (rp.Length < 4) continue;
+
+                    double fLeft, fTop, fWidth, fHeight;
+                    var inv = System.Globalization.CultureInfo.InvariantCulture;
+                    if (!double.TryParse(rp[0], System.Globalization.NumberStyles.Float, inv, out fLeft)) continue;
+                    if (!double.TryParse(rp[1], System.Globalization.NumberStyles.Float, inv, out fTop)) continue;
+                    if (!double.TryParse(rp[2], System.Globalization.NumberStyles.Float, inv, out fWidth)) continue;
+                    if (!double.TryParse(rp[3], System.Globalization.NumberStyles.Float, inv, out fHeight)) continue;
+                    if (fWidth < 50 || fHeight < 50) continue;
+
+                    // Wake auto-hidden player controls with a gentle hover over the lower area of the player
+                    double hoverX = fLeft + fWidth * 0.5;
+                    double hoverY = fTop + fHeight * 0.85;
+                    await webView.CoreWebView2.CallDevToolsProtocolMethodAsync(
+                        "Input.dispatchMouseEvent",
+                        string.Format(inv, "{{\"type\":\"mouseMoved\",\"x\":{0:0.##},\"y\":{1:0.##}}}", hoverX, hoverY)
+                    );
+                    await System.Threading.Tasks.Task.Delay(130);
+                    if (IsDisposed || webView.CoreWebView2 == null || simFullscreenSeq != seq || webView.CoreWebView2.ContainsFullScreenElement) return;
+
+                    CoreWebView2Frame[] frames;
+                    lock (childFrames) { frames = childFrames.ToArray(); }
+
+                    bool clicked = false;
+                    for (int i = frames.Length - 1; i >= 0; i--)
+                    {
+                        CoreWebView2Frame fr = frames[i];
+                        if (fr == null || fr.IsDestroyed() != 0) continue;
+                        string res = null;
+                        try { res = await fr.ExecuteScriptAsync(findFsBtnJs); } catch { continue; }
+                        if (string.IsNullOrEmpty(res)) continue;
+                        res = res.Trim('"');
+                        if (res == "ALREADY") return;
+                        string[] bp = res.Split(',');
+                        if (bp.Length < 4) continue;
+
+                        double bx, by, bw, bh;
+                        if (!double.TryParse(bp[0], System.Globalization.NumberStyles.Float, inv, out bx)) continue;
+                        if (!double.TryParse(bp[1], System.Globalization.NumberStyles.Float, inv, out by)) continue;
+                        if (!double.TryParse(bp[2], System.Globalization.NumberStyles.Float, inv, out bw) || bw <= 0) continue;
+                        if (!double.TryParse(bp[3], System.Globalization.NumberStyles.Float, inv, out bh) || bh <= 0) continue;
+
+                        double vx = fLeft + (bx / bw) * fWidth;
+                        double vy = fTop + (by / bh) * fHeight;
+
+                        await webView.CoreWebView2.CallDevToolsProtocolMethodAsync(
+                            "Input.dispatchMouseEvent",
+                            string.Format(inv, "{{\"type\":\"mouseMoved\",\"x\":{0:0.##},\"y\":{1:0.##}}}", vx, vy)
+                        );
+                        await webView.CoreWebView2.CallDevToolsProtocolMethodAsync(
+                            "Input.dispatchMouseEvent",
+                            string.Format(inv, "{{\"type\":\"mousePressed\",\"x\":{0:0.##},\"y\":{1:0.##},\"button\":\"left\",\"clickCount\":1}}", vx, vy)
+                        );
+                        await webView.CoreWebView2.CallDevToolsProtocolMethodAsync(
+                            "Input.dispatchMouseEvent",
+                            string.Format(inv, "{{\"type\":\"mouseReleased\",\"x\":{0:0.##},\"y\":{1:0.##},\"button\":\"left\",\"clickCount\":1}}", vx, vy)
+                        );
+                        clicked = true;
+                        break;
+                    }
+
+                    if (!clicked && attempt >= 3)
+                    {
+                        // Fallback: press 'f' shortcut inside the player if controls use non-standard icons
+                        await webView.CoreWebView2.CallDevToolsProtocolMethodAsync(
+                            "Input.dispatchKeyEvent",
+                            "{\"type\":\"rawKeyDown\",\"key\":\"f\",\"code\":\"KeyF\",\"windowsVirtualKeyCode\":70,\"nativeVirtualKeyCode\":70}"
+                        );
+                        await webView.CoreWebView2.CallDevToolsProtocolMethodAsync(
+                            "Input.dispatchKeyEvent",
+                            "{\"type\":\"keyUp\",\"key\":\"f\",\"code\":\"KeyF\",\"windowsVirtualKeyCode\":70,\"nativeVirtualKeyCode\":70}"
+                        );
+                    }
+
+                    await System.Threading.Tasks.Task.Delay(250);
+                    if (IsDisposed || webView.CoreWebView2 == null || webView.CoreWebView2.ContainsFullScreenElement) return;
+                }
+                catch { }
+            }
+        }
+
         private void WireWebViewEvents()
         {
+            webView.CoreWebView2.FrameCreated += delegate(object s, CoreWebView2FrameCreatedEventArgs e)
+            {
+                TrackFrame(e.Frame);
+            };
             webView.CoreWebView2.WebMessageReceived += delegate(object s, CoreWebView2WebMessageReceivedEventArgs args)
             {
                 try
@@ -604,23 +747,11 @@ namespace WonderWatchDesktop
                     {
                         CheckForUpdatesAsync(true);
                     }
-                    else if (msg == "ww:enter_fullscreen" || json.IndexOf("ww:enter_fullscreen", StringComparison.OrdinalIgnoreCase) >= 0)
+                    else if (msg == "ww:sim_fullscreen" || json.IndexOf("ww:sim_fullscreen", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        fullscreenEventSeq++;
-                        isWebAutoFullscreen = true;
-                        webAutoFsEnteredAt = DateTime.UtcNow;
                         if (!IsDisposed)
                         {
-                            BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen)));
-                        }
-                    }
-                    else if (msg == "ww:exit_fullscreen" || json.IndexOf("ww:exit_fullscreen", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        fullscreenEventSeq++;
-                        isWebAutoFullscreen = false;
-                        if (!IsDisposed)
-                        {
-                            BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen)));
+                            BeginInvoke((Action)(() => SimulatePlayerFullscreenAsync()));
                         }
                     }
                 }
@@ -632,65 +763,7 @@ namespace WonderWatchDesktop
                 isElementFullscreen = webView.CoreWebView2.ContainsFullScreenElement;
                 if (!isElementFullscreen)
                 {
-                    // If the player explicitly exited fullscreen after the initial episode-swap window,
-                    // also clear auto-fullscreen so the Desktop window can never stay stuck fullscreen.
-                    if (isWebAutoFullscreen && (DateTime.UtcNow - webAutoFsEnteredAt).TotalMilliseconds > 1200)
-                    {
-                        isWebAutoFullscreen = false;
-                        try
-                        {
-                            if (webView.CoreWebView2 != null)
-                            {
-                                webView.CoreWebView2.ExecuteScriptAsync("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();");
-                            }
-                        }
-                        catch { }
-                    }
-                    SetFullscreen(isAppFullscreen || isWebAutoFullscreen);
-                }
-                else if (isWebAutoFullscreen)
-                {
-                    // User clicked the player's built-in fullscreen button while in auto-fullscreen:
-                    // exit both the iframe's native fullscreen and Desktop borderless fullscreen on Press 1.
-                    isWebAutoFullscreen = false;
-                    try
-                    {
-                        if (webView.CoreWebView2 != null)
-                        {
-                            webView.CoreWebView2.ExecuteScriptAsync("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();");
-                        }
-                    }
-                    catch { }
-                    System.Threading.Tasks.Task.Delay(160).ContinueWith(_ =>
-                    {
-                        if (!IsDisposed && fullscreenEventSeq == seq)
-                        {
-                            BeginInvoke((Action)(() =>
-                            {
-                                if (webView.CoreWebView2 != null && webView.CoreWebView2.ContainsFullScreenElement)
-                                {
-                                    // WebView2 OOPIF didn't exit via JS document.exitFullscreen(); send Escape to WebView2
-                                    try
-                                    {
-                                        webView.Focus();
-                                        SendKeys.SendWait("{ESC}");
-                                    }
-                                    catch { }
-                                }
-                                System.Threading.Tasks.Task.Delay(100).ContinueWith(__ =>
-                                {
-                                    if (!IsDisposed)
-                                    {
-                                        BeginInvoke((Action)(() =>
-                                        {
-                                            isElementFullscreen = webView.CoreWebView2 != null && webView.CoreWebView2.ContainsFullScreenElement;
-                                            SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen);
-                                        }));
-                                    }
-                                });
-                            }));
-                        }
-                    });
+                    SetFullscreen(isAppFullscreen);
                 }
                 else
                 {
@@ -698,7 +771,7 @@ namespace WonderWatchDesktop
                     {
                         if (!IsDisposed && fullscreenEventSeq == seq)
                         {
-                            BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen)));
+                            BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen)));
                         }
                     });
                 }
@@ -721,11 +794,7 @@ namespace WonderWatchDesktop
 
             webView.CoreWebView2.NavigationCompleted += delegate
             {
-                if (isWebAutoFullscreen)
-                {
-                    isWebAutoFullscreen = false;
-                    SetFullscreen(isAppFullscreen || isElementFullscreen);
-                }
+                simFullscreenSeq++;
                 if (splashPanel.Visible)
                 {
                     splashSpinner.Stop();
@@ -752,23 +821,8 @@ namespace WonderWatchDesktop
             }
             if (keyData == Keys.Escape && isFullscreen && (webView.CoreWebView2 == null || !webView.CoreWebView2.ContainsFullScreenElement))
             {
-                if (isWebAutoFullscreen)
-                {
-                    isWebAutoFullscreen = false;
-                    try
-                    {
-                        if (webView.CoreWebView2 != null)
-                        {
-                            webView.CoreWebView2.ExecuteScriptAsync("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();");
-                        }
-                    }
-                    catch { }
-                    SetFullscreen(isAppFullscreen || isElementFullscreen);
-                }
-                else
-                {
-                    SetFullscreen(false);
-                }
+                isAppFullscreen = false;
+                SetFullscreen(false);
                 return true;
             }
             if (keyData == Keys.F5 || keyData == (Keys.Control | Keys.R))
@@ -1104,24 +1158,8 @@ namespace WonderWatchDesktop
 
         private void ToggleFullscreen()
         {
-            if (isFullscreen && isWebAutoFullscreen)
-            {
-                fullscreenEventSeq++;
-                isWebAutoFullscreen = false;
-                isAppFullscreen = false;
-                try
-                {
-                    if (webView.CoreWebView2 != null)
-                    {
-                        webView.CoreWebView2.ExecuteScriptAsync("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();");
-                    }
-                }
-                catch { }
-                SetFullscreen(false);
-                return;
-            }
             isAppFullscreen = !isAppFullscreen;
-            SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen);
+            SetFullscreen(isAppFullscreen || isElementFullscreen);
         }
 
         private void SetFullscreen(bool enable)

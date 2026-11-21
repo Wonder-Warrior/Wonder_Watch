@@ -56,7 +56,7 @@ public final class MainActivity extends Activity {
     private boolean initialPageRevealed = false;
     private boolean mainPageFinished = false;
     private int lastLoadProgress = 0;
-    private boolean autoShellFullscreen = false;
+    private int simFullscreenSeq = 0;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -311,19 +311,6 @@ public final class MainActivity extends Activity {
     }
 
     private void handleBackAction() {
-        if (autoShellFullscreen) {
-            autoShellFullscreen = false;
-            if (customFullscreenView != null) {
-                exitVideoFullscreen();
-            } else {
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                setImmersiveSystemBars(false);
-            }
-            if (webView != null) {
-                webView.evaluateJavascript("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();", null);
-            }
-            return;
-        }
         if (customFullscreenView != null) {
             if (customViewCallback != null) {
                 customViewCallback.onCustomViewHidden();
@@ -412,24 +399,11 @@ public final class MainActivity extends Activity {
     }
 
     private void enterVideoFullscreen(View view, WebChromeClient.CustomViewCallback callback) {
-        if (autoShellFullscreen) {
-            autoShellFullscreen = false;
-            if (callback != null) {
-                try {
-                    callback.onCustomViewHidden();
-                } catch (Exception ignored) {}
-            }
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            setImmersiveSystemBars(false);
-            if (webView != null) {
-                webView.evaluateJavascript("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();", null);
-            }
-            return;
-        }
         if (customFullscreenView != null) {
             callback.onCustomViewHidden();
             return;
         }
+        simFullscreenSeq++;
         customFullscreenView = view;
         customViewCallback = callback;
         fullscreenContainer.addView(view, new FrameLayout.LayoutParams(
@@ -455,10 +429,30 @@ public final class MainActivity extends Activity {
             } catch (Exception ignored) {}
         }
         webView.setVisibility(View.VISIBLE);
-        if (!autoShellFullscreen) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            setImmersiveSystemBars(false);
-        }
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        setImmersiveSystemBars(false);
+    }
+
+    private void dispatchSyntheticTap(final float x, final float y) {
+        if (webView == null || customFullscreenView != null) return;
+        final long downTime = android.os.SystemClock.uptimeMillis();
+        android.view.MotionEvent down = android.view.MotionEvent.obtain(
+            downTime, downTime, android.view.MotionEvent.ACTION_DOWN, x, y, 0
+        );
+        webView.dispatchTouchEvent(down);
+        down.recycle();
+        webView.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (webView == null || customFullscreenView != null) return;
+                long upTime = android.os.SystemClock.uptimeMillis();
+                android.view.MotionEvent up = android.view.MotionEvent.obtain(
+                    downTime, upTime, android.view.MotionEvent.ACTION_UP, x, y, 0
+                );
+                webView.dispatchTouchEvent(up);
+                up.recycle();
+            }
+        }, 45);
     }
 
     private void setImmersiveSystemBars(boolean immersive) {
@@ -514,28 +508,25 @@ public final class MainActivity extends Activity {
 
     private final class AndroidBridge {
         @android.webkit.JavascriptInterface
-        public void requestFullscreen() {
+        public void simulatePlayerFullscreen(final float leftFrac, final float topFrac, final float widthFrac, final float heightFrac) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    autoShellFullscreen = true;
-                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-                    setImmersiveSystemBars(true);
-                }
-            });
-        }
-
-        @android.webkit.JavascriptInterface
-        public void exitFullscreen() {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    autoShellFullscreen = false;
-                    if (customFullscreenView != null) {
-                        exitVideoFullscreen();
-                    } else {
-                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                        setImmersiveSystemBars(false);
+                    final int seq = ++simFullscreenSeq;
+                    final int[] delays = new int[] { 900, 1400, 2300, 2800 };
+                    for (final int delay : delays) {
+                        webView.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (isFinishing() || webView == null || customFullscreenView != null || simFullscreenSeq != seq) return;
+                                float w = webView.getWidth();
+                                float h = webView.getHeight();
+                                if (w <= 0 || h <= 0) return;
+                                float x = (leftFrac + widthFrac) * w - dp(22);
+                                float y = (topFrac + heightFrac) * h - dp(22);
+                                dispatchSyntheticTap(x, y);
+                            }
+                        }, delay);
                     }
                 }
             });
@@ -543,7 +534,7 @@ public final class MainActivity extends Activity {
 
         @android.webkit.JavascriptInterface
         public boolean isFullscreen() {
-            return autoShellFullscreen || customFullscreenView != null || getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
+            return customFullscreenView != null;
         }
 
         @android.webkit.JavascriptInterface
