@@ -129,10 +129,14 @@
       background: #000 !important;
     }
     .ww-player-shell:fullscreen iframe,
-    .ww-player-shell:-webkit-full-screen iframe,
-    .ww-player-shell.ww-auto-fullscreen iframe {
+    .ww-player-shell:-webkit-full-screen iframe {
       width: 100% !important;
       height: 100% !important;
+      border-radius: 0 !important;
+    }
+    .ww-player-shell.ww-auto-fullscreen iframe {
+      width: 100% !important;
+      height: calc(100vh - 1px) !important;
       border-radius: 0 !important;
     }
     body.ww-fs-lock {
@@ -2179,6 +2183,9 @@
           }
           if (data.name === 'ended' || data.name === 'next') {
             handleNextEpisode();
+          }
+          if (isAutoShellFullscreen && (data.name === 'fullscreen' || data.name === 'fullscreenchange') && (d.fullscreen === false || d.isFullscreen === false)) {
+            exitAllFullscreenLayers();
           }
           return;
         }

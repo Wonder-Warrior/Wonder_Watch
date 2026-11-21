@@ -312,6 +312,40 @@ namespace WonderWatchDesktop
             webView = new WebView2();
             webView.Dock = DockStyle.Fill;
             webView.DefaultBackgroundColor = BgDark;
+            webView.KeyDown += delegate(object s, KeyEventArgs e)
+            {
+                if (e.KeyCode == Keys.F11)
+                {
+                    ToggleFullscreen();
+                    e.Handled = true;
+                    return;
+                }
+                if (e.KeyCode == Keys.Escape && isFullscreen)
+                {
+                    if (isWebAutoFullscreen)
+                    {
+                        fullscreenEventSeq++;
+                        isWebAutoFullscreen = false;
+                        try
+                        {
+                            if (webView.CoreWebView2 != null)
+                            {
+                                webView.CoreWebView2.ExecuteScriptAsync("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();");
+                            }
+                        }
+                        catch { }
+                        isAppFullscreen = false;
+                        SetFullscreen(false);
+                        e.Handled = true;
+                    }
+                    else if (webView.CoreWebView2 == null || !webView.CoreWebView2.ContainsFullScreenElement)
+                    {
+                        isAppFullscreen = false;
+                        SetFullscreen(false);
+                        e.Handled = true;
+                    }
+                }
+            };
             Controls.Add(webView);
 
             // Dark startup splash matching mobile animated loading emblem
@@ -1035,6 +1069,22 @@ namespace WonderWatchDesktop
 
         private void ToggleFullscreen()
         {
+            if (isFullscreen && isWebAutoFullscreen)
+            {
+                fullscreenEventSeq++;
+                isWebAutoFullscreen = false;
+                isAppFullscreen = false;
+                try
+                {
+                    if (webView.CoreWebView2 != null)
+                    {
+                        webView.CoreWebView2.ExecuteScriptAsync("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();");
+                    }
+                }
+                catch { }
+                SetFullscreen(false);
+                return;
+            }
             isAppFullscreen = !isAppFullscreen;
             SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen);
         }
