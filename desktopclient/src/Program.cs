@@ -93,6 +93,7 @@ namespace WonderWatchDesktop
         private bool isAppFullscreen;
         private bool isElementFullscreen;
         private bool isWebAutoFullscreen;
+        private DateTime webAutoFsEnteredAt = DateTime.MinValue;
         private int fullscreenEventSeq;
         private FormWindowState prevWindowState = FormWindowState.Normal;
         private FormBorderStyle prevBorderStyle = FormBorderStyle.Sizable;
@@ -607,6 +608,7 @@ namespace WonderWatchDesktop
                     {
                         fullscreenEventSeq++;
                         isWebAutoFullscreen = true;
+                        webAutoFsEnteredAt = DateTime.UtcNow;
                         if (!IsDisposed)
                         {
                             BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen)));
@@ -630,12 +632,26 @@ namespace WonderWatchDesktop
                 isElementFullscreen = webView.CoreWebView2.ContainsFullScreenElement;
                 if (!isElementFullscreen)
                 {
+                    // If the player explicitly exited fullscreen after the initial episode-swap window,
+                    // also clear auto-fullscreen so the Desktop window can never stay stuck fullscreen.
+                    if (isWebAutoFullscreen && (DateTime.UtcNow - webAutoFsEnteredAt).TotalMilliseconds > 1200)
+                    {
+                        isWebAutoFullscreen = false;
+                        try
+                        {
+                            if (webView.CoreWebView2 != null)
+                            {
+                                webView.CoreWebView2.ExecuteScriptAsync("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();");
+                            }
+                        }
+                        catch { }
+                    }
                     SetFullscreen(isAppFullscreen || isWebAutoFullscreen);
                 }
                 else if (isWebAutoFullscreen)
                 {
                     // User clicked the player's built-in fullscreen button while in auto-fullscreen:
-                    // treat as Exit Fullscreen and sync the page cleanly.
+                    // exit both the iframe's native fullscreen and Desktop borderless fullscreen on Press 1.
                     isWebAutoFullscreen = false;
                     try
                     {
@@ -645,14 +661,33 @@ namespace WonderWatchDesktop
                         }
                     }
                     catch { }
-                    System.Threading.Tasks.Task.Delay(120).ContinueWith(_ =>
+                    System.Threading.Tasks.Task.Delay(160).ContinueWith(_ =>
                     {
                         if (!IsDisposed && fullscreenEventSeq == seq)
                         {
                             BeginInvoke((Action)(() =>
                             {
-                                isElementFullscreen = webView.CoreWebView2 != null && webView.CoreWebView2.ContainsFullScreenElement;
-                                SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen);
+                                if (webView.CoreWebView2 != null && webView.CoreWebView2.ContainsFullScreenElement)
+                                {
+                                    // WebView2 OOPIF didn't exit via JS document.exitFullscreen(); send Escape to WebView2
+                                    try
+                                    {
+                                        webView.Focus();
+                                        SendKeys.SendWait("{ESC}");
+                                    }
+                                    catch { }
+                                }
+                                System.Threading.Tasks.Task.Delay(100).ContinueWith(__ =>
+                                {
+                                    if (!IsDisposed)
+                                    {
+                                        BeginInvoke((Action)(() =>
+                                        {
+                                            isElementFullscreen = webView.CoreWebView2 != null && webView.CoreWebView2.ContainsFullScreenElement;
+                                            SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen);
+                                        }));
+                                    }
+                                });
                             }));
                         }
                     });

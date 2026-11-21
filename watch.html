@@ -1798,9 +1798,40 @@
     let isTransitioningFs = false;
     let pendingAutoRestore = false;
     let pendingAutoRestoreTimer = null;
+    let autoFsPollTimer = null;
+
+    // Remove ww-fade-in after initial page load so toggling fullscreen never replays a transform animation on <main>
+    setTimeout(() => {
+      document.querySelector('main')?.classList.remove('ww-fade-in');
+    }, 450);
 
     function getActiveFullscreenEl() {
       return document.fullscreenElement || document.webkitFullscreenElement || document.webkitCurrentFullScreenElement || null;
+    }
+
+    function stopAutoFsPoll() {
+      if (autoFsPollTimer) {
+        clearInterval(autoFsPollTimer);
+        autoFsPollTimer = null;
+      }
+    }
+
+    function startAutoFsPoll() {
+      stopAutoFsPoll();
+      autoFsPollTimer = setInterval(() => {
+        if (!isAutoShellFullscreen) {
+          stopAutoFsPoll();
+          return;
+        }
+        if (isExitingAutoFs || isTransitioningFs) return;
+        const fsEl = getActiveFullscreenEl();
+        const shell = document.querySelector('.ww-player-shell');
+        // Chromium can suppress fullscreenchange on the parent document when an ancestor is already fullscreen
+        // and a child iframe calls requestFullscreen(). Catch that transition immediately here.
+        if (fsEl && fsEl !== shell) {
+          exitAllFullscreenLayers();
+        }
+      }, 100);
     }
 
     function applyPseudoFullscreen(enable) {
@@ -1808,6 +1839,8 @@
       if (shell) shell.classList.toggle('ww-auto-fullscreen', !!enable);
       document.body.classList.toggle('ww-fs-lock', !!enable);
       isAutoShellFullscreen = !!enable;
+      if (enable) startAutoFsPoll();
+      else stopAutoFsPoll();
     }
 
     function notifyNativeExitFullscreen() {
@@ -1828,10 +1861,14 @@
       isExitingAutoFs = true;
       pendingAutoRestore = false;
       clearTimeout(pendingAutoRestoreTimer);
-      applyPseudoFullscreen(false);
-      notifyNativeExitFullscreen();
+      stopAutoFsPoll();
+      isAutoShellFullscreen = false;
       try {
-        const delays = [0, 70, 140, 220];
+        // Let any in-flight OOPIF requestFullscreen() commit briefly before exiting native fullscreen
+        if (getActiveFullscreenEl()) {
+          await new Promise(r => setTimeout(r, 60));
+        }
+        const delays = [0, 80, 160, 260];
         for (let i = 0; i < delays.length; i++) {
           if (delays[i] > 0) {
             await new Promise(r => setTimeout(r, delays[i]));
@@ -1842,9 +1879,10 @@
             else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
           } catch (_) {}
         }
+        applyPseudoFullscreen(false);
         notifyNativeExitFullscreen();
       } finally {
-        setTimeout(() => { isExitingAutoFs = false; }, 120);
+        setTimeout(() => { isExitingAutoFs = false; }, 150);
       }
     }
 
