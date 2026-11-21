@@ -112,11 +112,16 @@
     .ww-player-shell:-webkit-full-screen,
     .ww-player-shell.ww-auto-fullscreen {
       position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
       inset: 0 !important;
       width: 100vw !important;
       height: 100vh !important;
       max-width: none !important;
       max-height: none !important;
+      margin: 0 !important;
       z-index: 99999 !important;
       border-radius: 0 !important;
       border: none !important;
@@ -126,10 +131,27 @@
     .ww-player-shell:fullscreen iframe,
     .ww-player-shell:-webkit-full-screen iframe,
     .ww-player-shell.ww-auto-fullscreen iframe {
+      width: 100% !important;
+      height: 100% !important;
       border-radius: 0 !important;
     }
     body.ww-fs-lock {
       overflow: hidden !important;
+      background: #000 !important;
+    }
+    body.ww-fs-lock header,
+    body.ww-fs-lock footer,
+    body.ww-fs-lock #watchBackdropBg {
+      display: none !important;
+    }
+    body.ww-fs-lock main {
+      animation: none !important;
+      transform: none !important;
+      position: static !important;
+      z-index: auto !important;
+      max-width: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
     }
     button, a {
       transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
