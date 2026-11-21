@@ -1793,6 +1793,11 @@
     let isExitingAutoFs = false;
     let isTransitioningFs = false;
     let pendingAutoRestore = false;
+    let pendingAutoRestoreTimer = null;
+
+    function getActiveFullscreenEl() {
+      return document.fullscreenElement || document.webkitFullscreenElement || document.webkitCurrentFullScreenElement || null;
+    }
 
     function applyPseudoFullscreen(enable) {
       const shell = document.querySelector('.ww-player-shell');
@@ -1801,61 +1806,59 @@
       isAutoShellFullscreen = !!enable;
     }
 
+    function notifyNativeExitFullscreen() {
+      if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
+        try { window.chrome.webview.postMessage('ww:exit_fullscreen'); } catch (_) {}
+      }
+      if (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.exitFullscreen === 'function') {
+        try {
+          if (window.WonderWatchAndroid.isFullscreen && window.WonderWatchAndroid.isFullscreen()) {
+            window.WonderWatchAndroid.exitFullscreen();
+          }
+        } catch (_) {}
+      }
+    }
+
     async function exitAllFullscreenLayers() {
       if (isExitingAutoFs) return;
       isExitingAutoFs = true;
       pendingAutoRestore = false;
+      clearTimeout(pendingAutoRestoreTimer);
       applyPseudoFullscreen(false);
+      notifyNativeExitFullscreen();
       try {
-        for (let i = 0; i < 3; i++) {
-          if (!(document.fullscreenElement || document.webkitFullscreenElement)) break;
+        const delays = [0, 70, 140, 220];
+        for (let i = 0; i < delays.length; i++) {
+          if (delays[i] > 0) {
+            await new Promise(r => setTimeout(r, delays[i]));
+          }
+          if (!getActiveFullscreenEl()) break;
           try {
             if (document.exitFullscreen) await document.exitFullscreen();
             else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-          } catch (_) {
-            break;
-          }
-          await new Promise(r => setTimeout(r, 50));
-        }
-        if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
-          try { window.chrome.webview.postMessage('ww:exit_fullscreen'); } catch (_) {}
-        }
-        if (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.exitFullscreen === 'function') {
-          try {
-            if (window.WonderWatchAndroid.isFullscreen && window.WonderWatchAndroid.isFullscreen()) {
-              window.WonderWatchAndroid.exitFullscreen();
-            }
           } catch (_) {}
         }
+        notifyNativeExitFullscreen();
       } finally {
-        isExitingAutoFs = false;
+        setTimeout(() => { isExitingAutoFs = false; }, 120);
       }
     }
 
     window.__wwOnExitFullscreen = function() {
-      pendingAutoRestore = false;
-      applyPseudoFullscreen(false);
-      if (document.fullscreenElement || document.webkitFullscreenElement) {
-        try {
-          if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        } catch (_) {}
-      }
+      exitAllFullscreenLayers();
     };
 
     function handleFullscreenSync() {
-      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      const fsEl = getActiveFullscreenEl();
       const shell = document.querySelector('.ww-player-shell');
-      const frame = document.getElementById('playerFrame');
 
       if (!fsEl) {
         if (!isExitingAutoFs && !isTransitioningFs) {
-          // Only clear pseudo-fullscreen if we actually exited native shell fullscreen (not when swapping iframe)
-          if (!pendingAutoRestore && isAutoShellFullscreen) {
+          if (isAutoShellFullscreen) {
+            pendingAutoRestore = false;
+            clearTimeout(pendingAutoRestoreTimer);
             applyPseudoFullscreen(false);
-            if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
-              try { window.chrome.webview.postMessage('ww:exit_fullscreen'); } catch (_) {}
-            }
+            notifyNativeExitFullscreen();
           }
         }
         return;
@@ -1866,7 +1869,7 @@
       // If auto-fullscreen is active (either via shell native fullscreen or pseudo-fullscreen)
       // and the user clicks the player's built-in fullscreen button (which enters fullscreen on #playerFrame),
       // intercept that click as Exit Fullscreen so it stays 1-to-1 with the built-in button.
-      if (isAutoShellFullscreen && frame && fsEl === frame) {
+      if (isAutoShellFullscreen && fsEl !== shell) {
         exitAllFullscreenLayers();
         return;
       }
@@ -1886,7 +1889,7 @@
 
     async function loadPlayer(restoreFullscreen = false) {
       const shell = document.querySelector('.ww-player-shell');
-      const currentFsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      const currentFsEl = getActiveFullscreenEl();
       const wasShellFs = Boolean(shell && currentFsEl === shell);
       const wasAndroidFs = Boolean(
         window.WonderWatchAndroid &&
@@ -1896,6 +1899,10 @@
       const wasBrowserFs = Boolean(currentFsEl);
       const shouldRestore = restoreFullscreen || isAutoShellFullscreen || wasAndroidFs || wasBrowserFs;
       pendingAutoRestore = shouldRestore;
+      clearTimeout(pendingAutoRestoreTimer);
+      if (shouldRestore) {
+        pendingAutoRestoreTimer = setTimeout(() => { pendingAutoRestore = false; }, 1800);
+      }
 
       const isAndroidClient = Boolean(window.WonderWatchAndroid && typeof window.WonderWatchAndroid.requestFullscreen === 'function');
       const isDesktopClient = Boolean(window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function');
@@ -1912,25 +1919,28 @@
         } else if (isDesktopClient) {
           try { window.chrome.webview.postMessage('ww:enter_fullscreen'); } catch (_) {}
         } else if (shell && !wasShellFs) {
+          isTransitioningFs = true;
           try {
             const req = shell.requestFullscreen
               ? shell.requestFullscreen()
               : (shell.webkitRequestFullscreen ? shell.webkitRequestFullscreen() : null);
-            if (req && typeof req.catch === 'function') {
-              req.catch(() => {});
+            if (req && typeof req.then === 'function') {
+              await req.catch(() => {});
             }
           } catch (_) {}
+          setTimeout(() => { isTransitioningFs = false; }, 120);
         }
       }
 
-      // If #playerFrame itself was in native browser fullscreen (and we didn't promote to shell fullscreen), exit it cleanly
-      if (wasBrowserFs && !wasShellFs && (document.fullscreenElement || document.webkitFullscreenElement) !== shell) {
+      // If #playerFrame itself is still in native browser fullscreen (and wasn't promoted to shell fullscreen), exit it cleanly
+      const postFsEl = getActiveFullscreenEl();
+      if (postFsEl && postFsEl !== shell) {
         isTransitioningFs = true;
         try {
           if (document.exitFullscreen) await document.exitFullscreen();
           else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
         } catch (_) {}
-        setTimeout(() => { isTransitioningFs = false; }, 120);
+        setTimeout(() => { isTransitioningFs = false; }, 150);
       }
 
       syncAudioControlVisibility();

@@ -93,6 +93,7 @@ namespace WonderWatchDesktop
         private bool isAppFullscreen;
         private bool isElementFullscreen;
         private bool isWebAutoFullscreen;
+        private int fullscreenEventSeq;
         private FormWindowState prevWindowState = FormWindowState.Normal;
         private FormBorderStyle prevBorderStyle = FormBorderStyle.Sizable;
         private Rectangle prevBounds;
@@ -570,6 +571,7 @@ namespace WonderWatchDesktop
                     }
                     else if (msg == "ww:enter_fullscreen" || json.IndexOf("ww:enter_fullscreen", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
+                        fullscreenEventSeq++;
                         isWebAutoFullscreen = true;
                         if (!IsDisposed)
                         {
@@ -578,6 +580,7 @@ namespace WonderWatchDesktop
                     }
                     else if (msg == "ww:exit_fullscreen" || json.IndexOf("ww:exit_fullscreen", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
+                        fullscreenEventSeq++;
                         isWebAutoFullscreen = false;
                         if (!IsDisposed)
                         {
@@ -589,16 +592,42 @@ namespace WonderWatchDesktop
             };
             webView.CoreWebView2.ContainsFullScreenElementChanged += delegate
             {
+                int seq = ++fullscreenEventSeq;
                 isElementFullscreen = webView.CoreWebView2.ContainsFullScreenElement;
                 if (!isElementFullscreen)
                 {
                     SetFullscreen(isAppFullscreen || isWebAutoFullscreen);
                 }
+                else if (isWebAutoFullscreen)
+                {
+                    // User clicked the player's built-in fullscreen button while in auto-fullscreen:
+                    // treat as Exit Fullscreen and sync the page cleanly.
+                    isWebAutoFullscreen = false;
+                    try
+                    {
+                        if (webView.CoreWebView2 != null)
+                        {
+                            webView.CoreWebView2.ExecuteScriptAsync("if(typeof window.__wwOnExitFullscreen==='function')window.__wwOnExitFullscreen();");
+                        }
+                    }
+                    catch { }
+                    System.Threading.Tasks.Task.Delay(120).ContinueWith(_ =>
+                    {
+                        if (!IsDisposed && fullscreenEventSeq == seq)
+                        {
+                            BeginInvoke((Action)(() =>
+                            {
+                                isElementFullscreen = webView.CoreWebView2 != null && webView.CoreWebView2.ContainsFullScreenElement;
+                                SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen);
+                            }));
+                        }
+                    });
+                }
                 else
                 {
                     System.Threading.Tasks.Task.Delay(50).ContinueWith(_ =>
                     {
-                        if (!IsDisposed)
+                        if (!IsDisposed && fullscreenEventSeq == seq)
                         {
                             BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen || isWebAutoFullscreen)));
                         }
@@ -623,6 +652,11 @@ namespace WonderWatchDesktop
 
             webView.CoreWebView2.NavigationCompleted += delegate
             {
+                if (isWebAutoFullscreen)
+                {
+                    isWebAutoFullscreen = false;
+                    SetFullscreen(isAppFullscreen || isElementFullscreen);
+                }
                 if (splashPanel.Visible)
                 {
                     splashSpinner.Stop();
