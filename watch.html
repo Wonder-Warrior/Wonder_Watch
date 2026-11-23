@@ -277,12 +277,6 @@
           <i class="fa-solid fa-arrow-left text-xs"></i> <span class="hidden sm:inline">Back to Browse</span>
         </a>
 
-        <!-- Sync indicator -->
-        <div id="syncIndicator" class="hidden items-center gap-1.5 text-[10px] text-brand-400 font-semibold">
-          <i class="fa-solid fa-cloud text-xs"></i>
-          <span class="hidden sm:inline">Synced</span>
-        </div>
-
         <!-- User Profile / Log In state in Header -->
         <div id="authGuestSection">
           <button onclick="openAuthModal('login')" class="w-8 h-8 sm:w-auto p-0 sm:px-3.5 sm:py-2 inline-flex items-center justify-center sm:justify-start gap-1.5 text-xs font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 rounded-xl transition shadow-lg shadow-brand-500/20 whitespace-nowrap" title="Log In">
@@ -679,8 +673,6 @@
     // ============================================================
     //  UI SOUND CUES ENGINE (Web Audio API)
     // ============================================================
-    const SOUND_KEY = 'wonderwatch_sound';
-    let soundEnabled = localStorage.getItem(SOUND_KEY) !== 'off';
     let audioCtx = null;
 
     function getAudioCtx() {
@@ -711,7 +703,6 @@
 
     let lastCueTime = 0;
     function playSoundCue(type = 'click') {
-      if (!soundEnabled) return;
       const nowMs = performance.now();
       if (type !== 'type' && nowMs - lastCueTime < 35) return;
       lastCueTime = nowMs;
@@ -798,40 +789,11 @@
       } catch (_) {}
     }
 
-    function updateSoundToggleUI() {
-      const btn = document.getElementById('soundToggleBtn');
-      const icon = document.getElementById('soundToggleIcon');
-      if (!btn || !icon) return;
-      btn.removeAttribute('title');
-      if (soundEnabled) {
-        icon.className = 'fa-solid fa-volume-high';
-        btn.classList.add('text-brand-400', 'hover:text-brand-300');
-        btn.classList.remove('text-zinc-500', 'hover:text-zinc-300');
-      } else {
-        icon.className = 'fa-solid fa-volume-xmark';
-        btn.classList.remove('text-brand-400', 'hover:text-brand-300');
-        btn.classList.add('text-zinc-500', 'hover:text-zinc-300');
-      }
-    }
-
-    function toggleSoundCues() {
-      soundEnabled = !soundEnabled;
-      localStorage.setItem(SOUND_KEY, soundEnabled ? 'on' : 'off');
-      updateSoundToggleUI();
-      if (soundEnabled) playSoundCue('fav');
-      showToast(soundEnabled
-        ? '<i class="fa-solid fa-volume-high text-brand-400"></i> Unmuted website navigation'
-        : '<i class="fa-solid fa-volume-xmark text-zinc-400"></i> Muted website navigation', 2000);
-    }
-
     document.addEventListener('click', (e) => {
-      if (!soundEnabled) return;
       const target = e.target?.closest?.('button, a, [role="button"], .cursor-pointer, select');
-      if (!target || target.id === 'soundToggleBtn' || target.closest?.('#soundToggleBtn')) return;
+      if (!target) return;
       playSoundCue(target.tagName === 'A' ? 'nav' : 'click');
     });
-
-    updateSoundToggleUI();
 
     // ============================================================
     //  HELPERS
@@ -874,19 +836,30 @@
 
     async function saveHistoryItem(item) {
       let history = getLocalHistory();
-      const idx = history.findIndex(h => h.id == item.id);
-      if (idx >= 0) {
-        history[idx] = { ...history[idx], ...item, updatedAt: Date.now() };
-      } else {
-        history.unshift({ ...item, updatedAt: Date.now() });
-      }
+      const ids = Array.from(new Set([
+        Number(item.id),
+        ...(item.watchId ? [Number(item.watchId)] : []),
+        ...(Array.isArray(item.franchiseIds) ? item.franchiseIds.map(Number) : [])
+      ].filter(n => !isNaN(n))));
+      const idSet = new Set(ids);
+
+      // Deduplicate any other seasons belonging to the same franchise so Continue Watching shows 1 unified parent card
+      const removedIds = history
+        .filter(h => (idSet.has(Number(h.id)) || (h.watchId && idSet.has(Number(h.watchId)))) && Number(h.id) !== Number(item.id))
+        .map(h => h.id);
+      history = history.filter(h => !idSet.has(Number(h.id)) && !(h.watchId && idSet.has(Number(h.watchId))));
+      const entry = { ...item, franchiseIds: ids, updatedAt: Date.now() };
+      history.unshift(entry);
       if (history.length > 50) history = history.slice(0, 50);
       localStorage.setItem(LS_HISTORY, JSON.stringify(history));
 
       if (currentUser) {
         try {
+          for (const oldId of removedIds) {
+            await userDoc('history').doc(String(oldId)).delete().catch(() => {});
+          }
           await userDoc('history').doc(String(item.id)).set({
-            ...item,
+            ...entry,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           }, { merge: true });
         } catch (e) {
@@ -1105,9 +1078,6 @@
       updateAuthUI(user);
 
       if (user) {
-        document.getElementById('syncIndicator').classList.remove('hidden');
-        document.getElementById('syncIndicator').classList.add('flex');
-
         try {
           await db.collection('users').doc(user.uid).set({
             displayName: user.displayName || user.email?.split('@')[0] || 'User',
@@ -1128,9 +1098,6 @@
           showToast(`<i class="fa-solid fa-circle-check text-brand-400"></i> Signed in as ${escapeHtml(user.displayName || user.email?.split('@')[0] || 'there')}`);
         }
       } else {
-        document.getElementById('syncIndicator').classList.add('hidden');
-        document.getElementById('syncIndicator').classList.remove('flex');
-
         // Logged out: remove this account's local copy so nothing leaks to the next visitor
         if (prevUser || localStorage.getItem(LS_OWNER)) {
           localStorage.removeItem(LS_HISTORY);
@@ -1885,6 +1852,7 @@
 
     let pendingSimFullscreen = false;
     let pendingSimFullscreenTimer = null;
+    let lastSimTriggerAt = 0;
     let episodeMaskHideTimer = null;
     let episodeMaskSafetyTimer = null;
 
@@ -1940,15 +1908,18 @@
           window.__wwOnNativeFullscreenReady();
           return;
         }
-        pendingSimFullscreen = false;
-        clearTimeout(pendingSimFullscreenTimer);
+        // Keep pendingSimFullscreen armed across load -> ready -> play until native fullscreen actually engages
+        const now = Date.now();
+        if (now - lastSimTriggerAt < 1100) return;
+        lastSimTriggerAt = now;
         try { window.chrome.webview.postMessage('ww:sim_fullscreen'); } catch (_) {}
         return;
       }
 
       if (isAndroidClient) {
-        pendingSimFullscreen = false;
-        clearTimeout(pendingSimFullscreenTimer);
+        const now = Date.now();
+        if (now - lastSimTriggerAt < 1200) return;
+        lastSimTriggerAt = now;
         const frame = document.getElementById('playerFrame');
         if (frame && window.innerWidth > 0 && window.innerHeight > 0) {
           const r = frame.getBoundingClientRect();
@@ -1964,14 +1935,11 @@
         return;
       }
 
-      // Standard Web Browser: never force wrapper fullscreen (which desyncs the third-party player's GUI button).
-      // Ask the player natively if supported, then smoothly lift the transition mask.
+      // Standard Web Browser: never force wrapper fullscreen or send ungestured player fullscreen commands
+      // (which can desync third-party player buttons). Smoothly lift the transition mask once loaded.
       pendingSimFullscreen = false;
       clearTimeout(pendingSimFullscreenTimer);
-      try {
-        sendAniEmbedCommand('fullscreen', { fullscreen: true });
-      } catch (_) {}
-      hideEpisodeTransitionMask(850);
+      hideEpisodeTransitionMask(650);
     }
 
     function handleFullscreenMaskSync() {
@@ -2008,10 +1976,11 @@
       const shouldRestore = restoreFullscreen || wasAndroidFs || wasBrowserFs;
 
       pendingSimFullscreen = shouldRestore;
+      lastSimTriggerAt = 0;
       clearTimeout(pendingSimFullscreenTimer);
       clearTimeout(episodeMaskSafetyTimer);
       if (shouldRestore) {
-        pendingSimFullscreenTimer = setTimeout(() => { pendingSimFullscreen = false; }, 6000);
+        pendingSimFullscreenTimer = setTimeout(() => { pendingSimFullscreen = false; }, 8500);
 
         // Mask the unfullscreen -> reload -> re-fullscreen transition behind a sleek dark curtain
         showEpisodeTransitionMask(currentEpisode);
@@ -2020,7 +1989,10 @@
         if (isDesktopClient) {
           // Hold Desktop window in fullscreen while the curtain covers the iframe swap + simulated GUI button click
           try { window.chrome.webview.postMessage('ww:fs_transition_start'); } catch (_) {}
-          episodeMaskSafetyTimer = setTimeout(() => hideEpisodeTransitionMask(0), 5500);
+          episodeMaskSafetyTimer = setTimeout(() => {
+            pendingSimFullscreen = false;
+            hideEpisodeTransitionMask(0);
+          }, 8500);
         } else if (isAndroidClient) {
           // Hold Android landscape + immersive while the curtain covers the iframe swap + simulated GUI tap
           try {
@@ -2028,18 +2000,23 @@
               window.WonderWatchAndroid.beginEpisodeFullscreenTransition();
             }
           } catch (_) {}
-          episodeMaskSafetyTimer = setTimeout(() => hideEpisodeTransitionMask(0), 5500);
+          episodeMaskSafetyTimer = setTimeout(() => {
+            pendingSimFullscreen = false;
+            hideEpisodeTransitionMask(0);
+          }, 8500);
         } else {
-          // Web: lift the curtain cleanly once the new episode loads (safety fallback 2.8s)
-          episodeMaskSafetyTimer = setTimeout(() => hideEpisodeTransitionMask(0), 2800);
+          // Web: lift the curtain cleanly once the new episode loads (safety fallback 2.5s)
+          episodeMaskSafetyTimer = setTimeout(() => hideEpisodeTransitionMask(0), 2500);
         }
 
-        // Let the old iframe exit native fullscreen cleanly behind the curtain so the new player starts in sync
+        // Let the old iframe exit native fullscreen cleanly behind the curtain and yield 150ms
+        // so WebView2/Chromium finishes fullscreen teardown before replacing #playerFrame
         if (currentFsEl) {
           try {
             if (document.exitFullscreen) await document.exitFullscreen();
             else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
           } catch (_) {}
+          await new Promise(r => setTimeout(r, 150));
         }
       }
 
@@ -2341,14 +2318,29 @@
     });
 
     function autoSaveProgress(timestamp) {
-      const imgUrl = animeMetadata?.coverImage?.extraLarge || animeMetadata?.coverImage?.large || '';
-      const genres = animeMetadata?.genres || [];
-      
+      const currentId = parseInt(animeId);
+      const currentMalId = parseInt(malId);
+      const { parent, franchiseIds } = getCurrentFranchiseInfo();
+      const parentId = Number(parent?.id) || currentId;
+      const parentMalId = Number(parent?.idMal) || currentMalId;
+      const parentTitle = (typeof parent?.title === 'string' ? parent.title : (parent?.title?.english || parent?.title?.romaji)) || animeTitle;
+      const parentImg = parent?.coverImage?.extraLarge || parent?.coverImage?.large || parent?.coverImage?.medium
+        || animeMetadata?.coverImage?.extraLarge || animeMetadata?.coverImage?.large || '';
+      const genres = (parent?.genres && parent.genres.length) ? parent.genres : (animeMetadata?.genres || []);
+      const isSequelSeason = parentId !== currentId;
+      const seasonLabel = isSequelSeason ? normalizeSeasonTitle(animeTitle) : '';
+
       saveHistoryItem({
-        id: parseInt(animeId),
-        malId: parseInt(malId),
-        title: animeTitle,
-        img: imgUrl,
+        id: parentId,
+        malId: parentMalId,
+        title: parentTitle,
+        img: parentImg,
+        watchId: currentId,
+        watchMalId: currentMalId,
+        watchTitle: animeTitle,
+        watchEps: totalEpisodes,
+        seasonLabel: seasonLabel,
+        franchiseIds: franchiseIds,
         episode: currentEpisode,
         eps: totalEpisodes,
         timestamp: timestamp || savedResumeTime || 0,

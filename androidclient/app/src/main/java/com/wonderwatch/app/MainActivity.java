@@ -540,7 +540,7 @@ public final class MainActivity extends Activity {
                                     }
                                 }
                             }
-                        }, 5500);
+                        }, 8500);
                     }
                 }
             });

@@ -318,8 +318,6 @@
     // ============================================================
     //  UI SOUND CUES ENGINE (Web Audio API)
     // ============================================================
-    const SOUND_KEY = 'wonderwatch_sound';
-    let soundEnabled = localStorage.getItem(SOUND_KEY) !== 'off';
     let audioCtx = null;
 
     function getAudioCtx() {
@@ -345,7 +343,6 @@
 
     let lastCueTime = 0;
     function playSoundCue(type = 'click') {
-      if (!soundEnabled) return;
       const nowMs = performance.now();
       if (type !== 'type' && nowMs - lastCueTime < 35) return;
       lastCueTime = nowMs;
@@ -436,39 +433,11 @@
       } catch (_) {}
     }
 
-    function updateSoundToggleUI() {
-      const btn = document.getElementById('soundToggleBtn');
-      const icon = document.getElementById('soundToggleIcon');
-      if (!btn || !icon) return;
-      btn.removeAttribute('title');
-      if (soundEnabled) {
-        icon.className = 'fa-solid fa-volume-high';
-        btn.classList.add('text-brand-400', 'hover:text-brand-300');
-        btn.classList.remove('text-zinc-500', 'hover:text-zinc-300');
-      } else {
-        icon.className = 'fa-solid fa-volume-xmark';
-        btn.classList.remove('text-brand-400', 'hover:text-brand-300');
-        btn.classList.add('text-zinc-500', 'hover:text-zinc-300');
-      }
-    }
-
-    function toggleSoundCues() {
-      soundEnabled = !soundEnabled;
-      localStorage.setItem(SOUND_KEY, soundEnabled ? 'on' : 'off');
-      updateSoundToggleUI();
-      if (soundEnabled) playSoundCue('fav');
-      showToast(soundEnabled
-        ? '<i class="fa-solid fa-volume-high text-brand-400"></i> Unmuted website navigation'
-        : '<i class="fa-solid fa-volume-xmark text-zinc-400"></i> Muted website navigation', 2000);
-    }
-
     document.addEventListener('click', (e) => {
-      if (!soundEnabled) return;
       const target = e.target?.closest?.('button, a, [role="button"], .cursor-pointer, select');
-      if (!target || target.id === 'soundToggleBtn' || target.closest?.('#soundToggleBtn')) return;
+      if (!target) return;
       playSoundCue(target.tagName === 'A' ? 'nav' : 'click');
     });
-    updateSoundToggleUI();
 
     let toastTimer = null;
     function showToast(message, duration = 3000) {

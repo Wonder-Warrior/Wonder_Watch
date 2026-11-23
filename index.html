@@ -335,12 +335,6 @@
           <i class="fa-solid fa-magnifying-glass"></i>
         </button>
 
-        <!-- Sync indicator -->
-        <div id="syncIndicator" class="hidden items-center gap-1.5 text-[10px] text-brand-400 font-semibold">
-          <i class="fa-solid fa-cloud text-xs"></i>
-          <span id="syncLabel" class="hidden sm:inline">Synced</span>
-        </div>
-
         <!-- Guest State: Log In Button -->
         <div id="authGuestSection">
           <button onclick="openAuthModal('login')" class="w-8 h-8 sm:w-auto inline-flex items-center justify-center sm:justify-start gap-1.5 text-xs sm:text-sm font-heading font-bold text-black bg-brand-500 hover:bg-brand-400 p-0 sm:px-4 sm:py-2 rounded-xl transition shadow-lg shadow-brand-500/20" title="Log In">
@@ -588,7 +582,7 @@
     
     <!-- Continue Watching with Timestamps -->
     <section id="continueWatchingSection" class="hidden space-y-4">
-      <div class="flex justify-between items-center gap-3 flex-wrap">
+      <div class="flex justify-between items-center gap-3">
         <div class="flex items-center gap-2.5">
           <div class="w-2.5 h-6 bg-brand-400 rounded-full"></div>
           <div>
@@ -598,16 +592,10 @@
             <p class="text-xs text-zinc-500">Pick up right where you left off with saved timestamps</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <button onclick="promptClearHistory()" class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900/90 hover:bg-red-500/10 border border-zinc-800 hover:border-red-500/40 text-xs font-semibold text-zinc-400 hover:text-red-400 transition shadow-sm" title="Clear Watch History">
-            <i class="fa-solid fa-trash-can text-[11px] text-zinc-500 group-hover:text-red-400 transition"></i>
-            <span class="hidden sm:inline">Clear</span>
-          </button>
-          <a href="library.html?tab=history" onclick="playSoundCue('nav')" class="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-900/90 hover:bg-brand-500/10 border border-zinc-800 hover:border-brand-500/40 text-xs font-semibold text-zinc-300 hover:text-brand-400 transition shadow-sm" title="View all Continue Watching">
-            <span>View All <span id="continueCountBadge" class="text-zinc-500 group-hover:text-brand-400/80"></span></span>
-            <i class="fa-solid fa-arrow-right text-[10px] text-zinc-500 group-hover:text-brand-400 group-hover:translate-x-0.5 transition"></i>
-          </a>
-        </div>
+        <a href="library.html?tab=history" onclick="playSoundCue('nav')" class="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-900/90 hover:bg-brand-500/10 border border-zinc-800 hover:border-brand-500/40 text-xs font-semibold text-zinc-300 hover:text-brand-400 transition shadow-sm flex-shrink-0" title="View all Continue Watching">
+          <span>View All <span id="continueCountBadge" class="text-zinc-500 group-hover:text-brand-400/80"></span></span>
+          <i class="fa-solid fa-arrow-right text-[10px] text-zinc-500 group-hover:text-brand-400 group-hover:translate-x-0.5 transition"></i>
+        </a>
       </div>
       <div id="grid-continue" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
     </section>
@@ -1483,19 +1471,12 @@
         }, err => {
           console.warn('WatchLater sync error:', err);
         });
-      
-      const ind = document.getElementById('syncIndicator');
-      ind.classList.remove('hidden');
-      ind.classList.add('flex');
     }
 
     function stopRealtimeSync() {
       if (firestoreUnsubHistory) { firestoreUnsubHistory(); firestoreUnsubHistory = null; }
       if (firestoreUnsubFavorites) { firestoreUnsubFavorites(); firestoreUnsubFavorites = null; }
       if (firestoreUnsubWatchLater) { firestoreUnsubWatchLater(); firestoreUnsubWatchLater = null; }
-      const ind = document.getElementById('syncIndicator');
-      ind.classList.add('hidden');
-      ind.classList.remove('flex');
     }
 
     // Upload GUEST data to the account on login.
@@ -2539,12 +2520,16 @@
             </div>
             <div class="p-3">
               <h3 class="text-xs font-heading font-bold text-zinc-100 truncate group-hover:text-brand-400 transition">${escapeHtml(item.title || '')}</h3>
-              <p class="text-[10px] text-zinc-500 mt-0.5">Resume Episode ${escapeHtml(item.episode || 1)}</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5 truncate">${escapeHtml(item.seasonLabel ? `${item.seasonLabel} • Ep ${item.episode || 1}` : `Resume Episode ${item.episode || 1}`)}</p>
             </div>
           `;
           card.onclick = () => {
             playSoundCue('open');
-            window.location.href = `watch.html?id=${item.id}&malId=${item.malId}&title=${encodeURIComponent(item.title)}&eps=${item.eps || 12}&ep=${item.episode}&time=${timeSec}`;
+            const targetId = item.watchId || item.id;
+            const targetMalId = item.watchMalId || item.malId || targetId;
+            const targetTitle = item.watchTitle || item.title || '';
+            const targetEps = item.watchEps || item.eps || 12;
+            window.location.href = `watch.html?id=${targetId}&malId=${targetMalId}&title=${encodeURIComponent(targetTitle)}&eps=${targetEps}&ep=${item.episode}&time=${timeSec}`;
           };
           continueGrid.appendChild(card);
         });
@@ -2583,7 +2568,7 @@
       // Auto-heal any saved cards missing thumbnails or metadata
       hydrateMissingUserMetadata();
 
-      // 4. Render Recommendations ("Anime You Might Like") — below all three personal lists
+      // 4. Render Recommendations ("Anime You Might Like") — root franchises only, below all three personal lists
       if (history.length > 0 || watchLater.length > 0 || favorites.length > 0) {
         const topItem = history[0] || watchLater[0] || favorites[0];
         const genre = (topItem.genres && topItem.genres[0]) || 'Action';
@@ -2591,21 +2576,61 @@
         try {
           const recQuery = `
             query ($genre: String) {
-              Page(perPage: 6) { 
+              Page(perPage: 25) { 
                 media(genre: $genre, sort: POPULARITY_DESC, type: ANIME) { 
                   id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes averageScore format startDate { year }
+                  relations { edges { relationType node { type format } } }
                 } 
               }
             }
           `;
           const data = await fetchAniList(recQuery, { genre });
-          renderGrid('grid-recommended', data.Page.media);
+          const ownedIds = new Set();
+          [...history, ...watchLater, ...favorites].forEach(it => {
+            if (it?.id) ownedIds.add(Number(it.id));
+            if (it?.watchId) ownedIds.add(Number(it.watchId));
+            if (Array.isArray(it?.franchiseIds)) it.franchiseIds.forEach(fid => ownedIds.add(Number(fid)));
+          });
+          const roots = filterRootAnimeOnly(data.Page.media, 12).filter(m => !ownedIds.has(Number(m.id)));
+          const finalRecs = (roots.length >= 6 ? roots : filterRootAnimeOnly(data.Page.media, 6)).slice(0, 6);
+          renderGrid('grid-recommended', finalRecs);
         } catch (e) {
           console.error('Error fetching recommendations:', e);
         }
       } else {
         recSec.classList.add('hidden');
       }
+    }
+
+    function isStandaloneRootAnime(media) {
+      if (!media) return false;
+      const edges = media.relations?.edges || [];
+      return !edges.some(e =>
+        (e.relationType === 'PREQUEL' || e.relationType === 'PARENT') &&
+        e.node && e.node.type === 'ANIME' && e.node.format !== 'MUSIC'
+      );
+    }
+
+    function filterRootAnimeOnly(list, limit) {
+      if (!Array.isArray(list)) return [];
+      const seen = new Set();
+      const roots = [];
+      for (const m of list) {
+        if (!m || !m.id || seen.has(Number(m.id))) continue;
+        if (!isStandaloneRootAnime(m)) continue;
+        seen.add(Number(m.id));
+        roots.push(m);
+        if (roots.length >= limit) break;
+      }
+      if (roots.length < limit) {
+        for (const m of list) {
+          if (!m || !m.id || seen.has(Number(m.id))) continue;
+          seen.add(Number(m.id));
+          roots.push(m);
+          if (roots.length >= limit) break;
+        }
+      }
+      return roots;
     }
 
     function renderGrid(containerId, animeList, options = {}) {
@@ -2693,24 +2718,28 @@
 
       const fullQuery = `
         query {
-          trending: Page(perPage: 6) { 
+          trending: Page(perPage: 18) { 
             media(sort: TRENDING_DESC, type: ANIME) { 
               id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes nextAiringEpisode { episode } averageScore format startDate { year }
+              relations { edges { relationType node { type format } } }
             } 
           }
-          airing: Page(perPage: 6) { 
+          airing: Page(perPage: 18) { 
             media(status: RELEASING, sort: POPULARITY_DESC, type: ANIME) { 
               id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes nextAiringEpisode { episode } averageScore format startDate { year }
+              relations { edges { relationType node { type format } } }
             } 
           }
-          popular: Page(perPage: 6) { 
+          popular: Page(perPage: 18) { 
             media(sort: POPULARITY_DESC, type: ANIME) { 
               id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes nextAiringEpisode { episode } averageScore format startDate { year }
+              relations { edges { relationType node { type format } } }
             } 
           }
-          movies: Page(perPage: 6) { 
+          movies: Page(perPage: 18) { 
             media(format: MOVIE, sort: POPULARITY_DESC, type: ANIME) { 
               id idMal title { romaji english } coverImage { extraLarge large } bannerImage description genres episodes nextAiringEpisode { episode } averageScore format startDate { year }
+              relations { edges { relationType node { type format } } }
             } 
           }
         }
@@ -2718,10 +2747,10 @@
 
       try {
         const data = await fetchAniList(fullQuery);
-        renderGrid('grid-trending', data.trending.media);
-        renderGrid('grid-airing', data.airing.media);
-        renderGrid('grid-popular', data.popular.media);
-        renderGrid('grid-movies', data.movies.media);
+        renderGrid('grid-trending', filterRootAnimeOnly(data.trending.media, 6));
+        renderGrid('grid-airing', filterRootAnimeOnly(data.airing.media, 6));
+        renderGrid('grid-popular', filterRootAnimeOnly(data.popular.media, 6));
+        renderGrid('grid-movies', filterRootAnimeOnly(data.movies.media, 6));
       } catch (err) {
         console.error('Failed to load categories:', err);
       }
@@ -2764,15 +2793,16 @@
         try {
           const searchQuery = `
             query ($search: String) {
-              Page(perPage: 8) { 
+              Page(perPage: 16) { 
                 media(search: $search, type: ANIME) { 
                   id idMal title { romaji english native } coverImage { large } episodes nextAiringEpisode { episode } averageScore format startDate { year } genres
+                  relations { edges { relationType node { type format } } }
                 } 
               }
             }
           `;
           const data = await fetchAniList(searchQuery, { search: query });
-          renderSearchResults(data.Page.media);
+          renderSearchResults(filterRootAnimeOnly(data.Page.media, 8));
         } catch (err) {
           console.error('Search failed:', err);
         }
@@ -2861,13 +2891,14 @@
       try {
         const data = await fetchAniList(`
           query ($genre: String) {
-            Page(perPage: 12) {
+            Page(perPage: 25) {
               media(genre: $genre, sort: POPULARITY_DESC, type: ANIME) {
                 id idMal title { romaji english } coverImage { extraLarge large } genres episodes nextAiringEpisode { episode } averageScore format startDate { year }
+                relations { edges { relationType node { type format } } }
               }
             }
           }`, { genre });
-        renderGrid('grid-genre', data.Page.media);
+        renderGrid('grid-genre', filterRootAnimeOnly(data.Page.media, 12));
         wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       } catch (err) {
         console.error('Genre filter failed:', err);
@@ -2891,8 +2922,6 @@
     // ============================================================
     //  UI SOUND CUES ENGINE (Web Audio API)
     // ============================================================
-    const SOUND_KEY = 'wonderwatch_sound';
-    let soundEnabled = localStorage.getItem(SOUND_KEY) !== 'off';
     let audioCtx = null;
 
     function getAudioCtx() {
@@ -2923,7 +2952,6 @@
 
     let lastCueTime = 0;
     function playSoundCue(type = 'click') {
-      if (!soundEnabled) return;
       const nowMs = performance.now();
       if (type !== 'type' && nowMs - lastCueTime < 35) return;
       lastCueTime = nowMs;
@@ -3010,41 +3038,12 @@
       } catch (_) {}
     }
 
-    function updateSoundToggleUI() {
-      const btn = document.getElementById('soundToggleBtn');
-      const icon = document.getElementById('soundToggleIcon');
-      if (!btn || !icon) return;
-      btn.removeAttribute('title');
-      if (soundEnabled) {
-        icon.className = 'fa-solid fa-volume-high';
-        btn.classList.add('text-brand-400', 'hover:text-brand-300');
-        btn.classList.remove('text-zinc-500', 'hover:text-zinc-300');
-      } else {
-        icon.className = 'fa-solid fa-volume-xmark';
-        btn.classList.remove('text-brand-400', 'hover:text-brand-300');
-        btn.classList.add('text-zinc-500', 'hover:text-zinc-300');
-      }
-    }
-
-    function toggleSoundCues() {
-      soundEnabled = !soundEnabled;
-      localStorage.setItem(SOUND_KEY, soundEnabled ? 'on' : 'off');
-      updateSoundToggleUI();
-      if (soundEnabled) playSoundCue('fav');
-      showToast(soundEnabled
-        ? '<i class="fa-solid fa-volume-high text-brand-400"></i> Unmuted website navigation'
-        : '<i class="fa-solid fa-volume-xmark text-zinc-400"></i> Muted website navigation', 2000);
-    }
-
     // Global interaction sound feedback across buttons, links, cards, and controls
     document.addEventListener('click', (e) => {
-      if (!soundEnabled) return;
       const target = e.target?.closest?.('button, a, [role="button"], .cursor-pointer, select');
-      if (!target || target.id === 'soundToggleBtn' || target.closest?.('#soundToggleBtn')) return;
+      if (!target) return;
       playSoundCue(target.tagName === 'A' ? 'nav' : 'click');
     });
-
-    updateSoundToggleUI();
 
     // Header & Mobile Nav category shortcuts: smooth scroll directly into the middle of the viewport
     function setActiveCategoryHighlight(activeId) {

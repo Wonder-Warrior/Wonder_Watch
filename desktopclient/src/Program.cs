@@ -701,10 +701,10 @@ namespace WonderWatchDesktop
                 "if(document.fullscreenElement||document.webkitFullscreenElement)return 'ALREADY';" +
                 "var sels=[" +
                 "'button[aria-label*=\"fullscreen\" i]','[role=\"button\"][aria-label*=\"fullscreen\" i]'," +
-                "'button[title*=\"fullscreen\" i]','[title*=\"fullscreen\" i]'," +
+                "'button[title*=\"fullscreen\" i]','[role=\"button\"][title*=\"fullscreen\" i]'," +
                 "'button[aria-label*=\"full screen\" i]','button[title*=\"full screen\" i]'," +
                 "'[data-plyr=\"fullscreen\"]','.art-control-fullscreen','.jw-icon-fullscreen','.vjs-fullscreen-control','media-fullscreen-button'," +
-                "'button[class*=\"fullscreen\" i]','[class*=\"fullscreen\" i]','[id*=\"fullscreen\" i]'" +
+                "'button[class*=\"fullscreen\" i]','[role=\"button\"][class*=\"fullscreen\" i]','button[id*=\"fullscreen\" i]'" +
                 "];" +
                 "function isExitLabel(el){" +
                 "var t=((el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||'')+' '+(el.getAttribute('data-tooltip')||'')).toLowerCase();" +
@@ -714,11 +714,11 @@ namespace WonderWatchDesktop
                 "for(var i=0;i<sels.length;i++){" +
                 "var list=root.querySelectorAll(sels[i]);" +
                 "for(var j=0;j<list.length;j++){" +
-                "var el=list[j];if(isExitLabel(el))continue;" +
+                "var el=list[j];if(el.disabled||isExitLabel(el))continue;" +
                 "var r=el.getBoundingClientRect();" +
-                "if(r.width>=12&&r.height>=12&&r.width<=140&&r.height<=140){" +
+                "if(r.width>=12&&r.height>=12&&r.width<=120&&r.height<=120){" +
                 "var cs=getComputedStyle(el);" +
-                "if(cs.display!=='none'&&cs.visibility!=='hidden'){" +
+                "if(cs.display!=='none'&&cs.visibility!=='hidden'&&cs.pointerEvents!=='none'&&parseFloat(cs.opacity)>0.05){" +
                 "return (r.left+r.width/2)+','+(r.top+r.height/2)+','+window.innerWidth+','+window.innerHeight;" +
                 "}" +
                 "}" +
@@ -734,7 +734,7 @@ namespace WonderWatchDesktop
                 "}catch(e){return '';}" +
                 "})()";
 
-            int[] delays = new int[] { 350, 500, 650, 800, 900, 900, 1000 };
+            int[] delays = new int[] { 450, 600, 750, 900, 1000, 1100 };
             for (int attempt = 0; attempt < delays.Length; attempt++)
             {
                 await System.Threading.Tasks.Task.Delay(delays[attempt]);
@@ -744,10 +744,11 @@ namespace WonderWatchDesktop
                 try
                 {
                     string rectRaw = await webView.CoreWebView2.ExecuteScriptAsync(
-                        "(function(){var f=document.getElementById('playerFrame');if(!f)return '';var r=f.getBoundingClientRect();return r.left+','+r.top+','+r.width+','+r.height;})()"
+                        "(function(){if(document.fullscreenElement||document.webkitFullscreenElement)return 'ALREADY';var f=document.getElementById('playerFrame');if(!f)return '';var r=f.getBoundingClientRect();return r.left+','+r.top+','+r.width+','+r.height;})()"
                     );
                     if (string.IsNullOrEmpty(rectRaw)) continue;
                     rectRaw = rectRaw.Trim('"');
+                    if (rectRaw == "ALREADY") return;
                     string[] rp = rectRaw.Split(',');
                     if (rp.Length < 4) continue;
 
@@ -766,7 +767,7 @@ namespace WonderWatchDesktop
                         "Input.dispatchMouseEvent",
                         string.Format(inv, "{{\"type\":\"mouseMoved\",\"x\":{0:0.##},\"y\":{1:0.##}}}", hoverX, hoverY)
                     );
-                    await System.Threading.Tasks.Task.Delay(130);
+                    await System.Threading.Tasks.Task.Delay(160);
                     if (IsDisposed || webView.CoreWebView2 == null || simFullscreenSeq != seq || webView.CoreWebView2.ContainsFullScreenElement) return;
 
                     CoreWebView2Frame[] frames;
@@ -793,6 +794,7 @@ namespace WonderWatchDesktop
 
                         double vx = fLeft + (bx / bw) * fWidth;
                         double vy = fTop + (by / bh) * fHeight;
+                        if (vx < fLeft || vx > fLeft + fWidth || vy < fTop || vy > fTop + fHeight) continue;
 
                         await webView.CoreWebView2.CallDevToolsProtocolMethodAsync(
                             "Input.dispatchMouseEvent",
@@ -800,31 +802,25 @@ namespace WonderWatchDesktop
                         );
                         await webView.CoreWebView2.CallDevToolsProtocolMethodAsync(
                             "Input.dispatchMouseEvent",
-                            string.Format(inv, "{{\"type\":\"mousePressed\",\"x\":{0:0.##},\"y\":{1:0.##},\"button\":\"left\",\"clickCount\":1}}", vx, vy)
+                            string.Format(inv, "{{\"type\":\"mousePressed\",\"x\":{0:0.##},\"y\":{1:0.##},\"button\":\"left\",\"buttons\":1,\"clickCount\":1}}", vx, vy)
                         );
                         await webView.CoreWebView2.CallDevToolsProtocolMethodAsync(
                             "Input.dispatchMouseEvent",
-                            string.Format(inv, "{{\"type\":\"mouseReleased\",\"x\":{0:0.##},\"y\":{1:0.##},\"button\":\"left\",\"clickCount\":1}}", vx, vy)
+                            string.Format(inv, "{{\"type\":\"mouseReleased\",\"x\":{0:0.##},\"y\":{1:0.##},\"button\":\"left\",\"buttons\":0,\"clickCount\":1}}", vx, vy)
                         );
                         clicked = true;
                         break;
                     }
 
-                    if (!clicked && attempt >= 3)
+                    if (clicked)
                     {
-                        // Fallback: press 'f' shortcut inside the player if controls use non-standard icons
-                        await webView.CoreWebView2.CallDevToolsProtocolMethodAsync(
-                            "Input.dispatchKeyEvent",
-                            "{\"type\":\"rawKeyDown\",\"key\":\"f\",\"code\":\"KeyF\",\"windowsVirtualKeyCode\":70,\"nativeVirtualKeyCode\":70}"
-                        );
-                        await webView.CoreWebView2.CallDevToolsProtocolMethodAsync(
-                            "Input.dispatchKeyEvent",
-                            "{\"type\":\"keyUp\",\"key\":\"f\",\"code\":\"KeyF\",\"windowsVirtualKeyCode\":70,\"nativeVirtualKeyCode\":70}"
-                        );
+                        // Poll for up to 800ms after clicking so we never double-click the toggle button back off
+                        for (int p = 0; p < 16; p++)
+                        {
+                            await System.Threading.Tasks.Task.Delay(50);
+                            if (IsDisposed || webView.CoreWebView2 == null || simFullscreenSeq != seq || webView.CoreWebView2.ContainsFullScreenElement) return;
+                        }
                     }
-
-                    await System.Threading.Tasks.Task.Delay(250);
-                    if (IsDisposed || webView.CoreWebView2 == null || webView.CoreWebView2.ContainsFullScreenElement) return;
                 }
                 catch { }
             }
@@ -859,13 +855,14 @@ namespace WonderWatchDesktop
                         {
                             BeginInvoke((Action)(() => SetFullscreen(true)));
                         }
-                        System.Threading.Tasks.Task.Delay(5500).ContinueWith(_ =>
+                        System.Threading.Tasks.Task.Delay(8500).ContinueWith(_ =>
                         {
                             if (!IsDisposed && episodeFsTransitionSeq == tSeq && isEpisodeFsTransition)
                             {
                                 BeginInvoke((Action)(() =>
                                 {
                                     isEpisodeFsTransition = false;
+                                    simFullscreenSeq++;
                                     try
                                     {
                                         if (webView.CoreWebView2 != null)
@@ -912,6 +909,7 @@ namespace WonderWatchDesktop
                 }
                 else
                 {
+                    simFullscreenSeq++;
                     if (isEpisodeFsTransition)
                     {
                         isEpisodeFsTransition = false;
