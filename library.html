@@ -111,13 +111,13 @@
 
     .ww-toast {
       position: fixed;
-      bottom: 1.5rem;
+      bottom: max(1.25rem, env(safe-area-inset-bottom));
       left: 50%;
       transform: translateX(-50%) translateY(120%) scale(0.95);
       background: rgba(17, 18, 24, 0.95);
       border: 1px solid rgba(59, 255, 83, 0.3);
       color: #f4f4f5;
-      padding: 0.75rem 1.25rem;
+      padding: 0.7rem 1.15rem;
       border-radius: 1rem;
       font-size: 0.8rem;
       font-weight: 600;
@@ -143,6 +143,16 @@
     .ww-fade-in {
       animation: wwFadeUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
+    @media (hover: none), (pointer: coarse) {
+      .group:hover img,
+      .group:hover [class*="group-hover:scale-"],
+      [class*="hover:scale-"]:hover {
+        transform: none !important;
+      }
+      [class*="hover:"]:hover {
+        transition: none !important;
+      }
+    }
   </style>
 </head>
 <body class="bg-surface-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-black">
@@ -152,24 +162,24 @@
 
   <!-- Prominent Clear All Confirmation Modal (for Continue Watching, Watch Later, & My Favourites) -->
   <div id="clearListModal" onclick="if(event.target===this) closeClearListModal()" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[80] hidden items-center justify-center p-4">
-    <div class="relative w-full max-w-md bg-surface-900 border-2 border-red-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-red-950/50 space-y-5 text-center ring-1 ring-red-500/20">
-      <div class="w-16 h-16 rounded-2xl bg-red-500/15 border border-red-500/40 text-red-400 flex items-center justify-center mx-auto text-2xl shadow-lg shadow-red-500/20">
+    <div class="relative w-full max-w-md bg-surface-900 border-2 border-red-500/40 rounded-3xl p-5 sm:p-8 shadow-2xl shadow-red-950/50 space-y-4 sm:space-y-5 text-center ring-1 ring-red-500/20">
+      <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-red-500/15 border border-red-500/40 text-red-400 flex items-center justify-center mx-auto text-xl sm:text-2xl shadow-lg shadow-red-500/20">
         <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
-      <div class="space-y-2">
+      <div class="space-y-1.5 sm:space-y-2">
         <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-heading font-extrabold uppercase tracking-wider bg-red-500/15 border border-red-500/35 text-red-400">
           <i class="fa-solid fa-trash-can text-[9px]"></i> Irreversible Action
         </span>
-        <h3 id="clearModalTitle" class="text-xl font-heading font-black text-white">Clear All Items?</h3>
+        <h3 id="clearModalTitle" class="text-lg sm:text-xl font-heading font-black text-white">Clear All Items?</h3>
         <p id="clearModalDesc" class="text-xs sm:text-sm text-zinc-300 leading-relaxed">
           This will permanently delete all saved items in this list from this device and your cloud account.
         </p>
       </div>
-      <div class="pt-2 flex items-center gap-3">
-        <button type="button" onclick="closeClearListModal()" class="flex-1 bg-surface-800 hover:bg-surface-750 text-zinc-200 hover:text-white font-semibold py-3 px-4 rounded-xl text-xs sm:text-sm transition border border-zinc-700/70">
+      <div class="pt-1 sm:pt-2 flex items-center gap-2.5 sm:gap-3">
+        <button type="button" onclick="closeClearListModal()" class="flex-1 bg-surface-800 hover:bg-surface-750 text-zinc-200 hover:text-white font-semibold py-2.5 sm:py-3 px-4 rounded-xl text-xs sm:text-sm transition border border-zinc-700/70">
           Cancel
         </button>
-        <button type="button" id="clearModalConfirmBtn" onclick="confirmClearActiveList()" class="flex-1 bg-red-500 hover:bg-red-400 text-white font-heading font-bold py-3 px-4 rounded-xl text-xs sm:text-sm transition shadow-lg shadow-red-500/30 flex items-center justify-center gap-2">
+        <button type="button" id="clearModalConfirmBtn" onclick="confirmClearActiveList()" class="flex-1 bg-red-500 hover:bg-red-400 text-white font-heading font-bold py-2.5 sm:py-3 px-4 rounded-xl text-xs sm:text-sm transition shadow-lg shadow-red-500/30 flex items-center justify-center gap-2">
           <i class="fa-solid fa-trash-can text-xs"></i> Yes, Clear All
         </button>
       </div>
@@ -178,73 +188,75 @@
 
   <!-- Header -->
   <header class="ww-sticky-header border-b border-zinc-900/90 backdrop-blur-md sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
-    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 w-full">
-      <a href="index.html" onclick="event.preventDefault(); playSoundCue('logo'); setTimeout(() => { window.location.href = 'index.html'; }, 220);" class="flex items-center gap-2 group flex-shrink-0">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-xs shadow-lg shadow-brand-500/25 group-hover:scale-105 transition">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3 w-full">
+      <a href="index.html" onclick="event.preventDefault(); playSoundCue('logo'); setTimeout(() => { window.location.href = 'index.html'; }, 220);" class="flex items-center gap-2 group flex-shrink-0 min-w-0">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-xs shadow-lg shadow-brand-500/25 group-hover:scale-105 transition flex-shrink-0">
           <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
         </div>
         <span class="text-base sm:text-xl font-heading font-black tracking-wider text-white truncate">WONDER<span class="text-brand-400">WATCH</span></span>
       </a>
 
-      <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-        <a href="index.html" onclick="playSoundCue('nav')" class="inline-flex items-center gap-2 bg-surface-900 hover:bg-surface-800 border border-zinc-800 hover:border-zinc-700 text-zinc-200 hover:text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition">
-          <i class="fa-solid fa-arrow-left text-[11px]"></i>
-          <span>Back to Browse</span>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <a href="index.html" onclick="playSoundCue('nav')" class="w-8 h-8 sm:w-auto p-0 sm:px-3.5 sm:py-2 inline-flex items-center justify-center sm:justify-start gap-2 bg-surface-900 hover:bg-surface-800 border border-zinc-800 hover:border-brand-500/50 text-zinc-200 hover:text-white rounded-xl text-xs font-semibold transition whitespace-nowrap" title="Back to Browse">
+          <i class="fa-solid fa-arrow-left text-xs sm:text-[11px]"></i>
+          <span class="hidden sm:inline">Back to Browse</span>
         </a>
       </div>
     </div>
   </header>
 
   <!-- Main Content -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-7 sm:py-10 space-y-6 ww-fade-in">
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 sm:py-9 space-y-5 sm:space-y-6 ww-fade-in">
     <!-- Top Title, Tabs & Filter Bar -->
-    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-5 pb-4 border-b border-zinc-900">
-      <div class="space-y-3">
-        <div class="flex items-center gap-3">
-          <div id="libraryAccentBar" class="w-2.5 h-8 bg-brand-400 rounded-full"></div>
-          <div>
-            <h1 id="libraryHeading" class="text-2xl sm:text-3xl font-heading font-black tracking-tight text-white flex items-center gap-2.5">
-              <i id="libraryHeadingIcon" class="fa-solid fa-clock-rotate-left text-brand-400 text-xl"></i>
-              <span id="libraryHeadingText">Continue Watching</span>
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-5 pb-4 border-b border-zinc-900">
+      <div class="space-y-3 w-full lg:w-auto">
+        <div class="flex items-center gap-2.5 sm:gap-3">
+          <div id="libraryAccentBar" class="w-2 sm:w-2.5 h-6 sm:h-8 bg-brand-400 rounded-full flex-shrink-0"></div>
+          <div class="min-w-0">
+            <h1 id="libraryHeading" class="text-xl sm:text-3xl font-heading font-black tracking-tight text-white flex items-center gap-2 sm:gap-2.5">
+              <i id="libraryHeadingIcon" class="fa-solid fa-clock-rotate-left text-brand-400 text-base sm:text-xl"></i>
+              <span id="libraryHeadingText" class="truncate">Continue Watching</span>
             </h1>
-            <p id="librarySubtitle" class="text-xs sm:text-sm text-zinc-400 mt-0.5">Pick up right where you left off</p>
+            <p id="librarySubtitle" class="text-[11px] sm:text-sm text-zinc-400 mt-0.5">Pick up right where you left off</p>
           </div>
         </div>
 
-        <!-- Tab Switcher (Continue Watching, Watch Later, My Favourites) -->
-        <div class="inline-flex flex-wrap items-center gap-1.5 bg-surface-900 border border-zinc-800/90 p-1 rounded-2xl">
-          <button type="button" id="tabHistory" onclick="switchTab('history')" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
-            <i class="fa-solid fa-clock-rotate-left text-brand-400 text-[11px]"></i>
-            <span>Continue Watching</span>
+        <!-- Tab Switcher: 3-col full-width segmented bar on mobile, inline pills on sm+ -->
+        <div class="grid grid-cols-3 sm:inline-flex items-center gap-1 sm:gap-1.5 bg-surface-900 border border-zinc-800/90 p-1 rounded-2xl w-full sm:w-auto">
+          <button type="button" id="tabHistory" onclick="switchTab('history')" class="px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap">
+            <i class="fa-solid fa-clock-rotate-left text-brand-400 text-[10px] sm:text-[11px]"></i>
+            <span class="sm:hidden">Continue</span>
+            <span class="hidden sm:inline">Continue Watching</span>
             <span id="tabHistoryCount" class="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-surface-800 text-zinc-400">0</span>
           </button>
-          <button type="button" id="tabWatchLater" onclick="switchTab('watchlater')" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
-            <i class="fa-solid fa-bookmark text-amber-400 text-[11px]"></i>
+          <button type="button" id="tabWatchLater" onclick="switchTab('watchlater')" class="px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap">
+            <i class="fa-solid fa-bookmark text-amber-400 text-[10px] sm:text-[11px]"></i>
             <span>Watch Later</span>
             <span id="tabWatchLaterCount" class="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-surface-800 text-zinc-400">0</span>
           </button>
-          <button type="button" id="tabFavorites" onclick="switchTab('favorites')" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
-            <i class="fa-solid fa-heart text-red-500 text-[11px]"></i>
-            <span>My Favourites</span>
+          <button type="button" id="tabFavorites" onclick="switchTab('favorites')" class="px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap">
+            <i class="fa-solid fa-heart text-red-500 text-[10px] sm:text-[11px]"></i>
+            <span class="sm:hidden">Favourites</span>
+            <span class="hidden sm:inline">My Favourites</span>
             <span id="tabFavoritesCount" class="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-surface-800 text-zinc-400">0</span>
           </button>
         </div>
       </div>
 
       <!-- Filter Input + Clear All Button (available for all 3 tabs) -->
-      <div class="flex items-center gap-2.5 w-full lg:w-auto">
-        <button type="button" id="libraryClearAllBtn" onclick="promptClearActiveList()" class="hidden group inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-surface-900 hover:bg-red-500/15 border border-zinc-800 hover:border-red-500/50 text-xs font-semibold text-zinc-300 hover:text-red-400 transition flex-shrink-0" title="Clear all items in this list">
+      <div class="flex items-center gap-2 sm:gap-2.5 w-full lg:w-auto">
+        <button type="button" id="libraryClearAllBtn" onclick="promptClearActiveList()" class="hidden group inline-flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2.5 rounded-xl bg-surface-900 hover:bg-red-500/15 border border-zinc-800 hover:border-red-500/50 text-xs font-semibold text-zinc-300 hover:text-red-400 transition flex-shrink-0 whitespace-nowrap" title="Clear all items in this list">
           <i class="fa-solid fa-trash-can text-[11px] text-zinc-500 group-hover:text-red-400 transition"></i>
           <span>Clear All</span>
         </button>
-        <div class="relative flex-1 lg:w-72">
+        <div class="relative flex-1 lg:w-72 min-w-0">
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs pointer-events-none"></i>
           <input
             type="text"
             id="librarySearchInput"
-            placeholder="Filter saved anime by title or genre..."
+            placeholder="Filter by title or genre..."
             autocomplete="off"
-            class="w-full bg-surface-900 border border-zinc-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 rounded-xl pl-9 pr-9 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none transition"
+            class="w-full bg-surface-900 border border-zinc-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 rounded-xl pl-9 pr-9 py-2.5 text-[13px] sm:text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none transition"
           >
           <button type="button" id="librarySearchClear" onclick="clearLibraryFilter()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-[10px] transition" title="Clear filter">
             <i class="fa-solid fa-xmark"></i>
@@ -254,7 +266,7 @@
     </div>
 
     <!-- Library Grid -->
-    <div id="libraryGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+    <div id="libraryGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4"></div>
 
     <!-- Empty State -->
     <div id="libraryEmptyState" class="hidden py-16 px-6 text-center rounded-3xl bg-surface-900/70 border border-zinc-800/80 space-y-3">
@@ -860,10 +872,10 @@
       if (clearAllBtn) clearAllBtn.classList.toggle('hidden', sourceList.length === 0);
 
       // Update header aesthetics
-      document.getElementById('libraryAccentBar').className = `w-2.5 h-8 rounded-full ${isHist ? 'bg-brand-400' : (isFav ? 'bg-red-500' : 'bg-amber-400')}`;
+      document.getElementById('libraryAccentBar').className = `w-2 sm:w-2.5 h-6 sm:h-8 rounded-full flex-shrink-0 ${isHist ? 'bg-brand-400' : (isFav ? 'bg-red-500' : 'bg-amber-400')}`;
       document.getElementById('libraryHeadingIcon').className = isHist
-        ? 'fa-solid fa-clock-rotate-left text-brand-400 text-xl'
-        : (isFav ? 'fa-solid fa-heart text-red-500 text-xl' : 'fa-solid fa-bookmark text-amber-400 text-xl');
+        ? 'fa-solid fa-clock-rotate-left text-brand-400 text-base sm:text-xl'
+        : (isFav ? 'fa-solid fa-heart text-red-500 text-base sm:text-xl' : 'fa-solid fa-bookmark text-amber-400 text-base sm:text-xl');
       document.getElementById('libraryHeadingText').innerText = isHist ? 'Continue Watching' : (isFav ? 'My Favourites' : 'Watch Later');
       document.getElementById('librarySubtitle').innerText = isHist
         ? `${histList.length} ${histList.length === 1 ? 'anime' : 'anime'} in your watch history`
@@ -871,19 +883,20 @@
           ? `${favList.length} saved ${favList.length === 1 ? 'franchise' : 'franchises'} in your favourites`
           : `${wlList.length} saved ${wlList.length === 1 ? 'franchise' : 'franchises'} to watch next`);
 
-      // Tab button styles
+      // Tab button styles (mobile 3-col segmented bar + desktop inline pills)
       const tabHist = document.getElementById('tabHistory');
       const tabWl = document.getElementById('tabWatchLater');
       const tabFav = document.getElementById('tabFavorites');
+      const tabBase = 'px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap';
       tabHist.className = isHist
-        ? 'px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-brand-500/15 text-brand-400 border border-brand-500/35 shadow-sm'
-        : 'px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent';
+        ? `${tabBase} bg-brand-500/15 text-brand-400 border border-brand-500/35 shadow-sm`
+        : `${tabBase} text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent`;
       tabWl.className = isWl
-        ? 'px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-amber-400/15 text-amber-300 border border-amber-400/35 shadow-sm'
-        : 'px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent';
+        ? `${tabBase} bg-amber-400/15 text-amber-300 border border-amber-400/35 shadow-sm`
+        : `${tabBase} text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent`;
       tabFav.className = isFav
-        ? 'px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-red-500/15 text-red-400 border border-red-500/35 shadow-sm'
-        : 'px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent';
+        ? `${tabBase} bg-red-500/15 text-red-400 border border-red-500/35 shadow-sm`
+        : `${tabBase} text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent`;
 
       const filtered = filterQuery
         ? sourceList.filter(anime => {
