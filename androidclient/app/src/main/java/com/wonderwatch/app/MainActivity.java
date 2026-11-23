@@ -57,7 +57,7 @@ public final class MainActivity extends Activity {
     private boolean mainPageFinished = false;
     private int lastLoadProgress = 0;
     private int simFullscreenSeq = 0;
-    private boolean isEpisodeFsTransition = false;
+    private volatile boolean isEpisodeFsTransition = false;
     private int episodeFsTransitionSeq = 0;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -518,6 +518,8 @@ public final class MainActivity extends Activity {
     private final class AndroidBridge {
         @android.webkit.JavascriptInterface
         public void beginEpisodeFullscreenTransition() {
+            // Set immediately on the binder thread so exitVideoFullscreen() never races ahead and flips to portrait
+            isEpisodeFsTransition = true;
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -531,6 +533,7 @@ public final class MainActivity extends Activity {
                             public void run() {
                                 if (!isFinishing() && episodeFsTransitionSeq == tSeq && isEpisodeFsTransition) {
                                     isEpisodeFsTransition = false;
+                                    simFullscreenSeq++;
                                     if (webView != null) {
                                         webView.evaluateJavascript("if(typeof window.__wwOnNativeFullscreenReady==='function')window.__wwOnNativeFullscreenReady();", null);
                                     }
@@ -552,15 +555,15 @@ public final class MainActivity extends Activity {
                 @Override
                 public void run() {
                     final int seq = ++simFullscreenSeq;
-                    final int[] delays = new int[] { 500, 950, 1500, 2100, 2900, 3600 };
+                    final int[] delays = new int[] { 550, 1450, 2500, 3700 };
                     for (final int delay : delays) {
                         webView.postDelayed(new Runnable() {
                             @Override
                             public void run() {
                                 if (isFinishing() || webView == null || customFullscreenView != null || simFullscreenSeq != seq) return;
-                                // Query live playerFrame rect after landscape layout settles
+                                // Scroll bottom of playerFrame into the landscape viewport so the fullscreen button is on-screen
                                 webView.evaluateJavascript(
-                                    "(function(){var f=document.getElementById('playerFrame');if(!f||!window.innerWidth||!window.innerHeight)return '';var r=f.getBoundingClientRect();return (r.left/window.innerWidth)+','+(r.top/window.innerHeight)+','+(r.width/window.innerWidth)+','+(r.height/window.innerHeight);})()",
+                                    "(function(){var f=document.getElementById('playerFrame');if(!f||!window.innerWidth||!window.innerHeight)return '';try{f.scrollIntoView({block:'end',behavior:'instant'});}catch(e){}var r=f.getBoundingClientRect();return (r.left/window.innerWidth)+','+(r.top/window.innerHeight)+','+(r.width/window.innerWidth)+','+(r.height/window.innerHeight);})()",
                                     new android.webkit.ValueCallback<String>() {
                                         @Override
                                         public void onReceiveValue(String val) {
@@ -578,12 +581,24 @@ public final class MainActivity extends Activity {
                                                     } catch (Exception ignored) {}
                                                 }
                                             }
-                                            float w = webView.getWidth();
-                                            float h = webView.getHeight();
+                                            final float w = webView.getWidth();
+                                            final float h = webView.getHeight();
                                             if (w <= 0 || h <= 0 || wf <= 0 || hf <= 0) return;
-                                            float x = (lf + wf) * w - dp(22);
-                                            float y = (tf + hf) * h - dp(22);
-                                            dispatchSyntheticTap(x, y);
+
+                                            // Wake auto-hidden mobile player controls first, then tap bottom-right fullscreen button
+                                            final float wakeX = Math.max(dp(12), Math.min(w - dp(12), (lf + wf * 0.5f) * w));
+                                            final float wakeY = Math.max(dp(12), Math.min(h - dp(40), (tf + hf * 0.65f) * h));
+                                            final float fsX = Math.max(dp(12), Math.min(w - dp(10), (lf + wf) * w - dp(22)));
+                                            final float fsY = Math.max(dp(12), Math.min(h - dp(10), (tf + hf) * h - dp(22)));
+
+                                            dispatchSyntheticTap(wakeX, wakeY);
+                                            webView.postDelayed(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    if (isFinishing() || webView == null || customFullscreenView != null || simFullscreenSeq != seq) return;
+                                                    dispatchSyntheticTap(fsX, fsY);
+                                                }
+                                            }, 240);
                                         }
                                     }
                                 );
