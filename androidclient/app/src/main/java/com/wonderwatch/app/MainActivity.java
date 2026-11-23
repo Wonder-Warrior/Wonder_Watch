@@ -59,6 +59,8 @@ public final class MainActivity extends Activity {
     private int simFullscreenSeq = 0;
     private volatile boolean isEpisodeFsTransition = false;
     private int episodeFsTransitionSeq = 0;
+    private volatile long lastExitedFullscreenAt = 0L;
+    private int portraitResetSeq = 0;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -408,6 +410,7 @@ public final class MainActivity extends Activity {
         simFullscreenSeq++;
         isEpisodeFsTransition = false;
         episodeFsTransitionSeq++;
+        portraitResetSeq++;
         if (webView != null) {
             webView.evaluateJavascript("if(typeof window.__wwOnNativeFullscreenReady==='function')window.__wwOnNativeFullscreenReady();", null);
         }
@@ -425,6 +428,7 @@ public final class MainActivity extends Activity {
 
     private void exitVideoFullscreen() {
         if (customFullscreenView == null) return;
+        lastExitedFullscreenAt = android.os.SystemClock.uptimeMillis();
         WebChromeClient.CustomViewCallback cb = customViewCallback;
         fullscreenContainer.removeAllViews();
         fullscreenContainer.setVisibility(View.GONE);
@@ -437,8 +441,18 @@ public final class MainActivity extends Activity {
         }
         webView.setVisibility(View.VISIBLE);
         if (!isEpisodeFsTransition) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            setImmersiveSystemBars(false);
+            // Delay portrait reset by 450ms: if the player exited fullscreen right before firing
+            // an episode-ended/next event, beginEpisodeFullscreenTransition() cancels this cleanly.
+            final int pSeq = ++portraitResetSeq;
+            webView.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (!isFinishing() && portraitResetSeq == pSeq && !isEpisodeFsTransition && customFullscreenView == null) {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                        setImmersiveSystemBars(false);
+                    }
+                }
+            }, 450);
         }
     }
 
@@ -524,6 +538,7 @@ public final class MainActivity extends Activity {
                 @Override
                 public void run() {
                     final int tSeq = ++episodeFsTransitionSeq;
+                    portraitResetSeq++;
                     isEpisodeFsTransition = true;
                     setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
                     setImmersiveSystemBars(true);
@@ -611,7 +626,9 @@ public final class MainActivity extends Activity {
 
         @android.webkit.JavascriptInterface
         public boolean isFullscreen() {
-            return customFullscreenView != null || isEpisodeFsTransition;
+            return customFullscreenView != null
+                || isEpisodeFsTransition
+                || (android.os.SystemClock.uptimeMillis() - lastExitedFullscreenAt < 1800L);
         }
 
         private String pendingUpdateApkUrl = null;
