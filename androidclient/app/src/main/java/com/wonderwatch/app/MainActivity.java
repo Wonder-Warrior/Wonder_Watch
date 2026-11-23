@@ -57,6 +57,8 @@ public final class MainActivity extends Activity {
     private boolean mainPageFinished = false;
     private int lastLoadProgress = 0;
     private int simFullscreenSeq = 0;
+    private boolean isEpisodeFsTransition = false;
+    private int episodeFsTransitionSeq = 0;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -404,6 +406,11 @@ public final class MainActivity extends Activity {
             return;
         }
         simFullscreenSeq++;
+        isEpisodeFsTransition = false;
+        episodeFsTransitionSeq++;
+        if (webView != null) {
+            webView.evaluateJavascript("if(typeof window.__wwOnNativeFullscreenReady==='function')window.__wwOnNativeFullscreenReady();", null);
+        }
         customFullscreenView = view;
         customViewCallback = callback;
         fullscreenContainer.addView(view, new FrameLayout.LayoutParams(
@@ -429,8 +436,10 @@ public final class MainActivity extends Activity {
             } catch (Exception ignored) {}
         }
         webView.setVisibility(View.VISIBLE);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        setImmersiveSystemBars(false);
+        if (!isEpisodeFsTransition) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            setImmersiveSystemBars(false);
+        }
     }
 
     private void dispatchSyntheticTap(final float x, final float y) {
@@ -508,23 +517,76 @@ public final class MainActivity extends Activity {
 
     private final class AndroidBridge {
         @android.webkit.JavascriptInterface
+        public void beginEpisodeFullscreenTransition() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    final int tSeq = ++episodeFsTransitionSeq;
+                    isEpisodeFsTransition = true;
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                    setImmersiveSystemBars(true);
+                    if (webView != null) {
+                        webView.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (!isFinishing() && episodeFsTransitionSeq == tSeq && isEpisodeFsTransition) {
+                                    isEpisodeFsTransition = false;
+                                    if (webView != null) {
+                                        webView.evaluateJavascript("if(typeof window.__wwOnNativeFullscreenReady==='function')window.__wwOnNativeFullscreenReady();", null);
+                                    }
+                                    if (customFullscreenView == null) {
+                                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                                        setImmersiveSystemBars(false);
+                                    }
+                                }
+                            }
+                        }, 6000);
+                    }
+                }
+            });
+        }
+
+        @android.webkit.JavascriptInterface
         public void simulatePlayerFullscreen(final float leftFrac, final float topFrac, final float widthFrac, final float heightFrac) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     final int seq = ++simFullscreenSeq;
-                    final int[] delays = new int[] { 900, 1400, 2300, 2800 };
+                    final int[] delays = new int[] { 700, 1200, 2000, 2600, 3500, 4100 };
                     for (final int delay : delays) {
                         webView.postDelayed(new Runnable() {
                             @Override
                             public void run() {
                                 if (isFinishing() || webView == null || customFullscreenView != null || simFullscreenSeq != seq) return;
-                                float w = webView.getWidth();
-                                float h = webView.getHeight();
-                                if (w <= 0 || h <= 0) return;
-                                float x = (leftFrac + widthFrac) * w - dp(22);
-                                float y = (topFrac + heightFrac) * h - dp(22);
-                                dispatchSyntheticTap(x, y);
+                                // Query live playerFrame rect after landscape layout settles
+                                webView.evaluateJavascript(
+                                    "(function(){var f=document.getElementById('playerFrame');if(!f||!window.innerWidth||!window.innerHeight)return '';var r=f.getBoundingClientRect();return (r.left/window.innerWidth)+','+(r.top/window.innerHeight)+','+(r.width/window.innerWidth)+','+(r.height/window.innerHeight);})()",
+                                    new android.webkit.ValueCallback<String>() {
+                                        @Override
+                                        public void onReceiveValue(String val) {
+                                            if (isFinishing() || webView == null || customFullscreenView != null || simFullscreenSeq != seq) return;
+                                            float lf = leftFrac, tf = topFrac, wf = widthFrac, hf = heightFrac;
+                                            if (val != null) {
+                                                String cleaned = val.replace("\"", "").trim();
+                                                String[] p = cleaned.split(",");
+                                                if (p.length == 4) {
+                                                    try {
+                                                        lf = Float.parseFloat(p[0]);
+                                                        tf = Float.parseFloat(p[1]);
+                                                        wf = Float.parseFloat(p[2]);
+                                                        hf = Float.parseFloat(p[3]);
+                                                    } catch (Exception ignored) {}
+                                                }
+                                            }
+                                            float w = webView.getWidth();
+                                            float h = webView.getHeight();
+                                            if (w <= 0 || h <= 0 || wf <= 0 || hf <= 0) return;
+                                            float x = (lf + wf) * w - dp(22);
+                                            float y = (tf + hf) * h - dp(22);
+                                            dispatchSyntheticTap(x, y);
+                                        }
+                                    }
+                                );
                             }
                         }, delay);
                     }
@@ -534,7 +596,7 @@ public final class MainActivity extends Activity {
 
         @android.webkit.JavascriptInterface
         public boolean isFullscreen() {
-            return customFullscreenView != null;
+            return customFullscreenView != null || isEpisodeFsTransition;
         }
 
         @android.webkit.JavascriptInterface

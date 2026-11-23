@@ -16,6 +16,11 @@ service cloud.firestore {
       match /favorites/{docId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
+      // Watch Later subcollection
+      match /watchLater/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
   }
 }

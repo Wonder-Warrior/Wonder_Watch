@@ -314,6 +314,7 @@
 
         <!-- Desktop Nav -->
         <nav id="desktopCategoryNav" class="hidden md:flex items-center gap-1 bg-surface-900/90 border border-zinc-800/80 p-1 rounded-2xl backdrop-blur-md shadow-inner">
+          <button type="button" data-cat="watchLaterSection" onclick="smoothScrollToCategory('watchLaterSection', this)" id="navWatchLaterLink" class="cat-pill hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-bookmark text-amber-400 text-[11px]"></i> Watch Later</button>
           <button type="button" data-cat="favoritesSection" onclick="smoothScrollToCategory('favoritesSection', this)" id="navFavoritesLink" class="cat-pill hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-heart text-red-500 text-[11px]"></i> Favourites</button>
           <button type="button" data-cat="trending" onclick="smoothScrollToCategory('trending', this)" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-fire text-amber-400 text-[11px]"></i> Trending</button>
           <button type="button" data-cat="airing" onclick="smoothScrollToCategory('airing', this)" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-tower-broadcast text-brand-400 text-[11px]"></i> Airing</button>
@@ -370,6 +371,9 @@
               <button type="button" onclick="goToSection('continueWatchingSection', 'No watch history yet. Start watching something!')" class="w-full text-left px-4 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-surface-800 transition flex items-center gap-2">
                 <i class="fa-solid fa-clock-rotate-left text-zinc-400 text-xs"></i> Watch History
               </button>
+              <button type="button" onclick="goToSection('watchLaterSection', 'No anime in Watch Later yet. Tap the bookmark on an anime to save it.')" class="w-full text-left px-4 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-surface-800 transition flex items-center gap-2">
+                <i class="fa-solid fa-bookmark text-amber-400 text-xs"></i> Watch Later
+              </button>
               <button type="button" onclick="goToSection('favoritesSection', 'No favourites yet. Tap the heart on an anime to save it.')" class="w-full text-left px-4 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-surface-800 transition flex items-center gap-2">
                 <i class="fa-solid fa-heart text-red-500 text-xs"></i> My Favourites
               </button>
@@ -396,6 +400,9 @@
   <!-- Mobile Collapsible Navigation Drawer -->
   <div id="mobileNavDrawer" class="ww-mobile-drawer md:hidden bg-surface-950/96 border-b border-zinc-900 backdrop-blur-md sticky top-[53px] z-40 w-full">
     <div class="ww-mobile-drawer-inner px-4 py-2.5 space-y-1">
+      <button type="button" data-cat="watchLaterSection" onclick="smoothScrollToCategory('watchLaterSection'); closeMobileNav();" id="mobileNavWatchLaterLink" class="ww-drawer-item hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+        <i class="fa-solid fa-bookmark text-amber-400 text-xs w-4"></i> Watch Later
+      </button>
       <button type="button" data-cat="favoritesSection" onclick="smoothScrollToCategory('favoritesSection'); closeMobileNav();" id="mobileNavFavoritesLink" class="ww-drawer-item hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
         <i class="fa-solid fa-heart text-red-500 text-xs w-4"></i> My Favourites
       </button>
@@ -482,6 +489,9 @@
           <a id="heroWatchBtn" href="#" onclick="playSoundCue('watch')" class="inline-flex items-center gap-2.5 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-6 py-3.5 rounded-xl transition shadow-lg shadow-brand-500/25">
             <i class="fa-solid fa-play text-sm"></i> Watch Now
           </a>
+          <button id="heroWatchLaterBtn" onclick="toggleSpotlightWatchLater()" class="w-12 h-12 rounded-xl bg-surface-800/90 border border-zinc-700/60 hover:border-amber-400 text-zinc-300 hover:text-amber-400 flex items-center justify-center transition" title="Save to Watch Later">
+            <i class="fa-regular fa-bookmark text-base" id="heroWatchLaterIcon"></i>
+          </button>
           <button id="heroFavBtn" onclick="toggleSpotlightFavorite()" class="w-12 h-12 rounded-xl bg-surface-800/90 border border-zinc-700/60 hover:border-brand-500 text-zinc-300 hover:text-red-500 flex items-center justify-center transition" title="Save to Favourites">
             <i class="fa-regular fa-heart text-base" id="heroFavIcon"></i>
           </button>
@@ -608,9 +618,29 @@
       <div id="grid-recommended" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
     </section>
 
+    <!-- User Watch Later Section -->
+    <section id="watchLaterSection" class="hidden space-y-4">
+      <div class="flex justify-between items-center gap-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-2.5 h-6 bg-amber-400 rounded-full"></div>
+          <div>
+            <h2 class="text-lg sm:text-xl font-heading font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
+              <i class="fa-solid fa-bookmark text-amber-400 text-sm"></i> Watch Later
+            </h2>
+            <p class="text-xs text-zinc-500">Anime saved to watch next</p>
+          </div>
+        </div>
+        <a href="library.html?tab=watchlater" onclick="playSoundCue('nav')" class="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-900/90 hover:bg-amber-400/10 border border-zinc-800 hover:border-amber-400/40 text-xs font-semibold text-zinc-300 hover:text-amber-300 transition shadow-sm flex-shrink-0" title="View all Watch Later anime">
+          <span>View All <span id="watchLaterCountBadge" class="text-zinc-500 group-hover:text-amber-300/80"></span></span>
+          <i class="fa-solid fa-arrow-right text-[10px] text-zinc-500 group-hover:text-amber-300 group-hover:translate-x-0.5 transition"></i>
+        </a>
+      </div>
+      <div id="grid-watchlater" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+    </section>
+
     <!-- User Favourites Section -->
     <section id="favoritesSection" class="hidden space-y-4">
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between items-center gap-3">
         <div class="flex items-center gap-2.5">
           <div class="w-2.5 h-6 bg-red-500 rounded-full"></div>
           <div>
@@ -620,6 +650,10 @@
             <p class="text-xs text-zinc-500">Anime titles you've saved to your list</p>
           </div>
         </div>
+        <a href="library.html?tab=favorites" onclick="playSoundCue('nav')" class="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-900/90 hover:bg-red-500/10 border border-zinc-800 hover:border-red-500/40 text-xs font-semibold text-zinc-300 hover:text-red-400 transition shadow-sm flex-shrink-0" title="View all Favourites">
+          <span>View All <span id="favoritesCountBadge" class="text-zinc-500 group-hover:text-red-400/80"></span></span>
+          <i class="fa-solid fa-arrow-right text-[10px] text-zinc-500 group-hover:text-red-400 group-hover:translate-x-0.5 transition"></i>
+        </a>
       </div>
       <div id="grid-favorites" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
     </section>
@@ -907,13 +941,15 @@
     // ============================================================
     const LS_HISTORY = 'wonderwatch_history';
     const LS_FAVORITES = 'wonderwatch_favorites';
+    const LS_WATCH_LATER = 'wonderwatch_watch_later';
     const LS_OWNER = 'wonderwatch_owner'; // uid that the local copy belongs to ('' = guest)
 
     let currentUser = null;
     let explicitLogin = false; // true only when the user just logged in / signed up (controls the welcome toast)
-    let userDataCache = { history: [], favorites: [] };
+    let userDataCache = { history: [], favorites: [], watchLater: [] };
     let firestoreUnsubHistory = null;
     let firestoreUnsubFavorites = null;
+    let firestoreUnsubWatchLater = null;
 
     function readLocal(key) {
       try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { return []; }
@@ -1216,6 +1252,109 @@
       renderUserPersonalizedSections();
     }
 
+    async function removeFavoriteFromCard(id) {
+      playSoundCue('unfav');
+      await removeFavorite(id);
+      renderUserPersonalizedSections();
+      if (spotlightList.length) updateSpotlightFavButton(spotlightList[currentSpotlightIdx].id);
+      showToast('<i class="fa-regular fa-heart text-zinc-400"></i> Removed from favourites');
+    }
+
+    // --- WATCH LATER (FRANCHISE-AWARE) ---
+    function getWatchLater() {
+      return userDataCache.watchLater;
+    }
+
+    function findMatchingWatchLater(id) {
+      const numId = Number(id);
+      return userDataCache.watchLater.find(item =>
+        Number(item.id) === numId ||
+        (Array.isArray(item.franchiseIds) && item.franchiseIds.some(fid => Number(fid) === numId))
+      ) || null;
+    }
+
+    function isAnimeWatchLater(id) {
+      return Boolean(findMatchingWatchLater(id));
+    }
+
+    async function addWatchLater(anime, franchiseIds = null) {
+      const ids = Array.from(new Set([Number(anime.id), ...(Array.isArray(franchiseIds) ? franchiseIds.map(Number) : [])]));
+      const wlItem = {
+        id: anime.id,
+        idMal: anime.idMal || anime.id,
+        title: anime.title?.english || anime.title?.romaji || anime.title || 'Unknown',
+        coverImage: anime.coverImage || null,
+        episodes: anime.episodes || null,
+        averageScore: anime.averageScore || null,
+        format: anime.format || null,
+        genres: anime.genres || [],
+        franchiseIds: ids,
+        addedAt: Date.now()
+      };
+
+      const idSet = new Set(ids);
+      const removedIds = userDataCache.watchLater
+        .filter(w => idSet.has(Number(w.id)) && Number(w.id) !== Number(wlItem.id))
+        .map(w => w.id);
+      userDataCache.watchLater = userDataCache.watchLater.filter(w => !idSet.has(Number(w.id)));
+      userDataCache.watchLater.unshift(wlItem);
+      localStorage.setItem(LS_WATCH_LATER, JSON.stringify(userDataCache.watchLater));
+
+      if (currentUser) {
+        try {
+          for (const oldId of removedIds) {
+            await userDoc('watchLater').doc(String(oldId)).delete().catch(() => {});
+          }
+          await userDoc('watchLater').doc(String(anime.id)).set({
+            ...wlItem,
+            addedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch (e) {
+          console.warn('Firestore watchLater add failed:', e);
+        }
+      }
+    }
+
+    async function removeWatchLater(animeId) {
+      const match = findMatchingWatchLater(animeId);
+      const targetId = match ? match.id : animeId;
+      const numTarget = Number(targetId);
+      const numQuery = Number(animeId);
+      userDataCache.watchLater = userDataCache.watchLater.filter(w =>
+        Number(w.id) !== numTarget &&
+        Number(w.id) !== numQuery &&
+        !(Array.isArray(w.franchiseIds) && w.franchiseIds.some(fid => Number(fid) === numQuery))
+      );
+      localStorage.setItem(LS_WATCH_LATER, JSON.stringify(userDataCache.watchLater));
+
+      if (currentUser) {
+        try {
+          await userDoc('watchLater').doc(String(targetId)).delete();
+        } catch (e) {
+          console.warn('Firestore watchLater remove failed:', e);
+        }
+      }
+    }
+
+    async function toggleWatchLater(anime) {
+      const id = anime.id;
+      if (isAnimeWatchLater(id)) {
+        await removeWatchLater(id);
+      } else {
+        const resolved = await resolveFranchiseFavoriteTarget(anime);
+        await addWatchLater(resolved.parent, resolved.franchiseIds);
+      }
+      renderUserPersonalizedSections();
+    }
+
+    async function removeWatchLaterFromCard(id) {
+      playSoundCue('unfav');
+      await removeWatchLater(id);
+      renderUserPersonalizedSections();
+      if (spotlightList.length) updateSpotlightWatchLaterButton(spotlightList[currentSpotlightIdx].id);
+      showToast('<i class="fa-regular fa-bookmark text-zinc-400"></i> Removed from Watch Later');
+    }
+
     // --- REALTIME SYNC LISTENERS ---
     function startRealtimeSync() {
       if (!currentUser) return;
@@ -1263,6 +1402,27 @@
         }, err => {
           console.warn('Favorites sync error:', err);
         });
+
+      if (firestoreUnsubWatchLater) firestoreUnsubWatchLater();
+      firestoreUnsubWatchLater = userDoc('watchLater')
+        .orderBy('addedAt', 'desc')
+        .onSnapshot(snapshot => {
+          if (!currentUser || currentUser.uid !== uid) return;
+          const items = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            items.push({
+              ...data,
+              addedAt: data.addedAt?.toMillis?.() || data.addedAt || Date.now()
+            });
+          });
+          userDataCache.watchLater = items;
+          localStorage.setItem(LS_WATCH_LATER, JSON.stringify(items));
+          renderUserPersonalizedSections();
+          if (spotlightList.length) updateSpotlightWatchLaterButton(spotlightList[currentSpotlightIdx].id);
+        }, err => {
+          console.warn('WatchLater sync error:', err);
+        });
       
       const ind = document.getElementById('syncIndicator');
       ind.classList.remove('hidden');
@@ -1272,6 +1432,7 @@
     function stopRealtimeSync() {
       if (firestoreUnsubHistory) { firestoreUnsubHistory(); firestoreUnsubHistory = null; }
       if (firestoreUnsubFavorites) { firestoreUnsubFavorites(); firestoreUnsubFavorites = null; }
+      if (firestoreUnsubWatchLater) { firestoreUnsubWatchLater(); firestoreUnsubWatchLater = null; }
       const ind = document.getElementById('syncIndicator');
       ind.classList.add('hidden');
       ind.classList.remove('flex');
@@ -1286,6 +1447,7 @@
       if (owner && owner !== user.uid) {
         localStorage.removeItem(LS_HISTORY);
         localStorage.removeItem(LS_FAVORITES);
+        localStorage.removeItem(LS_WATCH_LATER);
       }
 
       const isGuestData = !owner;
@@ -1294,14 +1456,17 @@
 
       const localHistory = readLocal(LS_HISTORY);
       const localFavorites = readLocal(LS_FAVORITES);
-      if (!localHistory.length && !localFavorites.length) return;
+      const localWatchLater = readLocal(LS_WATCH_LATER);
+      if (!localHistory.length && !localFavorites.length && !localWatchLater.length) return;
 
       try {
         const histCol = db.collection('users').doc(user.uid).collection('history');
         const favCol = db.collection('users').doc(user.uid).collection('favorites');
-        const [histSnap, favSnap] = await Promise.all([histCol.get(), favCol.get()]);
+        const wlCol = db.collection('users').doc(user.uid).collection('watchLater');
+        const [histSnap, favSnap, wlSnap] = await Promise.all([histCol.get(), favCol.get(), wlCol.get()]);
         const histIds = new Set(histSnap.docs.map(d => d.id));
         const favIds = new Set(favSnap.docs.map(d => d.id));
+        const wlIds = new Set(wlSnap.docs.map(d => d.id));
 
         const batch = db.batch();
         let ops = 0;
@@ -1313,6 +1478,11 @@
         localFavorites.forEach(item => {
           if (item?.id == null || favIds.has(String(item.id))) return;
           batch.set(favCol.doc(String(item.id)), { ...item, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+          ops++;
+        });
+        localWatchLater.forEach(item => {
+          if (item?.id == null || wlIds.has(String(item.id))) return;
+          batch.set(wlCol.doc(String(item.id)), { ...item, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
           ops++;
         });
         if (ops > 0) await batch.commit();
@@ -1361,21 +1531,28 @@
           // Just logged out: wipe this account's local copy so the next visitor starts clean
           localStorage.removeItem(LS_HISTORY);
           localStorage.removeItem(LS_FAVORITES);
+          localStorage.removeItem(LS_WATCH_LATER);
           localStorage.removeItem(LS_OWNER);
           userDataCache.history = [];
           userDataCache.favorites = [];
+          userDataCache.watchLater = [];
         } else {
           // First load as a guest. Leftovers from a previous account (e.g. logged out on another page) are removed.
           if (localStorage.getItem(LS_OWNER)) {
             localStorage.removeItem(LS_HISTORY);
             localStorage.removeItem(LS_FAVORITES);
+            localStorage.removeItem(LS_WATCH_LATER);
             localStorage.removeItem(LS_OWNER);
           }
           userDataCache.history = readLocal(LS_HISTORY);
           userDataCache.favorites = readLocal(LS_FAVORITES);
+          userDataCache.watchLater = readLocal(LS_WATCH_LATER);
         }
         renderUserPersonalizedSections();
-        if (spotlightList.length) updateSpotlightFavButton(spotlightList[currentSpotlightIdx].id);
+        if (spotlightList.length) {
+          updateSpotlightFavButton(spotlightList[currentSpotlightIdx].id);
+          updateSpotlightWatchLaterButton(spotlightList[currentSpotlightIdx].id);
+        }
       }
     });
 
@@ -1914,6 +2091,7 @@
       watchBtn.href = `watch.html?id=${anilistId}&malId=${malId}&title=${encodeURIComponent(title)}&eps=${eps}`;
 
       updateSpotlightFavButton(anilistId);
+      updateSpotlightWatchLaterButton(anilistId);
     }
 
     function nextSpotlight() {
@@ -1957,7 +2135,7 @@
       startAutoSlide();
     }
 
-    // --- FAVORITES & CONTINUED WATCHING (User State) ---
+    // --- FAVORITES, WATCH LATER & CONTINUED WATCHING (User State) ---
     async function toggleSpotlightFavorite() {
       if (spotlightList.length === 0) return;
       const anime = spotlightList[currentSpotlightIdx];
@@ -1977,15 +2155,41 @@
       }
     }
 
+    async function toggleSpotlightWatchLater() {
+      if (spotlightList.length === 0) return;
+      const anime = spotlightList[currentSpotlightIdx];
+      const willBeSaved = !isAnimeWatchLater(anime.id);
+      playSoundCue(willBeSaved ? 'fav' : 'unfav');
+      await toggleWatchLater(anime);
+      updateSpotlightWatchLaterButton(anime.id);
+    }
+
+    function updateSpotlightWatchLaterButton(animeId) {
+      const wlIcon = document.getElementById('heroWatchLaterIcon');
+      if (!wlIcon) return;
+      if (isAnimeWatchLater(animeId)) {
+        wlIcon.className = "fa-solid fa-bookmark text-amber-400 text-base";
+      } else {
+        wlIcon.className = "fa-regular fa-bookmark text-base";
+      }
+    }
+
     async function renderUserPersonalizedSections() {
       const history = getHistory();
+      const watchLater = getWatchLater();
       const favorites = getFavorites();
 
       const continueSec = document.getElementById('continueWatchingSection');
       const continueGrid = document.getElementById('grid-continue');
+      const wlSec = document.getElementById('watchLaterSection');
       const favSec = document.getElementById('favoritesSection');
       const recSec = document.getElementById('recommendationsSection');
+      const wlNavLink = document.getElementById('navWatchLaterLink');
       const favNavLink = document.getElementById('navFavoritesLink');
+      const mobileWlNavLink = document.getElementById('mobileNavWatchLaterLink');
+      const mobileFavNavLink = document.getElementById('mobileNavFavoritesLink');
+      const wlCountBadge = document.getElementById('watchLaterCountBadge');
+      const favCountBadge = document.getElementById('favoritesCountBadge');
 
       // 1. Render Continue Watching
       if (history.length > 0) {
@@ -2028,22 +2232,35 @@
         continueSec.classList.add('hidden');
       }
 
-      // 2. Render Favourites
-      const mobileFavNavLink = document.getElementById('mobileNavFavoritesLink');
+      // 2. Render Watch Later (latest 6 on homepage, View All opens library.html?tab=watchlater)
+      if (watchLater.length > 0) {
+        wlSec.classList.remove('hidden');
+        if (wlNavLink) wlNavLink.classList.remove('hidden');
+        if (mobileWlNavLink) mobileWlNavLink.classList.remove('hidden');
+        if (wlCountBadge) wlCountBadge.innerText = `(${watchLater.length})`;
+        renderGrid('grid-watchlater', watchLater.slice(0, 6), { removeAction: 'watchlater' });
+      } else {
+        wlSec.classList.add('hidden');
+        if (wlNavLink) wlNavLink.classList.add('hidden');
+        if (mobileWlNavLink) mobileWlNavLink.classList.add('hidden');
+      }
+
+      // 3. Render Favourites (latest 6 on homepage, View All opens library.html?tab=favorites)
       if (favorites.length > 0) {
         favSec.classList.remove('hidden');
-        favNavLink.classList.remove('hidden');
+        if (favNavLink) favNavLink.classList.remove('hidden');
         if (mobileFavNavLink) mobileFavNavLink.classList.remove('hidden');
-        renderGrid('grid-favorites', favorites);
+        if (favCountBadge) favCountBadge.innerText = `(${favorites.length})`;
+        renderGrid('grid-favorites', favorites.slice(0, 6), { removeAction: 'favorite' });
       } else {
         favSec.classList.add('hidden');
-        favNavLink.classList.add('hidden');
+        if (favNavLink) favNavLink.classList.add('hidden');
         if (mobileFavNavLink) mobileFavNavLink.classList.add('hidden');
       }
 
-      // 3. Render Recommendations ("Anime You Might Like")
-      if (history.length > 0 || favorites.length > 0) {
-        const topItem = history[0] || favorites[0];
+      // 4. Render Recommendations ("Anime You Might Like")
+      if (history.length > 0 || watchLater.length > 0 || favorites.length > 0) {
+        const topItem = history[0] || watchLater[0] || favorites[0];
         const genre = (topItem.genres && topItem.genres[0]) || 'Action';
         recSec.classList.remove('hidden');
         try {
@@ -2066,7 +2283,7 @@
       }
     }
 
-    function renderGrid(containerId, animeList) {
+    function renderGrid(containerId, animeList, options = {}) {
       const container = document.getElementById(containerId);
       if (!container) return;
       container.innerHTML = '';
@@ -2074,6 +2291,8 @@
         container.innerHTML = `<div class="col-span-full py-8 text-center text-zinc-500 text-sm">No items found.</div>`;
         return;
       }
+
+      const removeAction = options.removeAction || null;
 
       animeList.forEach(anime => {
         const title = anime.title?.english || anime.title?.romaji || anime.title || 'Unknown Title';
@@ -2092,6 +2311,16 @@
           ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30' 
           : 'bg-zinc-800 text-zinc-400 border border-zinc-700/60';
 
+        const removeBtnHtml = removeAction === 'favorite'
+          ? `<button type="button" onclick="event.stopPropagation(); removeFavoriteFromCard(${Number(anilistId)})" class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/80 border border-zinc-700/80 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/60 flex items-center justify-center text-[11px] transition z-10 shadow-md" title="Remove from Favourites" aria-label="Remove from Favourites"><i class="fa-solid fa-xmark"></i></button>`
+          : (removeAction === 'watchlater'
+            ? `<button type="button" onclick="event.stopPropagation(); removeWatchLaterFromCard(${Number(anilistId)})" class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/80 border border-zinc-700/80 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 hover:border-amber-400/60 flex items-center justify-center text-[11px] transition z-10 shadow-md" title="Remove from Watch Later" aria-label="Remove from Watch Later"><i class="fa-solid fa-xmark"></i></button>`
+            : `<span class="absolute top-2 right-2 bg-surface-950/90 text-brand-400 text-xs font-black px-2 py-0.5 rounded-md border border-zinc-800 flex items-center gap-1"><i class="fa-solid fa-star text-[10px]"></i> ${score}</span>`);
+
+        const bottomRightHtml = removeAction
+          ? `<span class="bg-surface-950/90 text-brand-400 text-[10px] font-black px-1.5 py-0.5 rounded-md border border-zinc-800 flex items-center gap-0.5"><i class="fa-solid fa-star text-[9px]"></i> ${score}</span>`
+          : (year ? `<span class="text-zinc-400 font-normal">${year}</span>` : '');
+
         const card = document.createElement('div');
         card.className = 'group relative bg-surface-900 border border-zinc-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/60 transition-colors duration-200 flex flex-col';
         card.style.contain = 'layout style paint';
@@ -2105,13 +2334,11 @@
               <span class="bg-surface-950/90 text-[10px] font-bold px-1.5 py-0.5 rounded-md text-zinc-300 border border-zinc-800">${escapeHtml(format)}</span>
             </div>
 
-            <span class="absolute top-2 right-2 bg-surface-950/90 text-brand-400 text-xs font-black px-2 py-0.5 rounded-md border border-zinc-800 flex items-center gap-1">
-              <i class="fa-solid fa-star text-[10px]"></i> ${score}
-            </span>
+            ${removeBtnHtml}
 
             <div class="absolute bottom-2 left-2 right-2 flex justify-between items-center text-[11px] text-zinc-300 font-medium">
               <span class="bg-surface-950/90 px-2 py-0.5 rounded-md border border-zinc-800/80">EPS ${eps}</span>
-              ${year ? `<span class="text-zinc-400 font-normal">${year}</span>` : ''}
+              ${bottomRightHtml}
             </div>
           </div>
 
@@ -2520,7 +2747,9 @@
       const el = document.getElementById(sectionId);
       if (!el) return;
       if (el.classList.contains('hidden')) {
-        if (sectionId === 'favoritesSection') {
+        if (sectionId === 'watchLaterSection') {
+          showToast('<i class="fa-solid fa-bookmark text-amber-400"></i> No anime in Watch Later yet. Tap the bookmark on an anime to save it.');
+        } else if (sectionId === 'favoritesSection') {
           showToast('<i class="fa-solid fa-heart text-red-500"></i> No favourites yet. Tap the heart on an anime to save it.');
         }
         return;
@@ -2531,6 +2760,7 @@
     // Scroll spy: automatically highlight the category the user has scrolled to
     (function initCategoryScrollSpy() {
       const categorySections = [
+        'watchLaterSection',
         'favoritesSection',
         'trending',
         'airing',

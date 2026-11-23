@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <link rel="icon" type="image/x-icon" href="./favicon.ico">
+  <link rel="icon" type="image/png" sizes="128x128" href="./favicon.png">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='100%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%2322cc37'/%3E%3Cstop offset='55%25' stop-color='%233BFF53'/%3E%3Cstop offset='100%25' stop-color='%239effab'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='2' y='2' width='96' height='96' rx='26' fill='url(%23g)'/%3E%3Cpath d='M38 30 L72 50 L38 70 Z' fill='%23080a0c' stroke='%23080a0c' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="./favicon.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>My Library | WonderWatch</title>
+  <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            heading: ['"Outfit"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              300: '#9effab',
+              400: '#6aff7f',
+              500: '#3BFF53',
+              600: '#22cc37',
+            },
+            surface: {
+              750: '#20222a',
+              800: '#171821',
+              850: '#111218',
+              900: '#0b0c10',
+              950: '#050608',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    *, *::before, *::after {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    input, textarea, [contenteditable="true"] {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
+    html {
+      background-color: #050608;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: contain;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #050608;
+      -webkit-overflow-scrolling: touch;
+      touch-action: manipulation;
+    }
+    .ww-sticky-header {
+      background: rgba(5, 6, 8, 0.96);
+      box-shadow: 0 -240px 0 0 rgba(5, 6, 8, 0.98);
+      transform: translateZ(0);
+    }
+    @media (hover: none) {
+      .ww-sticky-header {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: #050608 !important;
+      }
+    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #050608; }
+    ::-webkit-scrollbar-thumb { background: #1c1d27; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2c2e3d; }
+
+    .ww-toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120%) scale(0.95);
+      background: rgba(17, 18, 24, 0.95);
+      border: 1px solid rgba(59, 255, 83, 0.3);
+      color: #f4f4f5;
+      padding: 0.75rem 1.25rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(18px);
+      z-index: 120;
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      max-width: calc(100vw - 2rem);
+    }
+    .ww-toast.show {
+      transform: translateX(-50%) translateY(0) scale(1);
+      opacity: 1;
+    }
+    @keyframes wwFadeUp {
+      from { opacity: 0; transform: translate3d(0, 12px, 0); }
+      to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+    .ww-fade-in {
+      animation: wwFadeUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-black">
+
+  <!-- Toast -->
+  <div id="toastNotif" class="ww-toast"></div>
+
+  <!-- Header -->
+  <header class="ww-sticky-header border-b border-zinc-900/90 backdrop-blur-md sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 w-full">
+      <a href="index.html" onclick="event.preventDefault(); playSoundCue('logo'); setTimeout(() => { window.location.href = 'index.html'; }, 220);" class="flex items-center gap-2 group flex-shrink-0">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-300 flex items-center justify-center text-black font-black text-xs shadow-lg shadow-brand-500/25 group-hover:scale-105 transition">
+          <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
+        </div>
+        <span class="text-base sm:text-xl font-heading font-black tracking-wider text-white truncate">WONDER<span class="text-brand-400">WATCH</span></span>
+      </a>
+
+      <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div id="syncIndicator" class="hidden items-center gap-1.5 text-[10px] text-brand-400 font-semibold">
+          <i class="fa-solid fa-cloud text-xs"></i>
+          <span class="hidden sm:inline">Synced</span>
+        </div>
+
+        <button id="soundToggleBtn" onclick="toggleSoundCues()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-surface-900 border border-zinc-800 hover:border-brand-500/50 text-brand-400 hover:text-brand-300 flex items-center justify-center text-xs transition" aria-label="Toggle UI sound effects">
+          <i class="fa-solid fa-volume-high" id="soundToggleIcon"></i>
+        </button>
+
+        <a href="index.html" onclick="playSoundCue('nav')" class="inline-flex items-center gap-2 bg-surface-900 hover:bg-surface-800 border border-zinc-800 hover:border-zinc-700 text-zinc-200 hover:text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition">
+          <i class="fa-solid fa-arrow-left text-[11px]"></i>
+          <span>Back to Browse</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-7 sm:py-10 space-y-6 ww-fade-in">
+    <!-- Top Title, Tabs & Filter Bar -->
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-5 pb-4 border-b border-zinc-900">
+      <div class="space-y-3">
+        <div class="flex items-center gap-3">
+          <div id="libraryAccentBar" class="w-2.5 h-8 bg-amber-400 rounded-full"></div>
+          <div>
+            <h1 id="libraryHeading" class="text-2xl sm:text-3xl font-heading font-black tracking-tight text-white flex items-center gap-2.5">
+              <i id="libraryHeadingIcon" class="fa-solid fa-bookmark text-amber-400 text-xl"></i>
+              <span id="libraryHeadingText">Watch Later</span>
+            </h1>
+            <p id="librarySubtitle" class="text-xs sm:text-sm text-zinc-400 mt-0.5">All anime saved to watch next</p>
+          </div>
+        </div>
+
+        <!-- Tab Switcher -->
+        <div class="inline-flex items-center gap-1.5 bg-surface-900 border border-zinc-800/90 p-1 rounded-2xl">
+          <button type="button" id="tabWatchLater" onclick="switchTab('watchlater')" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+            <i class="fa-solid fa-bookmark text-amber-400 text-[11px]"></i>
+            <span>Watch Later</span>
+            <span id="tabWatchLaterCount" class="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-surface-800 text-zinc-400">0</span>
+          </button>
+          <button type="button" id="tabFavorites" onclick="switchTab('favorites')" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+            <i class="fa-solid fa-heart text-red-500 text-[11px]"></i>
+            <span>My Favourites</span>
+            <span id="tabFavoritesCount" class="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-surface-800 text-zinc-400">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Input -->
+      <div class="relative w-full lg:w-80">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs pointer-events-none"></i>
+        <input
+          type="text"
+          id="librarySearchInput"
+          placeholder="Filter saved anime by title or genre..."
+          autocomplete="off"
+          class="w-full bg-surface-900 border border-zinc-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 rounded-xl pl-9 pr-9 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none transition"
+        >
+        <button type="button" id="librarySearchClear" onclick="clearLibraryFilter()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-[10px] transition" title="Clear filter">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Library Grid -->
+    <div id="libraryGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+
+    <!-- Empty State -->
+    <div id="libraryEmptyState" class="hidden py-16 px-6 text-center rounded-3xl bg-surface-900/70 border border-zinc-800/80 space-y-3">
+      <div id="emptyIconWrap" class="w-14 h-14 rounded-2xl bg-amber-400/10 border border-amber-400/25 text-amber-400 flex items-center justify-center mx-auto text-xl">
+        <i id="emptyIcon" class="fa-regular fa-bookmark"></i>
+      </div>
+      <h2 id="emptyTitle" class="text-lg font-heading font-bold text-white">Nothing here yet</h2>
+      <p id="emptyDesc" class="text-xs sm:text-sm text-zinc-400 max-w-md mx-auto">Tap the bookmark icon on any anime to save it to your Watch Later list.</p>
+      <div class="pt-2">
+        <a href="index.html" onclick="playSoundCue('nav')" class="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-5 py-2.5 rounded-xl text-xs transition shadow-lg shadow-brand-500/20">
+          <i class="fa-solid fa-compass"></i> Browse Anime
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-zinc-900 bg-surface-950 py-8 px-6 text-center text-zinc-500 text-xs space-y-2 mt-10">
+    <div class="text-zinc-400 font-heading font-semibold tracking-wider">WONDER<span class="text-brand-400">WATCH</span></div>
+    <p>Fast, uninterrupted HD anime streaming.</p>
+  </footer>
+
+  <script>
+    // ============================================================
+    //  FIREBASE INITIALIZATION
+    // ============================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyCzU8azrmGuXKhwZYKntnezqvXV0pv43vc",
+      authDomain: "wonderwatch-3a89a.firebaseapp.com",
+      projectId: "wonderwatch-3a89a",
+      storageBucket: "wonderwatch-3a89a.firebasestorage.app",
+      messagingSenderId: "152943296825",
+      appId: "1:152943296825:web:a499da06f13d6d9cf428e8"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+
+    // ============================================================
+    //  UI SOUND EFFECTS (uniform with index.html & watch.html)
+    // ============================================================
+    const SOUND_KEY = 'wonderwatch_sound_cues';
+    let soundEnabled = localStorage.getItem(SOUND_KEY) !== 'off';
+    let audioCtx = null;
+
+    function getAudioCtx() {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) audioCtx = new Ctx();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+
+    const primeAudio = () => {
+      try {
+        const ctx = getAudioCtx();
+        if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+      } catch (_) {}
+    };
+    ['pointerdown', 'touchstart', 'mousedown', 'keydown'].forEach(evt => {
+      window.addEventListener(evt, primeAudio, { once: true, passive: true });
+    });
+
+    let lastCueTime = 0;
+    function playSoundCue(type = 'click') {
+      if (!soundEnabled) return;
+      const nowMs = performance.now();
+      if (type !== 'type' && nowMs - lastCueTime < 35) return;
+      lastCueTime = nowMs;
+      try {
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'type') {
+          const pitch = 1800 + Math.random() * 450;
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(pitch, now);
+          osc.frequency.exponentialRampToValueAtTime(320, now + 0.022);
+          gain.gain.setValueAtTime(0.038, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.026);
+          osc.start(now);
+          osc.stop(now + 0.026);
+        } else if (type === 'logo') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+          osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.16);
+          gain.gain.setValueAtTime(0.11, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else if (type === 'open') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(380, now);
+          osc.frequency.exponentialRampToValueAtTime(740, now + 0.07);
+          gain.gain.setValueAtTime(0.11, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.10);
+          osc.start(now);
+          osc.stop(now + 0.10);
+        } else if (type === 'fav') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(780, now + 0.09);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+          osc.start(now);
+          osc.stop(now + 0.14);
+        } else if (type === 'unfav') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(540, now);
+          osc.frequency.exponentialRampToValueAtTime(340, now + 0.09);
+          gain.gain.setValueAtTime(0.10, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        } else if (type === 'nav') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(420, now);
+          osc.frequency.exponentialRampToValueAtTime(560, now + 0.06);
+          gain.gain.setValueAtTime(0.095, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(640, now);
+          osc.frequency.exponentialRampToValueAtTime(480, now + 0.045);
+          gain.gain.setValueAtTime(0.085, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+          osc.start(now);
+          osc.stop(now + 0.055);
+        }
+      } catch (_) {}
+    }
+
+    function updateSoundToggleUI() {
+      const btn = document.getElementById('soundToggleBtn');
+      const icon = document.getElementById('soundToggleIcon');
+      if (!btn || !icon) return;
+      if (soundEnabled) {
+        icon.className = 'fa-solid fa-volume-high';
+        btn.classList.add('text-brand-400', 'hover:text-brand-300');
+        btn.classList.remove('text-zinc-500', 'hover:text-zinc-300');
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark';
+        btn.classList.remove('text-brand-400', 'hover:text-brand-300');
+        btn.classList.add('text-zinc-500', 'hover:text-zinc-300');
+      }
+    }
+
+    function toggleSoundCues() {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem(SOUND_KEY, soundEnabled ? 'on' : 'off');
+      updateSoundToggleUI();
+      if (soundEnabled) playSoundCue('fav');
+      showToast(soundEnabled
+        ? '<i class="fa-solid fa-volume-high text-brand-400"></i> Unmuted website navigation'
+        : '<i class="fa-solid fa-volume-xmark text-zinc-400"></i> Muted website navigation', 2000);
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!soundEnabled) return;
+      const target = e.target?.closest?.('button, a, [role="button"], .cursor-pointer, select');
+      if (!target || target.id === 'soundToggleBtn' || target.closest?.('#soundToggleBtn')) return;
+      playSoundCue(target.tagName === 'A' ? 'nav' : 'click');
+    });
+
+    document.addEventListener('keydown', (e) => {
+      const activeTag = document.activeElement?.tagName;
+      if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
+        if (!['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)) {
+          playSoundCue('type');
+        }
+      }
+    });
+
+    updateSoundToggleUI();
+
+    // ============================================================
+    //  HELPERS & TOAST
+    // ============================================================
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    let toastTimer = null;
+    function showToast(message, duration = 2600) {
+      const toast = document.getElementById('toastNotif');
+      toast.innerHTML = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+    }
+
+    function getBestPosterUrl(anime) {
+      if (!anime) return '';
+      if (typeof anime.coverImage === 'string') return anime.coverImage;
+      return anime.coverImage?.extraLarge || anime.coverImage?.large || anime.coverImage?.medium || '';
+    }
+
+    function resolveAnimeEpisodes(anime) {
+      if (!anime) return '?';
+      if (anime.episodes && anime.episodes > 0) return anime.episodes;
+      if (anime.nextAiringEpisode?.episode > 1) return anime.nextAiringEpisode.episode - 1;
+      return '?';
+    }
+
+    // ============================================================
+    //  LIBRARY STATE & REALTIME SYNC
+    // ============================================================
+    const LS_HISTORY = 'wonderwatch_history';
+    const LS_FAVORITES = 'wonderwatch_favorites';
+    const LS_WATCH_LATER = 'wonderwatch_watch_later';
+    const LS_OWNER = 'wonderwatch_owner';
+
+    let currentUser = null;
+    let userDataCache = { favorites: [], watchLater: [] };
+    let firestoreUnsubFavorites = null;
+    let firestoreUnsubWatchLater = null;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    let activeTab = urlParams.get('tab') === 'favorites' ? 'favorites' : 'watchlater';
+    let filterQuery = '';
+
+    function readLocal(key) {
+      try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch (_) { return []; }
+    }
+
+    function userDoc(collection) {
+      if (!currentUser) return null;
+      return db.collection('users').doc(currentUser.uid).collection(collection);
+    }
+
+    function startRealtimeSync() {
+      if (!currentUser) return;
+      const uid = currentUser.uid;
+
+      if (firestoreUnsubFavorites) firestoreUnsubFavorites();
+      firestoreUnsubFavorites = userDoc('favorites')
+        .orderBy('addedAt', 'desc')
+        .onSnapshot(snapshot => {
+          if (!currentUser || currentUser.uid !== uid) return;
+          const items = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            items.push({ ...data, addedAt: data.addedAt?.toMillis?.() || data.addedAt || Date.now() });
+          });
+          userDataCache.favorites = items;
+          localStorage.setItem(LS_FAVORITES, JSON.stringify(items));
+          renderLibrary();
+        }, err => console.warn('Favorites sync error:', err));
+
+      if (firestoreUnsubWatchLater) firestoreUnsubWatchLater();
+      firestoreUnsubWatchLater = userDoc('watchLater')
+        .orderBy('addedAt', 'desc')
+        .onSnapshot(snapshot => {
+          if (!currentUser || currentUser.uid !== uid) return;
+          const items = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            items.push({ ...data, addedAt: data.addedAt?.toMillis?.() || data.addedAt || Date.now() });
+          });
+          userDataCache.watchLater = items;
+          localStorage.setItem(LS_WATCH_LATER, JSON.stringify(items));
+          renderLibrary();
+        }, err => console.warn('WatchLater sync error:', err));
+
+      const ind = document.getElementById('syncIndicator');
+      ind.classList.remove('hidden');
+      ind.classList.add('flex');
+    }
+
+    function stopRealtimeSync() {
+      if (firestoreUnsubFavorites) { firestoreUnsubFavorites(); firestoreUnsubFavorites = null; }
+      if (firestoreUnsubWatchLater) { firestoreUnsubWatchLater(); firestoreUnsubWatchLater = null; }
+      const ind = document.getElementById('syncIndicator');
+      ind.classList.add('hidden');
+      ind.classList.remove('flex');
+    }
+
+    auth.onAuthStateChanged((user) => {
+      const prevUser = currentUser;
+      currentUser = user;
+      if (user) {
+        const owner = localStorage.getItem(LS_OWNER);
+        if (owner && owner !== user.uid) {
+          localStorage.removeItem(LS_HISTORY);
+          localStorage.removeItem(LS_FAVORITES);
+          localStorage.removeItem(LS_WATCH_LATER);
+        }
+        localStorage.setItem(LS_OWNER, user.uid);
+        userDataCache.favorites = readLocal(LS_FAVORITES);
+        userDataCache.watchLater = readLocal(LS_WATCH_LATER);
+        renderLibrary();
+        startRealtimeSync();
+      } else {
+        stopRealtimeSync();
+        if (prevUser || localStorage.getItem(LS_OWNER)) {
+          localStorage.removeItem(LS_HISTORY);
+          localStorage.removeItem(LS_FAVORITES);
+          localStorage.removeItem(LS_WATCH_LATER);
+          localStorage.removeItem(LS_OWNER);
+          userDataCache.favorites = [];
+          userDataCache.watchLater = [];
+        } else {
+          userDataCache.favorites = readLocal(LS_FAVORITES);
+          userDataCache.watchLater = readLocal(LS_WATCH_LATER);
+        }
+        renderLibrary();
+      }
+    });
+
+    async function removeItem(kind, animeId) {
+      playSoundCue('unfav');
+      const numId = Number(animeId);
+      const isFav = kind === 'favorites';
+      const list = isFav ? userDataCache.favorites : userDataCache.watchLater;
+      const match = list.find(item =>
+        Number(item.id) === numId ||
+        (Array.isArray(item.franchiseIds) && item.franchiseIds.some(fid => Number(fid) === numId))
+      );
+      const targetId = match ? match.id : animeId;
+      const numTarget = Number(targetId);
+
+      const updated = list.filter(item =>
+        Number(item.id) !== numTarget &&
+        Number(item.id) !== numId &&
+        !(Array.isArray(item.franchiseIds) && item.franchiseIds.some(fid => Number(fid) === numId))
+      );
+
+      if (isFav) {
+        userDataCache.favorites = updated;
+        localStorage.setItem(LS_FAVORITES, JSON.stringify(updated));
+      } else {
+        userDataCache.watchLater = updated;
+        localStorage.setItem(LS_WATCH_LATER, JSON.stringify(updated));
+      }
+
+      renderLibrary();
+      showToast(isFav
+        ? '<i class="fa-regular fa-heart text-zinc-400"></i> Removed from favourites'
+        : '<i class="fa-regular fa-bookmark text-zinc-400"></i> Removed from Watch Later');
+
+      if (currentUser) {
+        try {
+          await userDoc(isFav ? 'favorites' : 'watchLater').doc(String(targetId)).delete();
+        } catch (e) {
+          console.warn('Cloud remove failed:', e);
+        }
+      }
+    }
+
+    // ============================================================
+    //  UI RENDERING & TAB SWITCHING
+    // ============================================================
+    function switchTab(tab) {
+      activeTab = tab === 'favorites' ? 'favorites' : 'watchlater';
+      playSoundCue('nav');
+      const nextUrl = `${window.location.pathname}?tab=${activeTab}`;
+      try { history.replaceState(null, '', nextUrl); } catch (_) {}
+      renderLibrary();
+    }
+
+    function clearLibraryFilter() {
+      const input = document.getElementById('librarySearchInput');
+      if (input) input.value = '';
+      filterQuery = '';
+      document.getElementById('librarySearchClear')?.classList.add('hidden');
+      renderLibrary();
+    }
+
+    const searchInput = document.getElementById('librarySearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        filterQuery = (e.target.value || '').trim().toLowerCase();
+        const clearBtn = document.getElementById('librarySearchClear');
+        if (clearBtn) clearBtn.classList.toggle('hidden', !filterQuery);
+        renderLibrary();
+      });
+    }
+
+    function renderLibrary() {
+      const wlList = userDataCache.watchLater || [];
+      const favList = userDataCache.favorites || [];
+
+      document.getElementById('tabWatchLaterCount').innerText = String(wlList.length);
+      document.getElementById('tabFavoritesCount').innerText = String(favList.length);
+
+      const isFav = activeTab === 'favorites';
+      document.title = `${isFav ? 'My Favourites' : 'Watch Later'} | WonderWatch`;
+
+      // Update header aesthetics
+      document.getElementById('libraryAccentBar').className = `w-2.5 h-8 rounded-full ${isFav ? 'bg-red-500' : 'bg-amber-400'}`;
+      document.getElementById('libraryHeadingIcon').className = isFav
+        ? 'fa-solid fa-heart text-red-500 text-xl'
+        : 'fa-solid fa-bookmark text-amber-400 text-xl';
+      document.getElementById('libraryHeadingText').innerText = isFav ? 'My Favourites' : 'Watch Later';
+      document.getElementById('librarySubtitle').innerText = isFav
+        ? `${favList.length} saved ${favList.length === 1 ? 'franchise' : 'franchises'} in your favourites`
+        : `${wlList.length} saved ${wlList.length === 1 ? 'franchise' : 'franchises'} to watch next`;
+
+      // Tab button styles
+      const tabWl = document.getElementById('tabWatchLater');
+      const tabFav = document.getElementById('tabFavorites');
+      tabWl.className = !isFav
+        ? 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-amber-400/15 text-amber-300 border border-amber-400/35 shadow-sm'
+        : 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent';
+      tabFav.className = isFav
+        ? 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-red-500/15 text-red-400 border border-red-500/35 shadow-sm'
+        : 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent';
+
+      const sourceList = isFav ? favList : wlList;
+      const filtered = filterQuery
+        ? sourceList.filter(anime => {
+            const title = (anime.title?.english || anime.title?.romaji || anime.title || '').toLowerCase();
+            const genres = Array.isArray(anime.genres) ? anime.genres.join(' ').toLowerCase() : '';
+            return title.includes(filterQuery) || genres.includes(filterQuery);
+          })
+        : sourceList;
+
+      const grid = document.getElementById('libraryGrid');
+      const empty = document.getElementById('libraryEmptyState');
+      grid.innerHTML = '';
+
+      if (filtered.length === 0) {
+        grid.classList.add('hidden');
+        empty.classList.remove('hidden');
+
+        const emptyIconWrap = document.getElementById('emptyIconWrap');
+        const emptyIcon = document.getElementById('emptyIcon');
+        const emptyTitle = document.getElementById('emptyTitle');
+        const emptyDesc = document.getElementById('emptyDesc');
+
+        if (filterQuery && sourceList.length > 0) {
+          emptyIconWrap.className = 'w-14 h-14 rounded-2xl bg-zinc-800/80 border border-zinc-700 text-zinc-400 flex items-center justify-center mx-auto text-xl';
+          emptyIcon.className = 'fa-solid fa-magnifying-glass';
+          emptyTitle.innerText = 'No matching anime';
+          emptyDesc.innerText = `No saved titles matched "${filterQuery}".`;
+        } else if (isFav) {
+          emptyIconWrap.className = 'w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/25 text-red-500 flex items-center justify-center mx-auto text-xl';
+          emptyIcon.className = 'fa-regular fa-heart';
+          emptyTitle.innerText = 'No favourites yet';
+          emptyDesc.innerText = 'Tap the heart icon on any anime to add its whole franchise to your favourites.';
+        } else {
+          emptyIconWrap.className = 'w-14 h-14 rounded-2xl bg-amber-400/10 border border-amber-400/25 text-amber-400 flex items-center justify-center mx-auto text-xl';
+          emptyIcon.className = 'fa-regular fa-bookmark';
+          emptyTitle.innerText = 'Your Watch Later list is empty';
+          emptyDesc.innerText = 'Tap the bookmark icon on any anime to save it here for later.';
+        }
+        return;
+      }
+
+      empty.classList.add('hidden');
+      grid.classList.remove('hidden');
+
+      filtered.forEach(anime => {
+        const title = anime.title?.english || anime.title?.romaji || anime.title || 'Unknown Title';
+        const safeTitle = escapeHtml(title);
+        const imgUrl = getBestPosterUrl(anime);
+        const eps = resolveAnimeEpisodes(anime);
+        const anilistId = anime.id;
+        const malId = anime.idMal || anime.id;
+        const score = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : 'N/A';
+        const format = anime.format || 'TV';
+        const year = anime.startDate?.year || '';
+        const isHD = format === 'MOVIE' || (year ? year >= 2000 : true);
+        const qualityTag = isHD ? 'HD' : 'SD';
+        const qualityBadgeClass = isHD
+          ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
+          : 'bg-zinc-800 text-zinc-400 border border-zinc-700/60';
+
+        const removeBtnClass = isFav
+          ? 'text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/60'
+          : 'text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 hover:border-amber-400/60';
+        const removeLabel = isFav ? 'Remove from Favourites' : 'Remove from Watch Later';
+
+        const card = document.createElement('div');
+        card.className = 'group relative bg-surface-900 border border-zinc-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/60 transition-colors duration-200 flex flex-col';
+        card.style.contain = 'layout style paint';
+        card.innerHTML = `
+          <div class="relative aspect-[3/4.2] overflow-hidden bg-surface-950">
+            <img src="${escapeHtml(imgUrl)}" alt="${safeTitle}" loading="lazy" decoding="async" class="w-full h-full object-cover md:group-hover:scale-105 md:transition-transform md:duration-300">
+            <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-surface-950/20 to-transparent opacity-85 group-hover:opacity-40 transition-opacity duration-200"></div>
+
+            <div class="absolute top-2 left-2 flex items-center gap-1">
+              <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${qualityBadgeClass}">${qualityTag}</span>
+              <span class="bg-surface-950/90 text-[10px] font-bold px-1.5 py-0.5 rounded-md text-zinc-300 border border-zinc-800">${escapeHtml(format)}</span>
+            </div>
+
+            <button type="button" onclick="event.stopPropagation(); removeItem('${isFav ? 'favorites' : 'watchlater'}', ${Number(anilistId)})" class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/80 border border-zinc-700/80 ${removeBtnClass} flex items-center justify-center text-[11px] transition z-10 shadow-md" title="${removeLabel}" aria-label="${removeLabel}">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="absolute bottom-2 left-2 right-2 flex justify-between items-center text-[11px] text-zinc-300 font-medium">
+              <span class="bg-surface-950/90 px-2 py-0.5 rounded-md border border-zinc-800/80">EPS ${eps}</span>
+              <span class="bg-surface-950/90 text-brand-400 text-[10px] font-black px-1.5 py-0.5 rounded-md border border-zinc-800 flex items-center gap-0.5">
+                <i class="fa-solid fa-star text-[9px]"></i> ${score}
+              </span>
+            </div>
+          </div>
+
+          <div class="p-3 flex flex-col justify-between flex-1">
+            <h3 class="text-xs sm:text-sm font-heading font-bold text-zinc-200 line-clamp-1 group-hover:text-brand-400 transition" title="${safeTitle}">${safeTitle}</h3>
+            <p class="text-[11px] text-zinc-500 mt-1 line-clamp-1">${escapeHtml(anime.genres?.slice(0, 2).join(' • ') || 'Anime')}</p>
+          </div>
+        `;
+
+        card.onclick = () => {
+          playSoundCue('open');
+          window.location.href = `watch.html?id=${anilistId}&malId=${malId}&title=${encodeURIComponent(title)}&eps=${eps}`;
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    // Immediate local render before Firebase auth resolves
+    if (!localStorage.getItem(LS_OWNER)) {
+      userDataCache.favorites = readLocal(LS_FAVORITES);
+      userDataCache.watchLater = readLocal(LS_WATCH_LATER);
+    }
+    renderLibrary();
+  </script>
+</body>
+</html>

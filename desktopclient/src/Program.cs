@@ -92,6 +92,8 @@ namespace WonderWatchDesktop
         private bool isFullscreen;
         private bool isAppFullscreen;
         private bool isElementFullscreen;
+        private bool isEpisodeFsTransition;
+        private int episodeFsTransitionSeq;
         private readonly System.Collections.Generic.List<CoreWebView2Frame> childFrames = new System.Collections.Generic.List<CoreWebView2Frame>();
         private int simFullscreenSeq;
         private int fullscreenEventSeq;
@@ -747,6 +749,34 @@ namespace WonderWatchDesktop
                     {
                         CheckForUpdatesAsync(true);
                     }
+                    else if (msg == "ww:fs_transition_start" || json.IndexOf("ww:fs_transition_start", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        int tSeq = ++episodeFsTransitionSeq;
+                        isEpisodeFsTransition = true;
+                        if (!IsDisposed)
+                        {
+                            BeginInvoke((Action)(() => SetFullscreen(true)));
+                        }
+                        System.Threading.Tasks.Task.Delay(6000).ContinueWith(_ =>
+                        {
+                            if (!IsDisposed && episodeFsTransitionSeq == tSeq && isEpisodeFsTransition)
+                            {
+                                BeginInvoke((Action)(() =>
+                                {
+                                    isEpisodeFsTransition = false;
+                                    try
+                                    {
+                                        if (webView.CoreWebView2 != null)
+                                        {
+                                            webView.CoreWebView2.ExecuteScriptAsync("if(typeof window.__wwOnNativeFullscreenReady==='function')window.__wwOnNativeFullscreenReady();");
+                                        }
+                                    }
+                                    catch { }
+                                    SetFullscreen(isAppFullscreen || isElementFullscreen);
+                                }));
+                            }
+                        });
+                    }
                     else if (msg == "ww:sim_fullscreen" || json.IndexOf("ww:sim_fullscreen", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         if (!IsDisposed)
@@ -763,15 +793,31 @@ namespace WonderWatchDesktop
                 isElementFullscreen = webView.CoreWebView2.ContainsFullScreenElement;
                 if (!isElementFullscreen)
                 {
-                    SetFullscreen(isAppFullscreen);
+                    if (!isEpisodeFsTransition)
+                    {
+                        SetFullscreen(isAppFullscreen);
+                    }
                 }
                 else
                 {
+                    if (isEpisodeFsTransition)
+                    {
+                        isEpisodeFsTransition = false;
+                        episodeFsTransitionSeq++;
+                        try
+                        {
+                            if (webView.CoreWebView2 != null)
+                            {
+                                webView.CoreWebView2.ExecuteScriptAsync("if(typeof window.__wwOnNativeFullscreenReady==='function')window.__wwOnNativeFullscreenReady();");
+                            }
+                        }
+                        catch { }
+                    }
                     System.Threading.Tasks.Task.Delay(50).ContinueWith(_ =>
                     {
                         if (!IsDisposed && fullscreenEventSeq == seq)
                         {
-                            BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen)));
+                            BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen || isEpisodeFsTransition)));
                         }
                     });
                 }
@@ -795,6 +841,12 @@ namespace WonderWatchDesktop
             webView.CoreWebView2.NavigationCompleted += delegate
             {
                 simFullscreenSeq++;
+                if (isEpisodeFsTransition)
+                {
+                    isEpisodeFsTransition = false;
+                    episodeFsTransitionSeq++;
+                    SetFullscreen(isAppFullscreen || isElementFullscreen);
+                }
                 if (splashPanel.Visible)
                 {
                     splashSpinner.Stop();

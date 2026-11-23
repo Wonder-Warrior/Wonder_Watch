@@ -109,9 +109,20 @@
       animation: wwPopIn 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
     .ww-player-shell:fullscreen,
-    .ww-player-shell:-webkit-full-screen {
+    .ww-player-shell:-webkit-full-screen,
+    .ww-player-shell.ww-fs-seamless {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      inset: 0 !important;
       width: 100vw !important;
       height: 100vh !important;
+      max-width: none !important;
+      max-height: none !important;
+      margin: 0 !important;
+      z-index: 99999 !important;
       border-radius: 0 !important;
       border: none !important;
       aspect-ratio: auto !important;
@@ -122,6 +133,29 @@
       width: 100% !important;
       height: 100% !important;
       border-radius: 0 !important;
+    }
+    .ww-player-shell.ww-fs-seamless iframe {
+      width: 100% !important;
+      height: calc(100vh - 1px) !important;
+      border-radius: 0 !important;
+    }
+    body.ww-fs-lock {
+      overflow: hidden !important;
+      background: #000 !important;
+    }
+    body.ww-fs-lock header,
+    body.ww-fs-lock footer,
+    body.ww-fs-lock #watchBackdropBg {
+      display: none !important;
+    }
+    body.ww-fs-lock main {
+      animation: none !important;
+      transform: none !important;
+      position: static !important;
+      z-index: auto !important;
+      max-width: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
     }
     button, a {
       transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
@@ -330,6 +364,11 @@
           
           <!-- Stream Controls & Actions -->
           <div class="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+            <!-- Watch Later toggle button -->
+            <button id="watchLaterBtn" onclick="toggleWatchLater()" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-surface-800 border border-zinc-700/60 hover:border-amber-400 text-zinc-400 hover:text-amber-400 flex items-center justify-center transition flex-shrink-0" title="Add to Watch Later">
+              <i class="fa-regular fa-bookmark text-sm" id="watchLaterIcon"></i>
+            </button>
+
             <!-- Favourite toggle button -->
             <button id="watchFavBtn" onclick="toggleWatchFavorite()" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-surface-800 border border-zinc-700/60 hover:border-red-500 text-zinc-400 hover:text-red-500 flex items-center justify-center transition flex-shrink-0" title="Add to Favourites">
               <i class="fa-regular fa-heart text-sm" id="watchFavIcon"></i>
@@ -820,6 +859,7 @@
     // ============================================================
     const LS_HISTORY = 'wonderwatch_history';
     const LS_FAVORITES = 'wonderwatch_favorites';
+    const LS_WATCH_LATER = 'wonderwatch_watch_later';
     const LS_OWNER = 'wonderwatch_owner';
 
     let currentUser = null;
@@ -920,26 +960,90 @@
       }
     }
 
+    // --- WATCH LATER ---
+    function getLocalWatchLater() { return readLocal(LS_WATCH_LATER); }
+
+    function findMatchingWatchLater(id, extraIds = []) {
+      const lookup = new Set([Number(id), ...extraIds.map(Number)].filter(n => !isNaN(n)));
+      return getLocalWatchLater().find(item => {
+        if (lookup.has(Number(item.id))) return true;
+        if (Array.isArray(item.franchiseIds) && item.franchiseIds.some(fid => lookup.has(Number(fid)))) return true;
+        return false;
+      }) || null;
+    }
+
+    function isAnimeWatchLater(id) {
+      const franchiseIds = getCurrentFranchiseIds();
+      return Boolean(findMatchingWatchLater(id, franchiseIds));
+    }
+
+    async function addWatchLater(item, franchiseIds = null) {
+      const ids = Array.from(new Set([Number(item.id), ...(Array.isArray(franchiseIds) ? franchiseIds.map(Number) : [])]));
+      const idSet = new Set(ids);
+      let list = getLocalWatchLater();
+      const removedIds = list
+        .filter(w => idSet.has(Number(w.id)) && Number(w.id) !== Number(item.id))
+        .map(w => w.id);
+      list = list.filter(w => !idSet.has(Number(w.id)));
+      const entry = { ...item, franchiseIds: ids, addedAt: Date.now() };
+      list.unshift(entry);
+      localStorage.setItem(LS_WATCH_LATER, JSON.stringify(list));
+
+      if (currentUser) {
+        try {
+          for (const oldId of removedIds) {
+            await userDoc('watchLater').doc(String(oldId)).delete().catch(() => {});
+          }
+          await userDoc('watchLater').doc(String(item.id)).set({
+            ...entry,
+            addedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch (e) { console.warn('WatchLater add failed:', e); }
+      }
+    }
+
+    async function removeWatchLater(animeId) {
+      const franchiseIds = getCurrentFranchiseIds();
+      const match = findMatchingWatchLater(animeId, franchiseIds);
+      const targetId = match ? match.id : animeId;
+      const lookup = new Set([Number(targetId), Number(animeId), ...franchiseIds.map(Number)]);
+      let list = getLocalWatchLater().filter(w =>
+        !lookup.has(Number(w.id)) &&
+        !(Array.isArray(w.franchiseIds) && w.franchiseIds.some(fid => lookup.has(Number(fid))))
+      );
+      localStorage.setItem(LS_WATCH_LATER, JSON.stringify(list));
+
+      if (currentUser) {
+        try {
+          await userDoc('watchLater').doc(String(targetId)).delete();
+        } catch (e) { console.warn('WatchLater remove failed:', e); }
+      }
+    }
+
     // Guest data -> account (only when the local copy has no owner), same rule as index.html
     async function mergeLocalDataToCloud(user) {
       const owner = localStorage.getItem(LS_OWNER);
       if (owner && owner !== user.uid) {
         localStorage.removeItem(LS_HISTORY);
         localStorage.removeItem(LS_FAVORITES);
+        localStorage.removeItem(LS_WATCH_LATER);
       }
       localStorage.setItem(LS_OWNER, user.uid);
       if (owner) return;
 
       const localHistory = getLocalHistory();
       const localFavorites = getLocalFavorites();
-      if (!localHistory.length && !localFavorites.length) return;
+      const localWatchLater = getLocalWatchLater();
+      if (!localHistory.length && !localFavorites.length && !localWatchLater.length) return;
 
       try {
         const histCol = db.collection('users').doc(user.uid).collection('history');
         const favCol = db.collection('users').doc(user.uid).collection('favorites');
-        const [histSnap, favSnap] = await Promise.all([histCol.get(), favCol.get()]);
+        const wlCol = db.collection('users').doc(user.uid).collection('watchLater');
+        const [histSnap, favSnap, wlSnap] = await Promise.all([histCol.get(), favCol.get(), wlCol.get()]);
         const histIds = new Set(histSnap.docs.map(d => d.id));
         const favIds = new Set(favSnap.docs.map(d => d.id));
+        const wlIds = new Set(wlSnap.docs.map(d => d.id));
         const batch = db.batch();
         let ops = 0;
         localHistory.slice(0, 50).forEach(item => {
@@ -950,6 +1054,11 @@
         localFavorites.forEach(item => {
           if (item?.id == null || favIds.has(String(item.id))) return;
           batch.set(favCol.doc(String(item.id)), { ...item, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+          ops++;
+        });
+        localWatchLater.forEach(item => {
+          if (item?.id == null || wlIds.has(String(item.id))) return;
+          batch.set(wlCol.doc(String(item.id)), { ...item, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
           ops++;
         });
         if (ops > 0) await batch.commit();
@@ -975,6 +1084,23 @@
       }
     }
 
+    // Pull the account's Watch Later list so the bookmark button shows the right state
+    async function loadCloudWatchLater() {
+      if (!currentUser) return;
+      try {
+        const snap = await userDoc('watchLater').get();
+        const items = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          items.push({ ...d, addedAt: d.addedAt?.toMillis?.() || d.addedAt || Date.now() });
+        });
+        items.sort((a, b) => b.addedAt - a.addedAt);
+        localStorage.setItem(LS_WATCH_LATER, JSON.stringify(items));
+      } catch (e) {
+        console.warn('Cloud watchLater load failed:', e);
+      }
+    }
+
     // ============================================================
     //  FIREBASE AUTH STATE
     // ============================================================
@@ -997,8 +1123,9 @@
         } catch (e) { /* non-critical */ }
 
         await mergeLocalDataToCloud(user);
-        await loadCloudFavorites();
+        await Promise.all([loadCloudFavorites(), loadCloudWatchLater()]);
         updateWatchFavButton();
+        updateWatchLaterButton();
         loadCloudTimestamp();
 
         if (explicitLogin) {
@@ -1013,9 +1140,11 @@
         if (prevUser || localStorage.getItem(LS_OWNER)) {
           localStorage.removeItem(LS_HISTORY);
           localStorage.removeItem(LS_FAVORITES);
+          localStorage.removeItem(LS_WATCH_LATER);
           localStorage.removeItem(LS_OWNER);
         }
         updateWatchFavButton();
+        updateWatchLaterButton();
       }
     });
 
@@ -1761,23 +1890,93 @@
 
     let pendingSimFullscreen = false;
     let pendingSimFullscreenTimer = null;
+    let isWebSeamlessFs = false;
+    let isTransitioningFs = false;
+    let isExitingWebFs = false;
+    let webFsPollTimer = null;
+    let nativeTransitionTimer = null;
+
+    setTimeout(() => {
+      document.querySelector('main')?.classList.remove('ww-fade-in');
+    }, 450);
 
     function getActiveFullscreenEl() {
       return document.fullscreenElement || document.webkitFullscreenElement || document.webkitCurrentFullScreenElement || null;
     }
 
+    function setSeamlessShellOverlay(enable) {
+      const shell = document.querySelector('.ww-player-shell');
+      if (shell) shell.classList.toggle('ww-fs-seamless', !!enable);
+      document.body.classList.toggle('ww-fs-lock', !!enable);
+    }
+
+    function stopWebFsPoll() {
+      if (webFsPollTimer) {
+        clearInterval(webFsPollTimer);
+        webFsPollTimer = null;
+      }
+    }
+
+    function startWebFsPoll() {
+      stopWebFsPoll();
+      webFsPollTimer = setInterval(() => {
+        if (!isWebSeamlessFs) {
+          stopWebFsPoll();
+          return;
+        }
+        if (isExitingWebFs || isTransitioningFs) return;
+        const fsEl = getActiveFullscreenEl();
+        const shell = document.querySelector('.ww-player-shell');
+        if (fsEl && fsEl !== shell) {
+          exitWebSeamlessFullscreen();
+        }
+      }, 100);
+    }
+
+    async function exitWebSeamlessFullscreen() {
+      if (isExitingWebFs) return;
+      isExitingWebFs = true;
+      isWebSeamlessFs = false;
+      pendingSimFullscreen = false;
+      clearTimeout(pendingSimFullscreenTimer);
+      stopWebFsPoll();
+      try {
+        if (getActiveFullscreenEl()) {
+          await new Promise(r => setTimeout(r, 60));
+        }
+        const delays = [0, 80, 160, 240];
+        for (let i = 0; i < delays.length; i++) {
+          if (delays[i] > 0) await new Promise(r => setTimeout(r, delays[i]));
+          if (!getActiveFullscreenEl()) break;
+          try {
+            if (document.exitFullscreen) await document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          } catch (_) {}
+        }
+        setSeamlessShellOverlay(false);
+      } finally {
+        setTimeout(() => { isExitingWebFs = false; }, 140);
+      }
+    }
+
+    window.__wwOnNativeFullscreenReady = function() {
+      clearTimeout(nativeTransitionTimer);
+      pendingSimFullscreen = false;
+      clearTimeout(pendingSimFullscreenTimer);
+      setSeamlessShellOverlay(false);
+    };
+
     function triggerSimulatedPlayerFullscreen() {
       if (!pendingSimFullscreen) return;
-      if (getActiveFullscreenEl()) {
-        pendingSimFullscreen = false;
-        clearTimeout(pendingSimFullscreenTimer);
-        return;
-      }
 
       const isDesktopClient = Boolean(window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function');
       const isAndroidClient = Boolean(window.WonderWatchAndroid && typeof window.WonderWatchAndroid.simulatePlayerFullscreen === 'function');
 
       if (isDesktopClient) {
+        if (getActiveFullscreenEl()) {
+          window.__wwOnNativeFullscreenReady();
+          return;
+        }
         pendingSimFullscreen = false;
         clearTimeout(pendingSimFullscreenTimer);
         try { window.chrome.webview.postMessage('ww:sim_fullscreen'); } catch (_) {}
@@ -1802,55 +2001,112 @@
         return;
       }
 
-      // Standard Web Browser: cross-origin iframes block direct DOM button clicks via Same-Origin Policy,
-      // so we attempt player postMessage fullscreen commands where supported without hijacking the page window.
+      // Standard Web Browser: keep seamless fullscreen active (native shell fullscreen or CSS seamless fallback)
       pendingSimFullscreen = false;
       clearTimeout(pendingSimFullscreenTimer);
-      try {
-        sendAniEmbedCommand('fullscreen', { fullscreen: true });
-        const frame = document.getElementById('playerFrame');
-        if (frame && frame.contentWindow) {
-          frame.contentWindow.postMessage({ type: 'fullscreen', fullscreen: true }, '*');
-          frame.contentWindow.postMessage({ command: 'fullscreen', value: true }, '*');
-        }
-      } catch (_) {}
     }
 
-    document.addEventListener('fullscreenchange', () => {
-      if (getActiveFullscreenEl()) {
-        pendingSimFullscreen = false;
-        clearTimeout(pendingSimFullscreenTimer);
+    function handleWebFullscreenSync() {
+      const isNativeClient = Boolean(
+        (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') ||
+        (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.simulatePlayerFullscreen === 'function')
+      );
+      const fsEl = getActiveFullscreenEl();
+      if (isNativeClient) {
+        if (fsEl) {
+          window.__wwOnNativeFullscreenReady();
+        }
+        return;
       }
-    });
-    document.addEventListener('webkitfullscreenchange', () => {
-      if (getActiveFullscreenEl()) {
-        pendingSimFullscreen = false;
-        clearTimeout(pendingSimFullscreenTimer);
+
+      const shell = document.querySelector('.ww-player-shell');
+      if (!fsEl) {
+        if (!isExitingWebFs && !isTransitioningFs && isWebSeamlessFs) {
+          isWebSeamlessFs = false;
+          stopWebFsPoll();
+          setSeamlessShellOverlay(false);
+        }
+        return;
+      }
+      if (isExitingWebFs || isTransitioningFs) return;
+      if (isWebSeamlessFs && fsEl !== shell) {
+        exitWebSeamlessFullscreen();
+      }
+    }
+
+    document.addEventListener('fullscreenchange', handleWebFullscreenSync);
+    document.addEventListener('webkitfullscreenchange', handleWebFullscreenSync);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isWebSeamlessFs) {
+        exitWebSeamlessFullscreen();
       }
     });
 
     async function loadPlayer(restoreFullscreen = false) {
+      const shell = document.querySelector('.ww-player-shell');
       const currentFsEl = getActiveFullscreenEl();
+      const wasShellFs = Boolean(shell && currentFsEl === shell);
+      const isDesktopClient = Boolean(window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function');
+      const isAndroidClient = Boolean(window.WonderWatchAndroid && typeof window.WonderWatchAndroid.simulatePlayerFullscreen === 'function');
       const wasAndroidFs = Boolean(
         window.WonderWatchAndroid &&
         typeof window.WonderWatchAndroid.isFullscreen === 'function' &&
         window.WonderWatchAndroid.isFullscreen()
       );
       const wasBrowserFs = Boolean(currentFsEl);
-      const shouldRestore = restoreFullscreen || wasAndroidFs || wasBrowserFs;
+      const shouldRestore = restoreFullscreen || isWebSeamlessFs || wasAndroidFs || wasBrowserFs;
 
       pendingSimFullscreen = shouldRestore;
       clearTimeout(pendingSimFullscreenTimer);
+      clearTimeout(nativeTransitionTimer);
       if (shouldRestore) {
         pendingSimFullscreenTimer = setTimeout(() => { pendingSimFullscreen = false; }, 7000);
       }
 
-      if (wasBrowserFs) {
+      if (shouldRestore) {
+        if (isDesktopClient) {
+          // Hold Desktop window in fullscreen smoothly while swapping episode and simulating GUI fullscreen click
+          setSeamlessShellOverlay(true);
+          try { window.chrome.webview.postMessage('ww:fs_transition_start'); } catch (_) {}
+          nativeTransitionTimer = setTimeout(() => setSeamlessShellOverlay(false), 6000);
+        } else if (isAndroidClient) {
+          // Hold Android landscape + immersive smoothly while swapping episode and simulating GUI tap
+          setSeamlessShellOverlay(true);
+          try {
+            if (typeof window.WonderWatchAndroid.beginEpisodeFullscreenTransition === 'function') {
+              window.WonderWatchAndroid.beginEpisodeFullscreenTransition();
+            }
+          } catch (_) {}
+          nativeTransitionTimer = setTimeout(() => setSeamlessShellOverlay(false), 6000);
+        } else {
+          // Standard Web Browser: stay seamlessly fullscreen without flashing out
+          isWebSeamlessFs = true;
+          setSeamlessShellOverlay(true);
+          startWebFsPoll();
+          if (shell && !wasShellFs) {
+            isTransitioningFs = true;
+            try {
+              const req = shell.requestFullscreen
+                ? shell.requestFullscreen()
+                : (shell.webkitRequestFullscreen ? shell.webkitRequestFullscreen() : null);
+              if (req && typeof req.then === 'function') {
+                await req.catch(() => {});
+              }
+            } catch (_) {}
+            setTimeout(() => { isTransitioningFs = false; }, 120);
+          }
+        }
+      }
+
+      // Exit old iframe's native fullscreen (unless Web already promoted fullscreen onto .ww-player-shell)
+      const postFsEl = getActiveFullscreenEl();
+      if (postFsEl && postFsEl !== shell) {
+        isTransitioningFs = true;
         try {
           if (document.exitFullscreen) await document.exitFullscreen();
           else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
         } catch (_) {}
-        await new Promise(r => setTimeout(r, 120));
+        setTimeout(() => { isTransitioningFs = false; }, 150);
       }
 
       syncAudioControlVisibility();
@@ -2318,6 +2574,61 @@
       updateWatchFavButton();
     }
 
+    function updateWatchLaterButton() {
+      const icon = document.getElementById('watchLaterIcon');
+      if (!icon) return;
+      if (isAnimeWatchLater(parseInt(animeId))) {
+        icon.className = "fa-solid fa-bookmark text-amber-400 text-sm";
+      } else {
+        icon.className = "fa-regular fa-bookmark text-sm";
+      }
+    }
+
+    async function syncFranchiseWatchLaterIdsIfNeeded() {
+      const currentId = parseInt(animeId);
+      const franchiseIds = getCurrentFranchiseIds();
+      const match = findMatchingWatchLater(currentId, franchiseIds);
+      if (!match) return;
+
+      const existingIds = new Set(
+        [Number(match.id), ...(Array.isArray(match.franchiseIds) ? match.franchiseIds.map(Number) : [])]
+      );
+      const missingAny = franchiseIds.some(fid => !existingIds.has(Number(fid)));
+      if (!missingAny) return;
+
+      const mergedIds = Array.from(new Set([...existingIds, ...franchiseIds.map(Number)]));
+      const list = getLocalWatchLater().map(w =>
+        Number(w.id) === Number(match.id) ? { ...w, franchiseIds: mergedIds } : w
+      );
+      localStorage.setItem(LS_WATCH_LATER, JSON.stringify(list));
+
+      if (currentUser) {
+        try {
+          await userDoc('watchLater').doc(String(match.id)).set({ franchiseIds: mergedIds }, { merge: true });
+        } catch (_) {}
+      }
+    }
+
+    async function toggleWatchLater() {
+      const id = parseInt(animeId);
+      const alreadySaved = isAnimeWatchLater(id);
+      playSoundCue(alreadySaved ? 'unfav' : 'fav');
+
+      if (franchiseGraphState && !franchiseGraphState.expanded) {
+        try { await ensureFullFranchiseGraphExpanded(); } catch (_) {}
+      }
+
+      if (isAnimeWatchLater(id)) {
+        await removeWatchLater(id);
+        showToast('<i class="fa-regular fa-bookmark text-zinc-400"></i> Removed from Watch Later');
+      } else {
+        const { parent, franchiseIds } = getCurrentFranchiseInfo();
+        await addWatchLater(parent, franchiseIds);
+        showToast('<i class="fa-solid fa-bookmark text-amber-400"></i> Saved to Watch Later!');
+      }
+      updateWatchLaterButton();
+    }
+
     // ============================================================
     //  SERIES DATA & FRANCHISE GROUPING
     // ============================================================
@@ -2512,6 +2823,7 @@
 
           renderSeriesRelations(media.relations?.edges, media);
           updateWatchFavButton();
+          updateWatchLaterButton();
 
           // Determine Sub/Dub availability directly from AniList voice cast (zero extra request)
           const hasEnCast = (media.enCast?.edges || []).some(e => Array.isArray(e?.voiceActors) && e.voiceActors.length > 0);
@@ -2808,6 +3120,8 @@
         }
         updateWatchFavButton();
         syncFranchiseFavoriteIdsIfNeeded();
+        updateWatchLaterButton();
+        syncFranchiseWatchLaterIdsIfNeeded();
       })();
 
       return franchiseGraphState.expandPromise;
