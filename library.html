@@ -92,6 +92,23 @@
     ::-webkit-scrollbar-thumb { background: #1c1d27; border-radius: 9999px; }
     ::-webkit-scrollbar-thumb:hover { background: #2c2e3d; }
 
+    .ww-skeleton {
+      position: relative;
+      overflow: hidden;
+      background: #14151c;
+    }
+    .ww-skeleton::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.055), transparent);
+      animation: ww-shimmer 1.4s infinite;
+    }
+    @keyframes ww-shimmer {
+      100% { transform: translateX(100%); }
+    }
+
     .ww-toast {
       position: fixed;
       bottom: 1.5rem;
@@ -133,6 +150,29 @@
   <!-- Toast -->
   <div id="toastNotif" class="ww-toast"></div>
 
+  <!-- Clear History Confirmation Modal -->
+  <div id="clearHistoryModal" onclick="if(event.target===this) closeClearHistoryModal()" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[70] hidden items-center justify-center p-4">
+    <div class="relative w-full max-w-sm bg-surface-900 border border-zinc-700/80 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-4 text-center">
+      <div class="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto text-xl shadow-lg shadow-red-500/10">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+      <div class="space-y-1.5">
+        <h3 class="text-lg font-heading font-black text-white">Clear Watch History?</h3>
+        <p class="text-xs text-zinc-400 leading-relaxed">
+          This will permanently remove your continue watching progress and saved timestamps.
+        </p>
+      </div>
+      <div class="pt-2 flex items-center gap-2.5">
+        <button type="button" onclick="closeClearHistoryModal()" class="flex-1 bg-surface-800 hover:bg-surface-750 text-zinc-300 hover:text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition border border-zinc-700/60">
+          Cancel
+        </button>
+        <button type="button" onclick="confirmClearHistory()" class="flex-1 bg-red-500 hover:bg-red-400 text-white font-heading font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-lg shadow-red-500/25">
+          Clear All
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Header -->
   <header class="ww-sticky-header border-b border-zinc-900/90 backdrop-blur-md sticky top-0 z-50 px-3 sm:px-8 py-2.5 sm:py-3 w-full">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 w-full">
@@ -167,24 +207,29 @@
     <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-5 pb-4 border-b border-zinc-900">
       <div class="space-y-3">
         <div class="flex items-center gap-3">
-          <div id="libraryAccentBar" class="w-2.5 h-8 bg-amber-400 rounded-full"></div>
+          <div id="libraryAccentBar" class="w-2.5 h-8 bg-brand-400 rounded-full"></div>
           <div>
             <h1 id="libraryHeading" class="text-2xl sm:text-3xl font-heading font-black tracking-tight text-white flex items-center gap-2.5">
-              <i id="libraryHeadingIcon" class="fa-solid fa-bookmark text-amber-400 text-xl"></i>
-              <span id="libraryHeadingText">Watch Later</span>
+              <i id="libraryHeadingIcon" class="fa-solid fa-clock-rotate-left text-brand-400 text-xl"></i>
+              <span id="libraryHeadingText">Continue Watching</span>
             </h1>
-            <p id="librarySubtitle" class="text-xs sm:text-sm text-zinc-400 mt-0.5">All anime saved to watch next</p>
+            <p id="librarySubtitle" class="text-xs sm:text-sm text-zinc-400 mt-0.5">Pick up right where you left off</p>
           </div>
         </div>
 
-        <!-- Tab Switcher -->
-        <div class="inline-flex items-center gap-1.5 bg-surface-900 border border-zinc-800/90 p-1 rounded-2xl">
-          <button type="button" id="tabWatchLater" onclick="switchTab('watchlater')" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+        <!-- Tab Switcher (Continue Watching, Watch Later, My Favourites) -->
+        <div class="inline-flex flex-wrap items-center gap-1.5 bg-surface-900 border border-zinc-800/90 p-1 rounded-2xl">
+          <button type="button" id="tabHistory" onclick="switchTab('history')" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-brand-400 text-[11px]"></i>
+            <span>Continue Watching</span>
+            <span id="tabHistoryCount" class="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-surface-800 text-zinc-400">0</span>
+          </button>
+          <button type="button" id="tabWatchLater" onclick="switchTab('watchlater')" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
             <i class="fa-solid fa-bookmark text-amber-400 text-[11px]"></i>
             <span>Watch Later</span>
             <span id="tabWatchLaterCount" class="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-surface-800 text-zinc-400">0</span>
           </button>
-          <button type="button" id="tabFavorites" onclick="switchTab('favorites')" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+          <button type="button" id="tabFavorites" onclick="switchTab('favorites')" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
             <i class="fa-solid fa-heart text-red-500 text-[11px]"></i>
             <span>My Favourites</span>
             <span id="tabFavoritesCount" class="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-surface-800 text-zinc-400">0</span>
@@ -192,19 +237,25 @@
         </div>
       </div>
 
-      <!-- Filter Input -->
-      <div class="relative w-full lg:w-80">
-        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs pointer-events-none"></i>
-        <input
-          type="text"
-          id="librarySearchInput"
-          placeholder="Filter saved anime by title or genre..."
-          autocomplete="off"
-          class="w-full bg-surface-900 border border-zinc-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 rounded-xl pl-9 pr-9 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none transition"
-        >
-        <button type="button" id="librarySearchClear" onclick="clearLibraryFilter()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-[10px] transition" title="Clear filter">
-          <i class="fa-solid fa-xmark"></i>
+      <!-- Filter Input + Clear History Button -->
+      <div class="flex items-center gap-2.5 w-full lg:w-auto">
+        <button type="button" id="libraryClearHistoryBtn" onclick="promptClearHistory()" class="hidden group inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-surface-900 hover:bg-red-500/10 border border-zinc-800 hover:border-red-500/40 text-xs font-semibold text-zinc-400 hover:text-red-400 transition flex-shrink-0" title="Clear Watch History">
+          <i class="fa-solid fa-trash-can text-[11px] text-zinc-500 group-hover:text-red-400 transition"></i>
+          <span>Clear All</span>
         </button>
+        <div class="relative flex-1 lg:w-72">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs pointer-events-none"></i>
+          <input
+            type="text"
+            id="librarySearchInput"
+            placeholder="Filter saved anime by title or genre..."
+            autocomplete="off"
+            class="w-full bg-surface-900 border border-zinc-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 rounded-xl pl-9 pr-9 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none transition"
+          >
+          <button type="button" id="librarySearchClear" onclick="clearLibraryFilter()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-[10px] transition" title="Clear filter">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -213,11 +264,11 @@
 
     <!-- Empty State -->
     <div id="libraryEmptyState" class="hidden py-16 px-6 text-center rounded-3xl bg-surface-900/70 border border-zinc-800/80 space-y-3">
-      <div id="emptyIconWrap" class="w-14 h-14 rounded-2xl bg-amber-400/10 border border-amber-400/25 text-amber-400 flex items-center justify-center mx-auto text-xl">
-        <i id="emptyIcon" class="fa-regular fa-bookmark"></i>
+      <div id="emptyIconWrap" class="w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/25 text-brand-400 flex items-center justify-center mx-auto text-xl">
+        <i id="emptyIcon" class="fa-solid fa-clock-rotate-left"></i>
       </div>
       <h2 id="emptyTitle" class="text-lg font-heading font-bold text-white">Nothing here yet</h2>
-      <p id="emptyDesc" class="text-xs sm:text-sm text-zinc-400 max-w-md mx-auto">Tap the bookmark icon on any anime to save it to your Watch Later list.</p>
+      <p id="emptyDesc" class="text-xs sm:text-sm text-zinc-400 max-w-md mx-auto">Start watching an anime and it will appear here automatically.</p>
       <div class="pt-2">
         <a href="index.html" onclick="playSoundCue('nav')" class="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold px-5 py-2.5 rounded-xl text-xs transition shadow-lg shadow-brand-500/20">
           <i class="fa-solid fa-compass"></i> Browse Anime
@@ -417,7 +468,7 @@
     function getBestPosterUrl(anime) {
       if (!anime) return '';
       if (typeof anime.coverImage === 'string') return anime.coverImage;
-      return anime.coverImage?.extraLarge || anime.coverImage?.large || anime.coverImage?.medium || '';
+      return anime.coverImage?.extraLarge || anime.coverImage?.large || anime.coverImage?.medium || anime.img || '';
     }
 
     function resolveAnimeEpisodes(anime) {
@@ -425,6 +476,16 @@
       if (anime.episodes && anime.episodes > 0) return anime.episodes;
       if (anime.nextAiringEpisode?.episode > 1) return anime.nextAiringEpisode.episode - 1;
       return '?';
+    }
+
+    async function fetchAniList(query, variables = {}) {
+      const res = await fetch('https://graphql.anilist.co', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ query, variables })
+      });
+      const json = await res.json();
+      return json?.data || null;
     }
 
     // ============================================================
@@ -436,12 +497,16 @@
     const LS_OWNER = 'wonderwatch_owner';
 
     let currentUser = null;
-    let userDataCache = { favorites: [], watchLater: [] };
+    let userDataCache = { history: [], favorites: [], watchLater: [] };
+    let firestoreUnsubHistory = null;
     let firestoreUnsubFavorites = null;
     let firestoreUnsubWatchLater = null;
 
     const urlParams = new URLSearchParams(window.location.search);
-    let activeTab = urlParams.get('tab') === 'favorites' ? 'favorites' : 'watchlater';
+    const rawTab = (urlParams.get('tab') || '').toLowerCase();
+    let activeTab = (rawTab === 'history' || rawTab === 'continue')
+      ? 'history'
+      : (rawTab === 'favorites' ? 'favorites' : 'watchlater');
     let filterQuery = '';
 
     function readLocal(key) {
@@ -456,6 +521,22 @@
     function startRealtimeSync() {
       if (!currentUser) return;
       const uid = currentUser.uid;
+
+      if (firestoreUnsubHistory) firestoreUnsubHistory();
+      firestoreUnsubHistory = userDoc('history')
+        .orderBy('updatedAt', 'desc')
+        .limit(50)
+        .onSnapshot(snapshot => {
+          if (!currentUser || currentUser.uid !== uid) return;
+          const items = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            items.push({ ...data, updatedAt: data.updatedAt?.toMillis?.() || data.updatedAt || Date.now() });
+          });
+          userDataCache.history = items;
+          localStorage.setItem(LS_HISTORY, JSON.stringify(items));
+          renderLibrary();
+        }, err => console.warn('History sync error:', err));
 
       if (firestoreUnsubFavorites) firestoreUnsubFavorites();
       firestoreUnsubFavorites = userDoc('favorites')
@@ -493,6 +574,7 @@
     }
 
     function stopRealtimeSync() {
+      if (firestoreUnsubHistory) { firestoreUnsubHistory(); firestoreUnsubHistory = null; }
       if (firestoreUnsubFavorites) { firestoreUnsubFavorites(); firestoreUnsubFavorites = null; }
       if (firestoreUnsubWatchLater) { firestoreUnsubWatchLater(); firestoreUnsubWatchLater = null; }
       const ind = document.getElementById('syncIndicator');
@@ -511,6 +593,7 @@
           localStorage.removeItem(LS_WATCH_LATER);
         }
         localStorage.setItem(LS_OWNER, user.uid);
+        userDataCache.history = readLocal(LS_HISTORY);
         userDataCache.favorites = readLocal(LS_FAVORITES);
         userDataCache.watchLater = readLocal(LS_WATCH_LATER);
         renderLibrary();
@@ -522,9 +605,11 @@
           localStorage.removeItem(LS_FAVORITES);
           localStorage.removeItem(LS_WATCH_LATER);
           localStorage.removeItem(LS_OWNER);
+          userDataCache.history = [];
           userDataCache.favorites = [];
           userDataCache.watchLater = [];
         } else {
+          userDataCache.history = readLocal(LS_HISTORY);
           userDataCache.favorites = readLocal(LS_FAVORITES);
           userDataCache.watchLater = readLocal(LS_WATCH_LATER);
         }
@@ -532,9 +617,119 @@
       }
     });
 
+    // Self-heal missing thumbnails or metadata saved before AniList resolved
+    const hydratedIdsAttempted = new Set();
+    let hydrationInFlight = false;
+
+    async function hydrateMissingLibraryMetadata() {
+      if (hydrationInFlight) return;
+      const missingIds = new Set();
+      const checkItem = (item, isHistory) => {
+        if (!item || !item.id) return;
+        const numId = Number(item.id);
+        if (!numId || hydratedIdsAttempted.has(numId)) return;
+        const poster = isHistory ? (item.img || getBestPosterUrl(item)) : getBestPosterUrl(item);
+        if (!poster || (!isHistory && (!item.averageScore || !item.format || !Array.isArray(item.genres) || item.genres.length === 0))) {
+          missingIds.add(numId);
+        }
+      };
+      userDataCache.history.forEach(item => checkItem(item, true));
+      userDataCache.watchLater.forEach(item => checkItem(item, false));
+      userDataCache.favorites.forEach(item => checkItem(item, false));
+
+      if (missingIds.size === 0) return;
+      const batch = Array.from(missingIds).slice(0, 25);
+      batch.forEach(id => hydratedIdsAttempted.add(id));
+      hydrationInFlight = true;
+
+      try {
+        const q = `
+          query ($ids: [Int]) {
+            Page(perPage: 25) {
+              media(id_in: $ids, type: ANIME) {
+                id idMal title { romaji english } coverImage { extraLarge large medium }
+                episodes nextAiringEpisode { episode } averageScore format genres startDate { year }
+              }
+            }
+          }
+        `;
+        const data = await fetchAniList(q, { ids: batch });
+        const list = data?.Page?.media || [];
+        if (!list.length) return;
+        const byId = new Map(list.map(m => [Number(m.id), m]));
+
+        let histChanged = false;
+        let wlChanged = false;
+        let favChanged = false;
+
+        userDataCache.history = userDataCache.history.map(item => {
+          const m = byId.get(Number(item.id));
+          if (!m) return item;
+          const poster = m.coverImage?.extraLarge || m.coverImage?.large || m.coverImage?.medium || '';
+          if (poster && !item.img) {
+            histChanged = true;
+            const patched = { ...item, img: poster, genres: (item.genres && item.genres.length) ? item.genres : (m.genres || []) };
+            if (currentUser) userDoc('history').doc(String(item.id)).set({ img: poster, genres: patched.genres }, { merge: true }).catch(() => {});
+            return patched;
+          }
+          return item;
+        });
+
+        const patchEntry = (item, col) => {
+          const m = byId.get(Number(item.id));
+          if (!m) return { item, changed: false };
+          if (getBestPosterUrl(item) && item.averageScore && item.format && Array.isArray(item.genres) && item.genres.length > 0) {
+            return { item, changed: false };
+          }
+          const patch = {
+            coverImage: m.coverImage || item.coverImage || null,
+            averageScore: m.averageScore || item.averageScore || null,
+            format: m.format || item.format || null,
+            genres: (m.genres && m.genres.length) ? m.genres : (item.genres || []),
+            episodes: m.episodes || item.episodes || null,
+            startDate: m.startDate || item.startDate || null
+          };
+          if (currentUser) userDoc(col).doc(String(item.id)).set(patch, { merge: true }).catch(() => {});
+          return { item: { ...item, ...patch }, changed: true };
+        };
+
+        userDataCache.watchLater = userDataCache.watchLater.map(item => {
+          const r = patchEntry(item, 'watchLater');
+          if (r.changed) wlChanged = true;
+          return r.item;
+        });
+
+        userDataCache.favorites = userDataCache.favorites.map(item => {
+          const r = patchEntry(item, 'favorites');
+          if (r.changed) favChanged = true;
+          return r.item;
+        });
+
+        if (histChanged) localStorage.setItem(LS_HISTORY, JSON.stringify(userDataCache.history));
+        if (wlChanged) localStorage.setItem(LS_WATCH_LATER, JSON.stringify(userDataCache.watchLater));
+        if (favChanged) localStorage.setItem(LS_FAVORITES, JSON.stringify(userDataCache.favorites));
+        if (histChanged || wlChanged || favChanged) renderLibrary();
+      } catch (_) {
+      } finally {
+        hydrationInFlight = false;
+      }
+    }
+
     async function removeItem(kind, animeId) {
       playSoundCue('unfav');
       const numId = Number(animeId);
+
+      if (kind === 'history') {
+        userDataCache.history = userDataCache.history.filter(item => Number(item.id) !== numId);
+        localStorage.setItem(LS_HISTORY, JSON.stringify(userDataCache.history));
+        renderLibrary();
+        showToast('<i class="fa-solid fa-xmark text-zinc-300"></i> Removed from watch history');
+        if (currentUser) {
+          try { await userDoc('history').doc(String(animeId)).delete(); } catch (_) {}
+        }
+        return;
+      }
+
       const isFav = kind === 'favorites';
       const list = isFav ? userDataCache.favorites : userDataCache.watchLater;
       const match = list.find(item =>
@@ -572,11 +767,42 @@
       }
     }
 
+    function promptClearHistory() {
+      playSoundCue('click');
+      const modal = document.getElementById('clearHistoryModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeClearHistoryModal() {
+      playSoundCue('click');
+      const modal = document.getElementById('clearHistoryModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function confirmClearHistory() {
+      closeClearHistoryModal();
+      userDataCache.history = [];
+      localStorage.removeItem(LS_HISTORY);
+      if (currentUser) {
+        try {
+          const batch = db.batch();
+          const snap = await userDoc('history').get();
+          snap.forEach(doc => batch.delete(doc.ref));
+          await batch.commit();
+        } catch (_) {}
+      }
+      renderLibrary();
+      playSoundCue('unfav');
+      showToast('<i class="fa-solid fa-trash-can text-red-400"></i> Watch history cleared');
+    }
+
     // ============================================================
     //  UI RENDERING & TAB SWITCHING
     // ============================================================
     function switchTab(tab) {
-      activeTab = tab === 'favorites' ? 'favorites' : 'watchlater';
+      activeTab = (tab === 'history' || tab === 'favorites') ? tab : 'watchlater';
       playSoundCue('nav');
       const nextUrl = `${window.location.pathname}?tab=${activeTab}`;
       try { history.replaceState(null, '', nextUrl); } catch (_) {}
@@ -602,36 +828,50 @@
     }
 
     function renderLibrary() {
+      const histList = userDataCache.history || [];
       const wlList = userDataCache.watchLater || [];
       const favList = userDataCache.favorites || [];
 
+      document.getElementById('tabHistoryCount').innerText = String(histList.length);
       document.getElementById('tabWatchLaterCount').innerText = String(wlList.length);
       document.getElementById('tabFavoritesCount').innerText = String(favList.length);
 
+      const isHist = activeTab === 'history';
       const isFav = activeTab === 'favorites';
-      document.title = `${isFav ? 'My Favourites' : 'Watch Later'} | WonderWatch`;
+      const isWl = activeTab === 'watchlater';
+
+      document.title = `${isHist ? 'Continue Watching' : (isFav ? 'My Favourites' : 'Watch Later')} | WonderWatch`;
+
+      const clearHistBtn = document.getElementById('libraryClearHistoryBtn');
+      if (clearHistBtn) clearHistBtn.classList.toggle('hidden', !(isHist && histList.length > 0));
 
       // Update header aesthetics
-      document.getElementById('libraryAccentBar').className = `w-2.5 h-8 rounded-full ${isFav ? 'bg-red-500' : 'bg-amber-400'}`;
-      document.getElementById('libraryHeadingIcon').className = isFav
-        ? 'fa-solid fa-heart text-red-500 text-xl'
-        : 'fa-solid fa-bookmark text-amber-400 text-xl';
-      document.getElementById('libraryHeadingText').innerText = isFav ? 'My Favourites' : 'Watch Later';
-      document.getElementById('librarySubtitle').innerText = isFav
-        ? `${favList.length} saved ${favList.length === 1 ? 'franchise' : 'franchises'} in your favourites`
-        : `${wlList.length} saved ${wlList.length === 1 ? 'franchise' : 'franchises'} to watch next`;
+      document.getElementById('libraryAccentBar').className = `w-2.5 h-8 rounded-full ${isHist ? 'bg-brand-400' : (isFav ? 'bg-red-500' : 'bg-amber-400')}`;
+      document.getElementById('libraryHeadingIcon').className = isHist
+        ? 'fa-solid fa-clock-rotate-left text-brand-400 text-xl'
+        : (isFav ? 'fa-solid fa-heart text-red-500 text-xl' : 'fa-solid fa-bookmark text-amber-400 text-xl');
+      document.getElementById('libraryHeadingText').innerText = isHist ? 'Continue Watching' : (isFav ? 'My Favourites' : 'Watch Later');
+      document.getElementById('librarySubtitle').innerText = isHist
+        ? `${histList.length} ${histList.length === 1 ? 'anime' : 'anime'} in your watch history`
+        : (isFav
+          ? `${favList.length} saved ${favList.length === 1 ? 'franchise' : 'franchises'} in your favourites`
+          : `${wlList.length} saved ${wlList.length === 1 ? 'franchise' : 'franchises'} to watch next`);
 
       // Tab button styles
+      const tabHist = document.getElementById('tabHistory');
       const tabWl = document.getElementById('tabWatchLater');
       const tabFav = document.getElementById('tabFavorites');
-      tabWl.className = !isFav
-        ? 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-amber-400/15 text-amber-300 border border-amber-400/35 shadow-sm'
-        : 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent';
+      tabHist.className = isHist
+        ? 'px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-brand-500/15 text-brand-400 border border-brand-500/35 shadow-sm'
+        : 'px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent';
+      tabWl.className = isWl
+        ? 'px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-amber-400/15 text-amber-300 border border-amber-400/35 shadow-sm'
+        : 'px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent';
       tabFav.className = isFav
-        ? 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-red-500/15 text-red-400 border border-red-500/35 shadow-sm'
-        : 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent';
+        ? 'px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-red-500/15 text-red-400 border border-red-500/35 shadow-sm'
+        : 'px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-surface-800/80 border border-transparent';
 
-      const sourceList = isFav ? favList : wlList;
+      const sourceList = isHist ? histList : (isFav ? favList : wlList);
       const filtered = filterQuery
         ? sourceList.filter(anime => {
             const title = (anime.title?.english || anime.title?.romaji || anime.title || '').toLowerCase();
@@ -658,6 +898,11 @@
           emptyIcon.className = 'fa-solid fa-magnifying-glass';
           emptyTitle.innerText = 'No matching anime';
           emptyDesc.innerText = `No saved titles matched "${filterQuery}".`;
+        } else if (isHist) {
+          emptyIconWrap.className = 'w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/25 text-brand-400 flex items-center justify-center mx-auto text-xl';
+          emptyIcon.className = 'fa-solid fa-clock-rotate-left';
+          emptyTitle.innerText = 'No watch history yet';
+          emptyDesc.innerText = 'Start watching any anime and your episode progress and timestamps will show up here.';
         } else if (isFav) {
           emptyIconWrap.className = 'w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/25 text-red-500 flex items-center justify-center mx-auto text-xl';
           emptyIcon.className = 'fa-regular fa-heart';
@@ -675,68 +920,117 @@
       empty.classList.add('hidden');
       grid.classList.remove('hidden');
 
-      filtered.forEach(anime => {
-        const title = anime.title?.english || anime.title?.romaji || anime.title || 'Unknown Title';
-        const safeTitle = escapeHtml(title);
-        const imgUrl = getBestPosterUrl(anime);
-        const eps = resolveAnimeEpisodes(anime);
-        const anilistId = anime.id;
-        const malId = anime.idMal || anime.id;
-        const score = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : 'N/A';
-        const format = anime.format || 'TV';
-        const year = anime.startDate?.year || '';
-        const isHD = format === 'MOVIE' || (year ? year >= 2000 : true);
-        const qualityTag = isHD ? 'HD' : 'SD';
-        const qualityBadgeClass = isHD
-          ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
-          : 'bg-zinc-800 text-zinc-400 border border-zinc-700/60';
+      if (isHist) {
+        filtered.forEach(item => {
+          const title = item.title || 'Unknown Title';
+          const safeTitle = escapeHtml(title);
+          const posterUrl = item.img || getBestPosterUrl(item);
+          const timeSec = item.timestamp || 0;
+          const mins = Math.floor(timeSec / 60);
+          const secs = Math.floor(timeSec % 60);
+          const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+          const posterHtml = posterUrl
+            ? `<img src="${escapeHtml(posterUrl)}" alt="${safeTitle}" loading="lazy" decoding="async" class="w-full h-full object-cover md:group-hover:scale-105 md:transition-transform md:duration-300">`
+            : `<div class="w-full h-full ww-skeleton"></div>`;
 
-        const removeBtnClass = isFav
-          ? 'text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/60'
-          : 'text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 hover:border-amber-400/60';
-        const removeLabel = isFav ? 'Remove from Favourites' : 'Remove from Watch Later';
+          const card = document.createElement('div');
+          card.className = 'group relative bg-surface-900 border border-zinc-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/60 transition-colors duration-200 flex flex-col';
+          card.style.contain = 'layout style paint';
+          card.innerHTML = `
+            <div class="relative aspect-[3/4.2] overflow-hidden bg-surface-950">
+              ${posterHtml}
+              <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-transparent to-transparent opacity-80"></div>
 
-        const card = document.createElement('div');
-        card.className = 'group relative bg-surface-900 border border-zinc-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/60 transition-colors duration-200 flex flex-col';
-        card.style.contain = 'layout style paint';
-        card.innerHTML = `
-          <div class="relative aspect-[3/4.2] overflow-hidden bg-surface-950">
-            <img src="${escapeHtml(imgUrl)}" alt="${safeTitle}" loading="lazy" decoding="async" class="w-full h-full object-cover md:group-hover:scale-105 md:transition-transform md:duration-300">
-            <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-surface-950/20 to-transparent opacity-85 group-hover:opacity-40 transition-opacity duration-200"></div>
-
-            <div class="absolute top-2 left-2 flex items-center gap-1">
-              <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${qualityBadgeClass}">${qualityTag}</span>
-              <span class="bg-surface-950/90 text-[10px] font-bold px-1.5 py-0.5 rounded-md text-zinc-300 border border-zinc-800">${escapeHtml(format)}</span>
-            </div>
-
-            <button type="button" onclick="event.stopPropagation(); removeItem('${isFav ? 'favorites' : 'watchlater'}', ${Number(anilistId)})" class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/80 border border-zinc-700/80 ${removeBtnClass} flex items-center justify-center text-[11px] transition z-10 shadow-md" title="${removeLabel}" aria-label="${removeLabel}">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-
-            <div class="absolute bottom-2 left-2 right-2 flex justify-between items-center text-[11px] text-zinc-300 font-medium">
-              <span class="bg-surface-950/90 px-2 py-0.5 rounded-md border border-zinc-800/80">EPS ${eps}</span>
-              <span class="bg-surface-950/90 text-brand-400 text-[10px] font-black px-1.5 py-0.5 rounded-md border border-zinc-800 flex items-center gap-0.5">
-                <i class="fa-solid fa-star text-[9px]"></i> ${score}
+              <span class="absolute top-2 left-2 bg-brand-500 text-black text-[10px] font-black uppercase px-2 py-0.5 rounded-md">EP ${escapeHtml(item.episode || 1)}</span>
+              <button type="button" onclick="event.stopPropagation(); removeItem('history', ${Number(item.id)})" class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/80 border border-zinc-700/80 text-zinc-300 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/60 flex items-center justify-center text-xs transition z-10 shadow-md" title="Remove from history" aria-label="Remove from history">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+              <span class="absolute bottom-2 left-2 bg-surface-950/90 text-brand-400 text-[10px] font-bold px-2 py-0.5 rounded-md border border-zinc-800">
+                <i class="fa-solid fa-clock text-[9px]"></i> ${timeStr}
               </span>
             </div>
-          </div>
 
-          <div class="p-3 flex flex-col justify-between flex-1">
-            <h3 class="text-xs sm:text-sm font-heading font-bold text-zinc-200 line-clamp-1 group-hover:text-brand-400 transition" title="${safeTitle}">${safeTitle}</h3>
-            <p class="text-[11px] text-zinc-500 mt-1 line-clamp-1">${escapeHtml(anime.genres?.slice(0, 2).join(' • ') || 'Anime')}</p>
-          </div>
-        `;
+            <div class="p-3 flex flex-col justify-between flex-1">
+              <h3 class="text-xs sm:text-sm font-heading font-bold text-zinc-200 line-clamp-1 group-hover:text-brand-400 transition" title="${safeTitle}">${safeTitle}</h3>
+              <p class="text-[11px] text-zinc-500 mt-1 line-clamp-1">Resume Episode ${escapeHtml(item.episode || 1)}</p>
+            </div>
+          `;
+          card.onclick = () => {
+            playSoundCue('open');
+            window.location.href = `watch.html?id=${item.id}&malId=${item.malId}&title=${encodeURIComponent(title)}&eps=${item.eps || 12}&ep=${item.episode}&time=${timeSec}`;
+          };
+          grid.appendChild(card);
+        });
+      } else {
+        filtered.forEach(anime => {
+          const title = anime.title?.english || anime.title?.romaji || anime.title || 'Unknown Title';
+          const safeTitle = escapeHtml(title);
+          const imgUrl = getBestPosterUrl(anime);
+          const eps = resolveAnimeEpisodes(anime);
+          const anilistId = anime.id;
+          const malId = anime.idMal || anime.id;
+          const score = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : 'N/A';
+          const format = anime.format || 'TV';
+          const year = anime.startDate?.year || '';
+          const isHD = format === 'MOVIE' || (year ? year >= 2000 : true);
+          const qualityTag = isHD ? 'HD' : 'SD';
+          const qualityBadgeClass = isHD
+            ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
+            : 'bg-zinc-800 text-zinc-400 border border-zinc-700/60';
 
-        card.onclick = () => {
-          playSoundCue('open');
-          window.location.href = `watch.html?id=${anilistId}&malId=${malId}&title=${encodeURIComponent(title)}&eps=${eps}`;
-        };
-        grid.appendChild(card);
-      });
+          const removeBtnClass = isFav
+            ? 'text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/60'
+            : 'text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 hover:border-amber-400/60';
+          const removeLabel = isFav ? 'Remove from Favourites' : 'Remove from Watch Later';
+          const posterHtml = imgUrl
+            ? `<img src="${escapeHtml(imgUrl)}" alt="${safeTitle}" loading="lazy" decoding="async" class="w-full h-full object-cover md:group-hover:scale-105 md:transition-transform md:duration-300">`
+            : `<div class="w-full h-full ww-skeleton"></div>`;
+
+          const card = document.createElement('div');
+          card.className = 'group relative bg-surface-900 border border-zinc-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/60 transition-colors duration-200 flex flex-col';
+          card.style.contain = 'layout style paint';
+          card.innerHTML = `
+            <div class="relative aspect-[3/4.2] overflow-hidden bg-surface-950">
+              ${posterHtml}
+              <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-surface-950/20 to-transparent opacity-85 group-hover:opacity-40 transition-opacity duration-200"></div>
+
+              <div class="absolute top-2 left-2 flex items-center gap-1">
+                <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${qualityBadgeClass}">${qualityTag}</span>
+                <span class="bg-surface-950/90 text-[10px] font-bold px-1.5 py-0.5 rounded-md text-zinc-300 border border-zinc-800">${escapeHtml(format)}</span>
+              </div>
+
+              <button type="button" onclick="event.stopPropagation(); removeItem('${isFav ? 'favorites' : 'watchlater'}', ${Number(anilistId)})" class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/80 border border-zinc-700/80 ${removeBtnClass} flex items-center justify-center text-xs transition z-10 shadow-md" title="${removeLabel}" aria-label="${removeLabel}">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+
+              <div class="absolute bottom-2 left-2 right-2 flex justify-between items-center text-[11px] text-zinc-300 font-medium">
+                <span class="bg-surface-950/90 px-2 py-0.5 rounded-md border border-zinc-800/80">EPS ${eps}</span>
+                <span class="bg-surface-950/90 text-brand-400 text-[10px] font-black px-1.5 py-0.5 rounded-md border border-zinc-800 flex items-center gap-0.5">
+                  <i class="fa-solid fa-star text-[9px]"></i> ${score}
+                </span>
+              </div>
+            </div>
+
+            <div class="p-3 flex flex-col justify-between flex-1">
+              <h3 class="text-xs sm:text-sm font-heading font-bold text-zinc-200 line-clamp-1 group-hover:text-brand-400 transition" title="${safeTitle}">${safeTitle}</h3>
+              <p class="text-[11px] text-zinc-500 mt-1 line-clamp-1">${escapeHtml(anime.genres?.slice(0, 2).join(' • ') || 'Anime')}</p>
+            </div>
+          `;
+
+          card.onclick = () => {
+            playSoundCue('open');
+            window.location.href = `watch.html?id=${anilistId}&malId=${malId}&title=${encodeURIComponent(title)}&eps=${eps}`;
+          };
+          grid.appendChild(card);
+        });
+      }
+
+      hydrateMissingLibraryMetadata();
     }
 
     // Immediate local render before Firebase auth resolves
     if (!localStorage.getItem(LS_OWNER)) {
+      userDataCache.history = readLocal(LS_HISTORY);
       userDataCache.favorites = readLocal(LS_FAVORITES);
       userDataCache.watchLater = readLocal(LS_WATCH_LATER);
     }
