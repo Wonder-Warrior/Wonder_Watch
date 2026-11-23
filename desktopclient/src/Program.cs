@@ -636,7 +636,7 @@ namespace WonderWatchDesktop
                 "}catch(e){return '';}" +
                 "})()";
 
-            int[] delays = new int[] { 550, 650, 750, 850, 900, 900, 1000 };
+            int[] delays = new int[] { 350, 500, 650, 800, 900, 900, 1000 };
             for (int attempt = 0; attempt < delays.Length; attempt++)
             {
                 await System.Threading.Tasks.Task.Delay(delays[attempt]);
@@ -757,7 +757,7 @@ namespace WonderWatchDesktop
                         {
                             BeginInvoke((Action)(() => SetFullscreen(true)));
                         }
-                        System.Threading.Tasks.Task.Delay(6000).ContinueWith(_ =>
+                        System.Threading.Tasks.Task.Delay(5500).ContinueWith(_ =>
                         {
                             if (!IsDisposed && episodeFsTransitionSeq == tSeq && isEpisodeFsTransition)
                             {
@@ -776,6 +776,16 @@ namespace WonderWatchDesktop
                                 }));
                             }
                         });
+                    }
+                    else if (msg == "ww:fs_transition_cancel" || json.IndexOf("ww:fs_transition_cancel", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        isEpisodeFsTransition = false;
+                        episodeFsTransitionSeq++;
+                        simFullscreenSeq++;
+                        if (!IsDisposed)
+                        {
+                            BeginInvoke((Action)(() => SetFullscreen(isAppFullscreen || isElementFullscreen)));
+                        }
                     }
                     else if (msg == "ww:sim_fullscreen" || json.IndexOf("ww:sim_fullscreen", StringComparison.OrdinalIgnoreCase) >= 0)
                     {

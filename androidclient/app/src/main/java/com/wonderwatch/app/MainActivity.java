@@ -540,7 +540,7 @@ public final class MainActivity extends Activity {
                                     }
                                 }
                             }
-                        }, 6000);
+                        }, 5500);
                     }
                 }
             });
@@ -552,7 +552,7 @@ public final class MainActivity extends Activity {
                 @Override
                 public void run() {
                     final int seq = ++simFullscreenSeq;
-                    final int[] delays = new int[] { 700, 1200, 2000, 2600, 3500, 4100 };
+                    final int[] delays = new int[] { 500, 950, 1500, 2100, 2900, 3600 };
                     for (final int delay : delays) {
                         webView.postDelayed(new Runnable() {
                             @Override
