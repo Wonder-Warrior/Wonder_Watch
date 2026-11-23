@@ -80,6 +80,12 @@ namespace WonderWatchDesktop
         private readonly Panel splashPanel;
         private readonly AnimatedEmblemSpinner splashSpinner;
         private readonly Label splashStatusLabel;
+        private readonly Panel errorPanel;
+        private readonly Label errorTitleLabel;
+        private readonly Label errorMessageLabel;
+        private readonly Label errorCodeLabel;
+        private readonly RoundedActionButton errorRetryButton;
+        private string lastAttemptedUrl;
         private readonly string startUrl;
         private readonly string appDataDir;
         private readonly string userDataDir;
@@ -492,6 +498,171 @@ namespace WonderWatchDesktop
 
             Controls.Add(splashPanel);
             splashPanel.BringToFront();
+
+            // Custom dark connection-error overlay (replaces Microsoft Edge's stock error screen)
+            lastAttemptedUrl = startUrl;
+            errorPanel = new Panel();
+            errorPanel.Dock = DockStyle.Fill;
+            errorPanel.BackColor = BgDark;
+            errorPanel.Visible = false;
+
+            Panel errorCard = new Panel();
+            errorCard.Size = new Size(440, 326);
+            errorCard.BackColor = Color.Transparent;
+            errorCard.Paint += delegate(object s, PaintEventArgs pe)
+            {
+                Graphics g = pe.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                RectangleF cardRect = new RectangleF(1f, 1f, errorCard.Width - 3f, errorCard.Height - 3f);
+                using (GraphicsPath path = CreateRoundedRectF(cardRect, 24f))
+                using (SolidBrush bg = new SolidBrush(Color.FromArgb(255, 11, 12, 16)))
+                using (Pen border = new Pen(Color.FromArgb(255, 42, 44, 54), 1.2f))
+                {
+                    g.FillPath(bg, path);
+                    g.DrawPath(border, path);
+                }
+            };
+
+            Control errorIcon = new OfflineIconBadge();
+            errorIcon.Size = new Size(68, 68);
+            errorIcon.Location = new Point((errorCard.Width - 68) / 2, 28);
+
+            Label errBrandLabel = new Label();
+            errBrandLabel.Text = "WONDERWATCH";
+            errBrandLabel.ForeColor = BrandLime;
+            errBrandLabel.BackColor = Color.FromArgb(255, 11, 12, 16);
+            errBrandLabel.Font = new Font("Segoe UI", 8.5f, FontStyle.Bold);
+            errBrandLabel.TextAlign = ContentAlignment.MiddleCenter;
+            errBrandLabel.SetBounds(24, 108, errorCard.Width - 48, 18);
+
+            errorTitleLabel = new Label();
+            errorTitleLabel.Text = "Connection Failed";
+            errorTitleLabel.ForeColor = Color.White;
+            errorTitleLabel.BackColor = Color.FromArgb(255, 11, 12, 16);
+            errorTitleLabel.Font = new Font("Segoe UI", 16f, FontStyle.Bold);
+            errorTitleLabel.TextAlign = ContentAlignment.MiddleCenter;
+            errorTitleLabel.SetBounds(24, 130, errorCard.Width - 48, 32);
+
+            errorMessageLabel = new Label();
+            errorMessageLabel.Text = "We couldn't connect to WonderWatch. Please check your internet connection and try again.";
+            errorMessageLabel.ForeColor = Color.FromArgb(255, 161, 161, 170);
+            errorMessageLabel.BackColor = Color.FromArgb(255, 11, 12, 16);
+            errorMessageLabel.Font = new Font("Segoe UI", 9.5f, FontStyle.Regular);
+            errorMessageLabel.TextAlign = ContentAlignment.TopCenter;
+            errorMessageLabel.SetBounds(36, 166, errorCard.Width - 72, 44);
+
+            errorCodeLabel = new Label();
+            errorCodeLabel.Text = "OFFLINE";
+            errorCodeLabel.ForeColor = Color.FromArgb(255, 113, 113, 122);
+            errorCodeLabel.BackColor = Color.FromArgb(255, 11, 12, 16);
+            errorCodeLabel.Font = new Font("Consolas", 8.5f, FontStyle.Regular);
+            errorCodeLabel.TextAlign = ContentAlignment.MiddleCenter;
+            errorCodeLabel.SetBounds(36, 214, errorCard.Width - 72, 20);
+
+            errorRetryButton = new RoundedActionButton(
+                "Try Again",
+                BrandLime,
+                Color.FromArgb(255, 106, 255, 127),
+                Color.FromArgb(255, 8, 10, 12),
+                Color.Transparent
+            );
+            errorRetryButton.SetBounds(48, 252, 166, 42);
+            errorRetryButton.Click += delegate { RetryConnection(); };
+
+            RoundedActionButton errorHomeButton = new RoundedActionButton(
+                "Go Home",
+                Color.FromArgb(255, 23, 24, 33),
+                Color.FromArgb(255, 34, 36, 48),
+                Color.FromArgb(255, 228, 228, 231),
+                Color.FromArgb(255, 63, 63, 70)
+            );
+            errorHomeButton.SetBounds(226, 252, 166, 42);
+            errorHomeButton.Click += delegate
+            {
+                lastAttemptedUrl = DefaultHomeUrl;
+                RetryConnection();
+            };
+
+            errorCard.Controls.Add(errorIcon);
+            errorCard.Controls.Add(errBrandLabel);
+            errorCard.Controls.Add(errorTitleLabel);
+            errorCard.Controls.Add(errorMessageLabel);
+            errorCard.Controls.Add(errorCodeLabel);
+            errorCard.Controls.Add(errorRetryButton);
+            errorCard.Controls.Add(errorHomeButton);
+
+            errorPanel.Controls.Add(errorCard);
+            errorPanel.Resize += delegate
+            {
+                errorCard.Location = new Point(
+                    Math.Max(0, (errorPanel.Width - errorCard.Width) / 2),
+                    Math.Max(0, (errorPanel.Height - errorCard.Height) / 2)
+                );
+            };
+            Controls.Add(errorPanel);
+        }
+
+        private void ShowConnectionError(CoreWebView2WebErrorStatus status)
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke((Action)(() => ShowConnectionError(status)));
+                return;
+            }
+            string title = "Connection Failed";
+            string desc = "We couldn't reach WonderWatch right now. Check your internet connection and try again.";
+            if (status == CoreWebView2WebErrorStatus.Disconnected || status == CoreWebView2WebErrorStatus.HostNameNotResolved)
+            {
+                title = "No Internet Connection";
+                desc = "You appear to be offline. Reconnect to the internet and press Try Again.";
+            }
+            else if (status == CoreWebView2WebErrorStatus.Timeout)
+            {
+                title = "Connection Timed Out";
+                desc = "The server took too long to respond. Please check your connection and try again.";
+            }
+            else if (status == CoreWebView2WebErrorStatus.CannotConnect || status == CoreWebView2WebErrorStatus.ServerUnreachable)
+            {
+                title = "Unable to Reach Server";
+                desc = "WonderWatch could not connect to the server. Please try again in a moment.";
+            }
+
+            errorTitleLabel.Text = title;
+            errorMessageLabel.Text = desc;
+            errorCodeLabel.Text = "STATUS: " + status.ToString().ToUpperInvariant();
+            errorRetryButton.Text = "Try Again";
+            errorRetryButton.Enabled = true;
+            errorPanel.Visible = true;
+            errorPanel.BringToFront();
+        }
+
+        private void HideConnectionError()
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke((Action)(() => HideConnectionError()));
+                return;
+            }
+            errorPanel.Visible = false;
+            errorRetryButton.Text = "Try Again";
+            errorRetryButton.Enabled = true;
+        }
+
+        private void RetryConnection()
+        {
+            if (webView == null || webView.CoreWebView2 == null) return;
+            errorRetryButton.Text = "Reconnecting...";
+            errorRetryButton.Enabled = false;
+            string target = !string.IsNullOrWhiteSpace(lastAttemptedUrl) ? lastAttemptedUrl : DefaultHomeUrl;
+            try
+            {
+                webView.CoreWebView2.Navigate(target);
+            }
+            catch
+            {
+                errorRetryButton.Text = "Try Again";
+                errorRetryButton.Enabled = true;
+            }
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -654,7 +825,7 @@ namespace WonderWatchDesktop
             settings.IsZoomControlEnabled = false;
             settings.AreBrowserAcceleratorKeysEnabled = false;
             settings.IsSwipeNavigationEnabled = false;
-            settings.IsBuiltInErrorPageEnabled = true;
+            settings.IsBuiltInErrorPageEnabled = false;
             settings.IsWebMessageEnabled = true;
         }
 
@@ -948,7 +1119,17 @@ namespace WonderWatchDesktop
                 UpdateDiscordPresence();
             };
 
-            webView.CoreWebView2.NavigationCompleted += delegate
+            webView.CoreWebView2.NavigationStarting += delegate(object s, CoreWebView2NavigationStartingEventArgs e)
+            {
+                if (!string.IsNullOrWhiteSpace(e.Uri) &&
+                    (e.Uri.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+                     e.Uri.StartsWith("http://", StringComparison.OrdinalIgnoreCase)))
+                {
+                    lastAttemptedUrl = e.Uri;
+                }
+            };
+
+            webView.CoreWebView2.NavigationCompleted += delegate(object s, CoreWebView2NavigationCompletedEventArgs e)
             {
                 simFullscreenSeq++;
                 if (isEpisodeFsTransition)
@@ -962,6 +1143,15 @@ namespace WonderWatchDesktop
                     splashSpinner.Stop();
                     splashPanel.Visible = false;
                 }
+                if (!e.IsSuccess)
+                {
+                    if (e.WebErrorStatus != CoreWebView2WebErrorStatus.OperationCanceled)
+                    {
+                        ShowConnectionError(e.WebErrorStatus);
+                    }
+                    return;
+                }
+                HideConnectionError();
                 if (!string.IsNullOrEmpty(pendingStartupUpdateJson) && webView.CoreWebView2 != null)
                 {
                     string queued = pendingStartupUpdateJson;
@@ -1329,6 +1519,11 @@ namespace WonderWatchDesktop
 
         private void ReloadPage()
         {
+            if (errorPanel != null && errorPanel.Visible)
+            {
+                RetryConnection();
+                return;
+            }
             if (webView.CoreWebView2 != null)
             {
                 webView.CoreWebView2.Reload();
@@ -1436,6 +1631,137 @@ namespace WonderWatchDesktop
             }
             catch
             {
+            }
+        }
+
+        private sealed class OfflineIconBadge : Control
+        {
+            public OfflineIconBadge()
+            {
+                SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
+                BackColor = Color.FromArgb(255, 11, 12, 16);
+            }
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                base.OnPaint(e);
+                Graphics g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(BackColor);
+
+                RectangleF box = new RectangleF(2f, 2f, Width - 5f, Height - 5f);
+                using (GraphicsPath path = CreateRoundedRectF(box, 18f))
+                using (SolidBrush fill = new SolidBrush(Color.FromArgb(38, 239, 68, 68)))
+                using (Pen border = new Pen(Color.FromArgb(115, 239, 68, 68), 1.4f))
+                {
+                    g.FillPath(fill, path);
+                    g.DrawPath(border, path);
+                }
+
+                float cx = Width / 2f;
+                float cy = Height * 0.62f;
+                using (Pen arcPen = new Pen(Color.FromArgb(255, 248, 113, 113), 2.8f))
+                {
+                    arcPen.StartCap = LineCap.Round;
+                    arcPen.EndCap = LineCap.Round;
+                    g.DrawArc(arcPen, cx - 18f, cy - 18f, 36f, 36f, 225f, 90f);
+                    g.DrawArc(arcPen, cx - 11f, cy - 11f, 22f, 22f, 225f, 90f);
+                }
+                using (SolidBrush dot = new SolidBrush(Color.FromArgb(255, 248, 113, 113)))
+                {
+                    g.FillEllipse(dot, cx - 3f, cy - 3f, 6f, 6f);
+                }
+                using (Pen slashBg = new Pen(Color.FromArgb(255, 26, 15, 18), 5.5f))
+                using (Pen slash = new Pen(Color.FromArgb(255, 248, 113, 113), 2.6f))
+                {
+                    slashBg.StartCap = LineCap.Round;
+                    slashBg.EndCap = LineCap.Round;
+                    slash.StartCap = LineCap.Round;
+                    slash.EndCap = LineCap.Round;
+                    g.DrawLine(slashBg, 18f, 18f, Width - 18f, Height - 18f);
+                    g.DrawLine(slash, 18f, 18f, Width - 18f, Height - 18f);
+                }
+            }
+        }
+
+        private sealed class RoundedActionButton : Control
+        {
+            private readonly Color normalBg;
+            private readonly Color hoverBg;
+            private readonly Color textColor;
+            private readonly Color borderColor;
+            private bool isHovered;
+
+            public RoundedActionButton(string label, Color bg, Color hover, Color fg, Color border)
+            {
+                SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
+                Text = label;
+                normalBg = bg;
+                hoverBg = hover;
+                textColor = fg;
+                borderColor = border;
+                BackColor = Color.FromArgb(255, 11, 12, 16);
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
+                Cursor = Cursors.Hand;
+            }
+
+            protected override void OnTextChanged(EventArgs e)
+            {
+                base.OnTextChanged(e);
+                Invalidate();
+            }
+
+            protected override void OnEnabledChanged(EventArgs e)
+            {
+                base.OnEnabledChanged(e);
+                Cursor = Enabled ? Cursors.Hand : Cursors.Default;
+                Invalidate();
+            }
+
+            protected override void OnMouseEnter(EventArgs e)
+            {
+                base.OnMouseEnter(e);
+                isHovered = true;
+                Invalidate();
+            }
+
+            protected override void OnMouseLeave(EventArgs e)
+            {
+                base.OnMouseLeave(e);
+                isHovered = false;
+                Invalidate();
+            }
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                base.OnPaint(e);
+                Graphics g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(BackColor);
+
+                RectangleF rect = new RectangleF(1f, 1f, Width - 3f, Height - 3f);
+                Color bg = !Enabled ? Color.FromArgb(140, normalBg) : (isHovered ? hoverBg : normalBg);
+                using (GraphicsPath path = CreateRoundedRectF(rect, 12f))
+                using (SolidBrush brush = new SolidBrush(bg))
+                {
+                    g.FillPath(brush, path);
+                    if (borderColor != Color.Transparent)
+                    {
+                        using (Pen pen = new Pen(borderColor, 1.1f))
+                        {
+                            g.DrawPath(pen, path);
+                        }
+                    }
+                }
+
+                TextRenderer.DrawText(
+                    g,
+                    Text,
+                    Font,
+                    new Rectangle(0, 0, Width, Height),
+                    textColor,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis
+                );
             }
         }
 
