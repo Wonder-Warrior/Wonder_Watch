@@ -2493,6 +2493,9 @@
       const alreadyFav = isAnimeFavorite(id);
       playSoundCue(alreadyFav ? 'unfav' : 'fav');
 
+      if (!animeMetadata && seriesDataPromise) {
+        try { await seriesDataPromise; } catch (_) {}
+      }
       if (franchiseGraphState && !franchiseGraphState.expanded) {
         try { await ensureFullFranchiseGraphExpanded(); } catch (_) {}
       }
@@ -2548,6 +2551,9 @@
       const alreadySaved = isAnimeWatchLater(id);
       playSoundCue(alreadySaved ? 'unfav' : 'fav');
 
+      if (!animeMetadata && seriesDataPromise) {
+        try { await seriesDataPromise; } catch (_) {}
+      }
       if (franchiseGraphState && !franchiseGraphState.expanded) {
         try { await ensureFullFranchiseGraphExpanded(); } catch (_) {}
       }
@@ -3479,10 +3485,11 @@
     // ============================================================
     //  INIT
     // ============================================================
+    let seriesDataPromise = null;
     renderEpisodeSkeletons(8);
     renderFranchiseSkeletons(3);
     loadPlayer();
-    loadSeriesData();
+    seriesDataPromise = loadSeriesData();
   </script>
 </body>
 </html>

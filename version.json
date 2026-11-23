@@ -1,6 +1,6 @@
 ﻿{
     "desktop":  {
-                    "version":  "2.4.22",
+                    "version":  "2.4.23",
                     "exeUrl":  "https://raw.githubusercontent.com/wonder-warrior/Wonder_Watch/main/desktopclient/WonderWatch.exe",
                     "installerUrl":  "https://raw.githubusercontent.com/wonder-warrior/Wonder_Watch/main/desktopclient/WonderWatch-Setup-win-x64.exe"
                 },

@@ -100,6 +100,11 @@ namespace WonderWatchDesktop
         private FormWindowState prevWindowState = FormWindowState.Normal;
         private FormBorderStyle prevBorderStyle = FormBorderStyle.Sizable;
         private Rectangle prevBounds;
+        private string pendingUpdateExeUrl = null;
+        private string pendingUpdateLocalVer = null;
+        private string pendingUpdateRemoteVer = null;
+        private string pendingStartupUpdateJson = null;
+        private bool isDownloadingUpdate = false;
 
         private static string SanitizeStartUrl(string initialUrl)
         {
@@ -136,12 +141,71 @@ namespace WonderWatchDesktop
             catch { }
         }
 
+        private static string EscapeJsString(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "\\n");
+        }
+
+        private void DispatchUpdateStatusToWeb(string state, string currentVer, string latestVer, string message, int progress, bool queueIfNotReady)
+        {
+            string payloadJson = string.Format(
+                "{{\"state\":\"{0}\",\"platform\":\"desktop\",\"currentVersion\":\"{1}\",\"latestVersion\":\"{2}\",\"message\":\"{3}\",\"progress\":{4}}}",
+                EscapeJsString(state),
+                EscapeJsString(currentVer),
+                EscapeJsString(latestVer),
+                EscapeJsString(message),
+                progress
+            );
+
+            Action sendAction = delegate
+            {
+                if (IsDisposed) return;
+                if (webView != null && webView.CoreWebView2 != null)
+                {
+                    string js = "(function(){if(typeof window.__wwOnUpdateStatus==='function'){window.__wwOnUpdateStatus(" + payloadJson + ");return 'OK';}return 'NO_FN';})()";
+                    var t = webView.CoreWebView2.ExecuteScriptAsync(js);
+                    t.ContinueWith(resTask =>
+                    {
+                        try
+                        {
+                            string r = resTask.Result != null ? resTask.Result.Trim('"') : "";
+                            if (r != "OK" && queueIfNotReady)
+                            {
+                                pendingStartupUpdateJson = payloadJson;
+                            }
+                        }
+                        catch
+                        {
+                            if (queueIfNotReady) pendingStartupUpdateJson = payloadJson;
+                        }
+                    });
+                }
+                else if (queueIfNotReady)
+                {
+                    pendingStartupUpdateJson = payloadJson;
+                }
+            };
+
+            if (InvokeRequired) BeginInvoke(sendAction);
+            else sendAction();
+        }
+
         private void CheckForUpdatesAsync(bool manual)
         {
+            if (isDownloadingUpdate) return;
+            Version localVerInit = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            string localStrInit = new Version(localVerInit.Major, localVerInit.Minor, Math.Max(0, localVerInit.Build)).ToString(3);
+            if (manual)
+            {
+                DispatchUpdateStatusToWeb("checking", localStrInit, "", "Looking for the latest WonderWatch release...", 0, false);
+            }
+
             System.Threading.Tasks.Task.Run(() =>
             {
                 Version localVer = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
                 Version local3 = new Version(localVer.Major, localVer.Minor, Math.Max(0, localVer.Build));
+                string localStr = local3.ToString(3);
                 try
                 {
                     try { System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12 | (System.Net.SecurityProtocolType)12288; }
@@ -179,7 +243,7 @@ namespace WonderWatchDesktop
                         if (manual && !IsDisposed)
                         {
                             string errText = lastErr != null ? lastErr.Message : "Network error";
-                            BeginInvoke((Action)(() => MessageBox.Show(this, "Unable to check for updates right now.\n\nCurrent version: v" + local3.ToString(3) + "\nError: " + errText, "WonderWatch Updates", MessageBoxButtons.OK, MessageBoxIcon.Warning)));
+                            DispatchUpdateStatusToWeb("error", localStr, "", "Unable to check for updates: " + errText, 0, false);
                         }
                         return;
                     }
@@ -190,80 +254,114 @@ namespace WonderWatchDesktop
                     {
                         if (manual && !IsDisposed)
                         {
-                            BeginInvoke((Action)(() => MessageBox.Show(this, "Current version: v" + local3.ToString(3) + "\nLatest version: Unable to read version.json", "WonderWatch Updates", MessageBoxButtons.OK, MessageBoxIcon.Information)));
+                            DispatchUpdateStatusToWeb("error", localStr, "", "Unable to read version info from update server.", 0, false);
                         }
                         return;
                     }
 
                     Version remoteVer = new Version(verMatch.Groups[1].Value);
+                    string remoteStr = remoteVer.ToString(3);
                     if (remoteVer <= local3)
                     {
+                        pendingUpdateExeUrl = null;
                         if (manual && !IsDisposed)
                         {
-                            BeginInvoke((Action)(() => MessageBox.Show(this, "You are up to date!\n\nCurrent version: v" + local3.ToString(3) + "\nLatest version: v" + remoteVer.ToString(3), "WonderWatch Updates", MessageBoxButtons.OK, MessageBoxIcon.Information)));
+                            DispatchUpdateStatusToWeb("up_to_date", localStr, remoteStr, "You are running the latest version of WonderWatch Desktop.", 0, false);
                         }
                         return;
                     }
 
-                    string exeUrl = urlMatch.Groups[1].Value;
+                    pendingUpdateExeUrl = urlMatch.Groups[1].Value;
+                    pendingUpdateLocalVer = localStr;
+                    pendingUpdateRemoteVer = remoteStr;
                     if (!IsDisposed)
                     {
-                        BeginInvoke((Action)(() =>
-                        {
-                            var res = MessageBox.Show(
-                                this,
-                                "A new version of WonderWatch Desktop is available!\n\nCurrent version: v" + local3.ToString(3) + "\nLatest version: v" + remoteVer.ToString(3) + "\n\nWould you like to update now?",
-                                "WonderWatch Update Available",
-                                MessageBoxButtons.YesNo,
-                                MessageBoxIcon.Information
-                            );
-                            if (res != DialogResult.Yes) return;
-
-                            System.Threading.Tasks.Task.Run(() =>
-                            {
-                                try
-                                {
-                                    string currentExe = Application.ExecutablePath;
-                                    string newExe = currentExe + ".new";
-                                    using (var dl = new System.Net.WebClient())
-                                    {
-                                        dl.Headers.Add("User-Agent", "WonderWatchDesktop");
-                                        dl.DownloadFile(exeUrl, newExe);
-                                    }
-                                    if (!File.Exists(newExe) || new FileInfo(newExe).Length < 50000)
-                                    {
-                                        if (!IsDisposed)
-                                        {
-                                            BeginInvoke((Action)(() => MessageBox.Show(this, "Downloaded update file was incomplete. Please try again.", "WonderWatch Update", MessageBoxButtons.OK, MessageBoxIcon.Warning)));
-                                        }
-                                        return;
-                                    }
-
-                                    string cmd = "/c ping 127.0.0.1 -n 2 > nul & move /y \"" + newExe + "\" \"" + currentExe + "\" & start \"\" \"" + currentExe + "\"";
-                                    Process.Start(new ProcessStartInfo("cmd.exe", cmd)
-                                    {
-                                        CreateNoWindow = true,
-                                        UseShellExecute = false
-                                    });
-                                    BeginInvoke((Action)(() => Application.Exit()));
-                                }
-                                catch (Exception ex)
-                                {
-                                    if (!IsDisposed)
-                                    {
-                                        BeginInvoke((Action)(() => MessageBox.Show(this, "Update failed: " + ex.Message, "WonderWatch Update", MessageBoxButtons.OK, MessageBoxIcon.Warning)));
-                                    }
-                                }
-                            });
-                        }));
+                        DispatchUpdateStatusToWeb(
+                            "available",
+                            localStr,
+                            remoteStr,
+                            "A new version of WonderWatch Desktop is ready. Would you like to update now?",
+                            0,
+                            !manual
+                        );
                     }
                 }
                 catch (Exception ex)
                 {
                     if (manual && !IsDisposed)
                     {
-                        BeginInvoke((Action)(() => MessageBox.Show(this, "Unable to check for updates right now.\n\nCurrent version: v" + local3.ToString(3) + "\nError: " + ex.Message, "WonderWatch Updates", MessageBoxButtons.OK, MessageBoxIcon.Warning)));
+                        DispatchUpdateStatusToWeb("error", localStr, "", "Unable to check for updates: " + ex.Message, 0, false);
                     }
+                }
+            });
+        }
+
+        private void StartPendingUpdateAsync()
+        {
+            if (isDownloadingUpdate) return;
+            string exeUrl = pendingUpdateExeUrl;
+            string localStr = pendingUpdateLocalVer ?? "";
+            string remoteStr = pendingUpdateRemoteVer ?? "";
+            if (string.IsNullOrEmpty(exeUrl))
+            {
+                DispatchUpdateStatusToWeb("error", localStr, remoteStr, "No pending update found. Please check for updates again.", 0, false);
+                return;
+            }
+
+            isDownloadingUpdate = true;
+            DispatchUpdateStatusToWeb("downloading", localStr, remoteStr, "Downloading WonderWatch v" + remoteStr + "...", 0, false);
+
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    try { System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12 | (System.Net.SecurityProtocolType)12288; }
+                    catch { System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12; }
+
+                    string currentExe = Application.ExecutablePath;
+                    string newExe = currentExe + ".new";
+                    int lastReportedPct = -1;
+
+                    using (var dl = new System.Net.WebClient())
+                    {
+                        dl.Headers.Add("User-Agent", "WonderWatchDesktop");
+                        dl.DownloadProgressChanged += delegate(object s, System.Net.DownloadProgressChangedEventArgs ev)
+                        {
+                            int pct = ev.ProgressPercentage;
+                            if (pct != lastReportedPct && (pct == 100 || pct - lastReportedPct >= 3))
+                            {
+                                lastReportedPct = pct;
+                                DispatchUpdateStatusToWeb("downloading", localStr, remoteStr, "Downloading WonderWatch v" + remoteStr + "...", pct, false);
+                            }
+                        };
+                        dl.DownloadFileTaskAsync(new Uri(exeUrl), newExe).GetAwaiter().GetResult();
+                    }
+
+                    if (!File.Exists(newExe) || new FileInfo(newExe).Length < 50000)
+                    {
+                        isDownloadingUpdate = false;
+                        DispatchUpdateStatusToWeb("error", localStr, remoteStr, "Downloaded update file was incomplete. Please try again.", 0, false);
+                        return;
+                    }
+
+                    DispatchUpdateStatusToWeb("installing", localStr, remoteStr, "Installing v" + remoteStr + " and restarting WonderWatch...", 100, false);
+                    System.Threading.Thread.Sleep(500);
+
+                    string cmd = "/c ping 127.0.0.1 -n 2 > nul & move /y \"" + newExe + "\" \"" + currentExe + "\" & start \"\" \"" + currentExe + "\"";
+                    Process.Start(new ProcessStartInfo("cmd.exe", cmd)
+                    {
+                        CreateNoWindow = true,
+                        UseShellExecute = false
+                    });
+                    if (!IsDisposed)
+                    {
+                        BeginInvoke((Action)(() => Application.Exit()));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    isDownloadingUpdate = false;
+                    DispatchUpdateStatusToWeb("error", localStr, remoteStr, "Update failed: " + ex.Message, 0, false);
                 }
             });
         }
@@ -749,6 +847,10 @@ namespace WonderWatchDesktop
                     {
                         CheckForUpdatesAsync(true);
                     }
+                    else if (msg == "ww:start_update" || json.IndexOf("ww:start_update", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        StartPendingUpdateAsync();
+                    }
                     else if (msg == "ww:fs_transition_start" || json.IndexOf("ww:fs_transition_start", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         int tSeq = ++episodeFsTransitionSeq;
@@ -861,6 +963,23 @@ namespace WonderWatchDesktop
                 {
                     splashSpinner.Stop();
                     splashPanel.Visible = false;
+                }
+                if (!string.IsNullOrEmpty(pendingStartupUpdateJson) && webView.CoreWebView2 != null)
+                {
+                    string queued = pendingStartupUpdateJson;
+                    webView.CoreWebView2.ExecuteScriptAsync(
+                        "(function(){if(typeof window.__wwOnUpdateStatus==='function'){window.__wwOnUpdateStatus(" + queued + ");return 'OK';}return 'NO';})()"
+                    ).ContinueWith(t =>
+                    {
+                        try
+                        {
+                            if (t.Result != null && t.Result.Trim('"') == "OK")
+                            {
+                                pendingStartupUpdateJson = null;
+                            }
+                        }
+                        catch { }
+                    });
                 }
                 UpdateDiscordPresence();
             };

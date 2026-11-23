@@ -599,6 +599,27 @@ public final class MainActivity extends Activity {
             return customFullscreenView != null || isEpisodeFsTransition;
         }
 
+        private String pendingUpdateApkUrl = null;
+        private String pendingUpdateLocalVer = "";
+        private String pendingUpdateRemoteVer = "";
+
+        private String escapeJs(String s) {
+            if (s == null) return "";
+            return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "").replace("\n", "\\n");
+        }
+
+        private void dispatchUpdateStatus(final String state, final String currentVer, final String latestVer, final String message, final int progress) {
+            runOnUiThread(() -> {
+                if (isFinishing() || webView == null) return;
+                String json = "{\"state\":\"" + escapeJs(state) +
+                    "\",\"platform\":\"android\",\"currentVersion\":\"" + escapeJs(currentVer) +
+                    "\",\"latestVersion\":\"" + escapeJs(latestVer) +
+                    "\",\"message\":\"" + escapeJs(message) +
+                    "\",\"progress\":" + progress + "}";
+                webView.evaluateJavascript("if(typeof window.__wwOnUpdateStatus==='function')window.__wwOnUpdateStatus(" + json + ");", null);
+            });
+        }
+
         @android.webkit.JavascriptInterface
         public void checkForUpdates() {
             new Thread(() -> {
@@ -625,27 +646,34 @@ public final class MainActivity extends Activity {
                     final String apkUrl = androidObj != null ? androidObj.optString("apkUrl", "") : "";
                     final boolean hasUpdate = isNewerVersion(remoteVer, localVer) && !apkUrl.isEmpty();
 
-                    runOnUiThread(() -> {
-                        android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(MainActivity.this);
-                        b.setTitle(hasUpdate ? "Update Available" : "WonderWatch Updates");
-                        b.setMessage("Current version: v" + localVer + "\nLatest version: v" + remoteVer + (hasUpdate ? "\n\nWould you like to download the latest APK?" : "\n\nYou are up to date!"));
-                        if (hasUpdate) {
-                            b.setPositiveButton("Update", (d, w) -> downloadAndInstallApk(apkUrl));
-                            b.setNegativeButton("Later", null);
-                        } else {
-                            b.setPositiveButton("OK", null);
-                        }
-                        b.show();
-                    });
+                    if (hasUpdate) {
+                        pendingUpdateApkUrl = apkUrl;
+                        pendingUpdateLocalVer = localVer;
+                        pendingUpdateRemoteVer = remoteVer;
+                        dispatchUpdateStatus("available", localVer, remoteVer, "A new version of WonderWatch Android is ready. Would you like to update now?", 0);
+                    } else {
+                        pendingUpdateApkUrl = null;
+                        dispatchUpdateStatus("up_to_date", localVer, remoteVer, "You are running the latest version of WonderWatch Android.", 0);
+                    }
                 } catch (Exception e) {
-                    runOnUiThread(() -> new android.app.AlertDialog.Builder(MainActivity.this)
-                        .setTitle("WonderWatch Updates")
-                        .setMessage("Current version: v" + localVer + "\n\nUnable to check for updates right now.")
-                        .setPositiveButton("OK", null)
-                        .show());
+                    dispatchUpdateStatus("error", localVer, "", "Unable to check for updates right now.", 0);
                 }
             }).start();
         }
+
+        @android.webkit.JavascriptInterface
+        public void startUpdate() {
+            final String apkUrl = pendingUpdateApkUrl;
+            final String localVer = pendingUpdateLocalVer;
+            final String remoteVer = pendingUpdateRemoteVer;
+            if (apkUrl == null || apkUrl.isEmpty()) {
+                dispatchUpdateStatus("error", localVer, remoteVer, "No pending update found. Please check for updates again.", 0);
+                return;
+            }
+            dispatchUpdateStatus("downloading", localVer, remoteVer, "Downloading WonderWatch v" + remoteVer + "...", 5);
+            downloadAndInstallApk(apkUrl, localVer, remoteVer);
+        }
+
         private boolean isNewerVersion(String remote, String local) {
             try {
                 String[] r = remote.split("\\.");
@@ -661,10 +689,13 @@ public final class MainActivity extends Activity {
             return false;
         }
 
-        private void downloadAndInstallApk(String apkUrl) {
+        private void downloadAndInstallApk(final String apkUrl, final String localVer, final String remoteVer) {
             try {
-                android.app.DownloadManager dm = (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-                if (dm == null) return;
+                final android.app.DownloadManager dm = (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                if (dm == null) {
+                    dispatchUpdateStatus("error", localVer, remoteVer, "Download service unavailable.", 0);
+                    return;
+                }
                 android.app.DownloadManager.Request req = new android.app.DownloadManager.Request(Uri.parse(apkUrl));
                 req.setTitle("WonderWatch Update");
                 req.setDescription("Downloading latest APK...");
@@ -672,18 +703,54 @@ public final class MainActivity extends Activity {
                 req.setDestinationInExternalFilesDir(MainActivity.this, android.os.Environment.DIRECTORY_DOWNLOADS, "WonderWatch-Update.apk");
                 final long downloadId = dm.enqueue(req);
 
+                final boolean[] completed = new boolean[] { false };
+                new Thread(() -> {
+                    while (!completed[0] && !isFinishing()) {
+                        try {
+                            Thread.sleep(350);
+                            android.database.Cursor c = dm.query(new android.app.DownloadManager.Query().setFilterById(downloadId));
+                            if (c != null) {
+                                try {
+                                    if (c.moveToFirst()) {
+                                        int status = c.getInt(c.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_STATUS));
+                                        long dlBytes = c.getLong(c.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
+                                        long totalBytes = c.getLong(c.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
+                                        if (status == android.app.DownloadManager.STATUS_FAILED) {
+                                            completed[0] = true;
+                                            dispatchUpdateStatus("error", localVer, remoteVer, "Download failed. Please try again.", 0);
+                                            break;
+                                        }
+                                        if (totalBytes > 0) {
+                                            int pct = (int) Math.min(99, (dlBytes * 100L) / totalBytes);
+                                            dispatchUpdateStatus("downloading", localVer, remoteVer, "Downloading WonderWatch v" + remoteVer + "...", pct);
+                                        }
+                                    }
+                                } finally {
+                                    c.close();
+                                }
+                            }
+                        } catch (Exception ignored) {
+                            break;
+                        }
+                    }
+                }).start();
+
                 android.content.BroadcastReceiver onComplete = new android.content.BroadcastReceiver() {
                     @Override
                     public void onReceive(android.content.Context ctx, Intent intent) {
                         long id = intent.getLongExtra(android.app.DownloadManager.EXTRA_DOWNLOAD_ID, -1);
                         if (id != downloadId) return;
+                        completed[0] = true;
                         try { unregisterReceiver(this); } catch (Exception ignored) {}
                         Uri apkUri = dm.getUriForDownloadedFile(downloadId);
                         if (apkUri != null) {
+                            dispatchUpdateStatus("installing", localVer, remoteVer, "Opening Android package installer...", 100);
                             Intent install = new Intent(Intent.ACTION_VIEW);
                             install.setDataAndType(apkUri, "application/vnd.android.package-archive");
                             install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
                             try { startActivity(install); } catch (Exception ignored) {}
+                        } else {
+                            dispatchUpdateStatus("error", localVer, remoteVer, "Downloaded APK could not be opened.", 0);
                         }
                     }
                 };
@@ -692,7 +759,9 @@ public final class MainActivity extends Activity {
                 } else {
                     registerReceiver(onComplete, new android.content.IntentFilter(android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE));
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                dispatchUpdateStatus("error", localVer, remoteVer, "Update failed: " + e.getMessage(), 0);
+            }
         }
     }
 

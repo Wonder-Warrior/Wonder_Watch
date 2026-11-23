@@ -313,9 +313,10 @@
         </a>
 
         <!-- Desktop Nav -->
-        <nav id="desktopCategoryNav" class="hidden md:flex items-center gap-1 bg-surface-900/90 border border-zinc-800/80 p-1 rounded-2xl backdrop-blur-md shadow-inner">
-          <button type="button" data-cat="watchLaterSection" onclick="smoothScrollToCategory('watchLaterSection', this)" id="navWatchLaterLink" class="cat-pill hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-bookmark text-amber-400 text-[11px]"></i> Watch Later</button>
-          <button type="button" data-cat="favoritesSection" onclick="smoothScrollToCategory('favoritesSection', this)" id="navFavoritesLink" class="cat-pill hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-heart text-red-500 text-[11px]"></i> Favourites</button>
+        <nav id="desktopCategoryNav" class="hidden md:flex items-center gap-1 bg-surface-900/90 border border-zinc-800/80 p-1 rounded-2xl backdrop-blur-md shadow-inner overflow-x-auto no-scrollbar">
+          <button type="button" data-cat="continueWatchingSection" onclick="smoothScrollToCategory('continueWatchingSection', this)" id="navContinueLink" class="cat-pill hidden px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-clock-rotate-left text-brand-400 text-[11px]"></i> Continue</button>
+          <button type="button" data-cat="watchLaterSection" onclick="smoothScrollToCategory('watchLaterSection', this)" id="navWatchLaterLink" class="cat-pill hidden px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-bookmark text-amber-400 text-[11px]"></i> Watch Later</button>
+          <button type="button" data-cat="favoritesSection" onclick="smoothScrollToCategory('favoritesSection', this)" id="navFavoritesLink" class="cat-pill hidden px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-heart text-red-500 text-[11px]"></i> Favourites</button>
           <button type="button" data-cat="trending" onclick="smoothScrollToCategory('trending', this)" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-fire text-amber-400 text-[11px]"></i> Trending</button>
           <button type="button" data-cat="airing" onclick="smoothScrollToCategory('airing', this)" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-tower-broadcast text-brand-400 text-[11px]"></i> Airing</button>
           <button type="button" data-cat="popular" onclick="smoothScrollToCategory('popular', this)" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-surface-800/90 transition flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-star text-yellow-400 text-[11px]"></i> Popular</button>
@@ -400,6 +401,9 @@
   <!-- Mobile Collapsible Navigation Drawer -->
   <div id="mobileNavDrawer" class="ww-mobile-drawer md:hidden bg-surface-950/96 border-b border-zinc-900 backdrop-blur-md sticky top-[53px] z-40 w-full">
     <div class="ww-mobile-drawer-inner px-4 py-2.5 space-y-1">
+      <button type="button" data-cat="continueWatchingSection" onclick="smoothScrollToCategory('continueWatchingSection'); closeMobileNav();" id="mobileNavContinueLink" class="ww-drawer-item hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
+        <i class="fa-solid fa-clock-rotate-left text-brand-400 text-xs w-4"></i> Continue Watching
+      </button>
       <button type="button" data-cat="watchLaterSection" onclick="smoothScrollToCategory('watchLaterSection'); closeMobileNav();" id="mobileNavWatchLaterLink" class="ww-drawer-item hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-surface-900 text-xs font-medium transition text-left">
         <i class="fa-solid fa-bookmark text-amber-400 text-xs w-4"></i> Watch Later
       </button>
@@ -584,7 +588,7 @@
     
     <!-- Continue Watching with Timestamps -->
     <section id="continueWatchingSection" class="hidden space-y-4">
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between items-center gap-3 flex-wrap">
         <div class="flex items-center gap-2.5">
           <div class="w-2.5 h-6 bg-brand-400 rounded-full"></div>
           <div>
@@ -594,28 +598,18 @@
             <p class="text-xs text-zinc-500">Pick up right where you left off with saved timestamps</p>
           </div>
         </div>
-        <button onclick="promptClearHistory()" class="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-900/90 hover:bg-red-500/10 border border-zinc-800 hover:border-red-500/40 text-xs font-semibold text-zinc-400 hover:text-red-400 transition shadow-sm" title="Clear Watch History">
-          <i class="fa-solid fa-trash-can text-[11px] text-zinc-500 group-hover:text-red-400 transition"></i>
-          <span>Clear History</span>
-        </button>
-      </div>
-      <div id="grid-continue" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
-    </section>
-
-    <!-- Recommended Anime Based on Watch History -->
-    <section id="recommendationsSection" class="hidden space-y-4">
-      <div class="flex justify-between items-center">
-        <div class="flex items-center gap-2.5">
-          <div class="w-2.5 h-6 bg-brand-500 rounded-full"></div>
-          <div>
-            <h2 class="text-lg sm:text-xl font-heading font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
-              <i class="fa-solid fa-wand-magic-sparkles text-brand-400 text-sm"></i> Anime You Might Like
-            </h2>
-            <p class="text-xs text-zinc-500">Personalized recommendations based on what you've watched</p>
-          </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button onclick="promptClearHistory()" class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900/90 hover:bg-red-500/10 border border-zinc-800 hover:border-red-500/40 text-xs font-semibold text-zinc-400 hover:text-red-400 transition shadow-sm" title="Clear Watch History">
+            <i class="fa-solid fa-trash-can text-[11px] text-zinc-500 group-hover:text-red-400 transition"></i>
+            <span class="hidden sm:inline">Clear</span>
+          </button>
+          <a href="library.html?tab=history" onclick="playSoundCue('nav')" class="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-900/90 hover:bg-brand-500/10 border border-zinc-800 hover:border-brand-500/40 text-xs font-semibold text-zinc-300 hover:text-brand-400 transition shadow-sm" title="View all Continue Watching">
+            <span>View All <span id="continueCountBadge" class="text-zinc-500 group-hover:text-brand-400/80"></span></span>
+            <i class="fa-solid fa-arrow-right text-[10px] text-zinc-500 group-hover:text-brand-400 group-hover:translate-x-0.5 transition"></i>
+          </a>
         </div>
       </div>
-      <div id="grid-recommended" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+      <div id="grid-continue" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
     </section>
 
     <!-- User Watch Later Section -->
@@ -656,6 +650,22 @@
         </a>
       </div>
       <div id="grid-favorites" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+    </section>
+
+    <!-- Recommended Anime Based on Watch History -->
+    <section id="recommendationsSection" class="hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-2.5">
+          <div class="w-2.5 h-6 bg-brand-500 rounded-full"></div>
+          <div>
+            <h2 class="text-lg sm:text-xl font-heading font-bold tracking-wide uppercase text-zinc-100 flex items-center gap-2">
+              <i class="fa-solid fa-wand-magic-sparkles text-brand-400 text-sm"></i> Anime You Might Like
+            </h2>
+            <p class="text-xs text-zinc-500">Personalized recommendations based on what you've watched</p>
+          </div>
+        </div>
+      </div>
+      <div id="grid-recommended" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
     </section>
 
   </div>
@@ -893,6 +903,56 @@
         </button>
         <button type="button" onclick="confirmClearHistory()" class="flex-1 bg-red-500 hover:bg-red-400 text-white font-heading font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-lg shadow-red-500/25">
           Clear All
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom App Update Modal (Desktop & Android Clients) -->
+  <div id="updateModal" onclick="if(event.target===this && !updateModalBusy) closeUpdateModal()" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[75] hidden items-center justify-center p-4">
+    <div class="relative w-full max-w-sm bg-surface-900 border border-zinc-700/80 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-center ring-1 ring-white/5">
+      <button type="button" id="updateModalCloseX" onclick="closeUpdateModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-surface-800 hover:bg-surface-750 border border-zinc-700/60 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div id="updateModalIconWrap" class="w-14 h-14 rounded-2xl bg-brand-500/15 border border-brand-500/35 text-brand-400 flex items-center justify-center mx-auto text-2xl shadow-lg shadow-brand-500/15">
+        <i id="updateModalIcon" class="fa-solid fa-arrows-rotate fa-spin"></i>
+      </div>
+
+      <div class="space-y-1.5">
+        <span id="updateModalBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-heading font-extrabold uppercase tracking-wider bg-brand-500/15 border border-brand-500/30 text-brand-400">WonderWatch Client</span>
+        <h3 id="updateModalTitle" class="text-lg font-heading font-black text-white">Checking for Updates</h3>
+        <p id="updateModalDesc" class="text-xs text-zinc-400 leading-relaxed">Connecting to WonderWatch update server...</p>
+      </div>
+
+      <!-- Version comparison pills -->
+      <div id="updateVersionRow" class="hidden items-center justify-center gap-2.5 bg-surface-950/90 border border-zinc-800/90 rounded-2xl px-4 py-3 text-xs">
+        <div class="text-center">
+          <div class="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">Current</div>
+          <div id="updateCurrentVer" class="font-heading font-bold text-zinc-200 mt-0.5">v—</div>
+        </div>
+        <i id="updateVersionArrow" class="fa-solid fa-arrow-right text-zinc-600 text-[11px] px-1"></i>
+        <div class="text-center">
+          <div class="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">Latest</div>
+          <div id="updateLatestVer" class="font-heading font-bold text-brand-400 mt-0.5">v—</div>
+        </div>
+      </div>
+
+      <!-- Download progress bar -->
+      <div id="updateProgressWrap" class="hidden space-y-2">
+        <div class="w-full h-2 rounded-full bg-surface-950 border border-zinc-800 overflow-hidden">
+          <div id="updateProgressBar" class="h-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-300 rounded-full transition-all duration-200" style="width: 0%"></div>
+        </div>
+        <p id="updateProgressText" class="text-[11px] font-semibold text-brand-400">Downloading... 0%</p>
+      </div>
+
+      <!-- Action buttons -->
+      <div id="updateModalActions" class="pt-1 flex items-center gap-2.5">
+        <button type="button" id="updateSecondaryBtn" onclick="closeUpdateModal()" class="flex-1 bg-surface-800 hover:bg-surface-750 text-zinc-300 hover:text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition border border-zinc-700/60">
+          Close
+        </button>
+        <button type="button" id="updatePrimaryBtn" onclick="confirmAppUpdate()" class="hidden flex-1 bg-brand-500 hover:bg-brand-400 text-black font-heading font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-lg shadow-brand-500/25 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-download text-[11px]"></i> Update Now
         </button>
       </div>
     </div>
@@ -1850,13 +1910,157 @@
       document.getElementById('userDropdownMenu').classList.toggle('hidden');
     }
 
+    let updateModalBusy = false;
+
+    function openUpdateModal() {
+      const modal = document.getElementById('updateModal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeUpdateModal() {
+      if (updateModalBusy) return;
+      const modal = document.getElementById('updateModal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    window.__wwOnUpdateStatus = function(payload) {
+      if (!payload) return;
+      const state = payload.state || 'checking';
+      const currentVer = payload.currentVersion ? `v${String(payload.currentVersion).replace(/^v/i, '')}` : 'v—';
+      const latestVer = payload.latestVersion ? `v${String(payload.latestVersion).replace(/^v/i, '')}` : 'v—';
+      const platform = payload.platform === 'android' ? 'WonderWatch Android' : 'WonderWatch Desktop';
+
+      const iconWrap = document.getElementById('updateModalIconWrap');
+      const icon = document.getElementById('updateModalIcon');
+      const badge = document.getElementById('updateModalBadge');
+      const title = document.getElementById('updateModalTitle');
+      const desc = document.getElementById('updateModalDesc');
+      const verRow = document.getElementById('updateVersionRow');
+      const curEl = document.getElementById('updateCurrentVer');
+      const latEl = document.getElementById('updateLatestVer');
+      const progWrap = document.getElementById('updateProgressWrap');
+      const progBar = document.getElementById('updateProgressBar');
+      const progText = document.getElementById('updateProgressText');
+      const secBtn = document.getElementById('updateSecondaryBtn');
+      const priBtn = document.getElementById('updatePrimaryBtn');
+      const closeX = document.getElementById('updateModalCloseX');
+
+      if (badge) badge.innerText = platform;
+      if (curEl) curEl.innerText = currentVer;
+      if (latEl) latEl.innerText = latestVer;
+
+      updateModalBusy = (state === 'downloading' || state === 'installing');
+      if (closeX) closeX.classList.toggle('hidden', updateModalBusy);
+
+      if (state === 'checking') {
+        iconWrap.className = 'w-14 h-14 rounded-2xl bg-brand-500/15 border border-brand-500/35 text-brand-400 flex items-center justify-center mx-auto text-2xl shadow-lg shadow-brand-500/15';
+        icon.className = 'fa-solid fa-arrows-rotate fa-spin';
+        title.innerText = 'Checking for Updates';
+        desc.innerText = 'Looking for the latest WonderWatch release...';
+        verRow.classList.add('hidden');
+        verRow.classList.remove('flex');
+        progWrap.classList.add('hidden');
+        priBtn.classList.add('hidden');
+        secBtn.classList.remove('hidden');
+        secBtn.innerText = 'Cancel';
+        openUpdateModal();
+      } else if (state === 'up_to_date') {
+        iconWrap.className = 'w-14 h-14 rounded-2xl bg-brand-500/15 border border-brand-500/35 text-brand-400 flex items-center justify-center mx-auto text-2xl shadow-lg shadow-brand-500/15';
+        icon.className = 'fa-solid fa-circle-check';
+        title.innerText = "You're Up to Date!";
+        desc.innerText = payload.message || 'You are running the latest version of WonderWatch.';
+        verRow.classList.remove('hidden');
+        verRow.classList.add('flex');
+        progWrap.classList.add('hidden');
+        priBtn.classList.add('hidden');
+        secBtn.classList.remove('hidden');
+        secBtn.innerText = 'Close';
+        openUpdateModal();
+      } else if (state === 'available') {
+        iconWrap.className = 'w-14 h-14 rounded-2xl bg-brand-500/15 border border-brand-500/40 text-brand-400 flex items-center justify-center mx-auto text-2xl shadow-lg shadow-brand-500/20';
+        icon.className = 'fa-solid fa-cloud-arrow-down';
+        title.innerText = 'Update Available';
+        desc.innerText = payload.message || 'A newer version is ready. Would you like to update now?';
+        verRow.classList.remove('hidden');
+        verRow.classList.add('flex');
+        progWrap.classList.add('hidden');
+        priBtn.classList.remove('hidden');
+        priBtn.disabled = false;
+        priBtn.innerHTML = '<i class="fa-solid fa-download text-[11px]"></i> Update Now';
+        priBtn.onclick = confirmAppUpdate;
+        secBtn.classList.remove('hidden');
+        secBtn.innerText = 'Later';
+        openUpdateModal();
+      } else if (state === 'downloading') {
+        const pct = Math.max(0, Math.min(100, Number(payload.progress) || 0));
+        iconWrap.className = 'w-14 h-14 rounded-2xl bg-brand-500/15 border border-brand-500/35 text-brand-400 flex items-center justify-center mx-auto text-2xl shadow-lg shadow-brand-500/15';
+        icon.className = 'fa-solid fa-cloud-arrow-down animate-pulse';
+        title.innerText = 'Downloading Update';
+        desc.innerText = payload.message || `Downloading ${latestVer}... Please keep the app open.`;
+        verRow.classList.remove('hidden');
+        verRow.classList.add('flex');
+        progWrap.classList.remove('hidden');
+        progBar.style.width = `${pct}%`;
+        progText.innerText = pct > 0 ? `Downloading... ${pct}%` : 'Starting download...';
+        priBtn.classList.add('hidden');
+        secBtn.classList.add('hidden');
+        openUpdateModal();
+      } else if (state === 'installing') {
+        iconWrap.className = 'w-14 h-14 rounded-2xl bg-brand-500/15 border border-brand-500/35 text-brand-400 flex items-center justify-center mx-auto text-2xl shadow-lg shadow-brand-500/15';
+        icon.className = 'fa-solid fa-rocket';
+        title.innerText = 'Installing Update';
+        desc.innerText = payload.message || 'Applying update and restarting WonderWatch...';
+        progWrap.classList.remove('hidden');
+        progBar.style.width = '100%';
+        progText.innerText = 'Finalizing...';
+        priBtn.classList.add('hidden');
+        secBtn.classList.add('hidden');
+        openUpdateModal();
+      } else if (state === 'error') {
+        iconWrap.className = 'w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/35 text-amber-400 flex items-center justify-center mx-auto text-2xl shadow-lg shadow-amber-500/10';
+        icon.className = 'fa-solid fa-triangle-exclamation';
+        title.innerText = 'Update Check Failed';
+        desc.innerText = payload.message || 'Unable to reach the update server right now.';
+        if (payload.currentVersion) {
+          verRow.classList.remove('hidden');
+          verRow.classList.add('flex');
+        } else {
+          verRow.classList.add('hidden');
+          verRow.classList.remove('flex');
+        }
+        progWrap.classList.add('hidden');
+        priBtn.classList.remove('hidden');
+        priBtn.disabled = false;
+        priBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-[11px]"></i> Retry';
+        priBtn.onclick = handleCheckForUpdates;
+        secBtn.classList.remove('hidden');
+        secBtn.innerText = 'Close';
+        openUpdateModal();
+      }
+    };
+
+    function confirmAppUpdate() {
+      playSoundCue('fav');
+      if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
+        window.__wwOnUpdateStatus({ state: 'downloading', platform: 'desktop', progress: 0 });
+        window.chrome.webview.postMessage('ww:start_update');
+      } else if (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.startUpdate === 'function') {
+        window.__wwOnUpdateStatus({ state: 'downloading', platform: 'android', progress: 0 });
+        window.WonderWatchAndroid.startUpdate();
+      }
+    }
+
     function handleCheckForUpdates() {
       document.getElementById('userDropdownMenu').classList.add('hidden');
       if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
-        showToast('<i class="fa-solid fa-arrows-rotate fa-spin text-brand-400"></i> Checking for updates...', 2500);
+        window.__wwOnUpdateStatus({ state: 'checking', platform: 'desktop' });
         window.chrome.webview.postMessage('ww:check_updates');
       } else if (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.checkForUpdates === 'function') {
-        showToast('<i class="fa-solid fa-arrows-rotate fa-spin text-brand-400"></i> Checking for updates...', 2500);
+        window.__wwOnUpdateStatus({ state: 'checking', platform: 'android' });
         window.WonderWatchAndroid.checkForUpdates();
       }
     }
@@ -1890,6 +2094,11 @@
     }
 
     window.__wwHandleBack = function() {
+      const updateModal = document.getElementById('updateModal');
+      if (updateModal && !updateModal.classList.contains('hidden')) {
+        closeUpdateModal();
+        return true;
+      }
       const authModal = document.getElementById('authModal');
       if (authModal && !authModal.classList.contains('hidden')) {
         closeAuthModal();
@@ -2174,6 +2383,107 @@
       }
     }
 
+    const hydratedIdsAttempted = new Set();
+    let hydrationInFlight = false;
+
+    async function hydrateMissingUserMetadata() {
+      if (hydrationInFlight) return;
+      const missingIds = new Set();
+
+      const needsHydration = (item, isHistory) => {
+        if (!item || !item.id) return false;
+        const numId = Number(item.id);
+        if (!numId || hydratedIdsAttempted.has(numId)) return false;
+        const poster = isHistory ? (item.img || getBestPosterUrl(item)) : getBestPosterUrl(item);
+        return !poster || (!isHistory && (!item.averageScore || !item.format || !Array.isArray(item.genres) || item.genres.length === 0));
+      };
+
+      userDataCache.history.forEach(item => { if (needsHydration(item, true)) missingIds.add(Number(item.id)); });
+      userDataCache.watchLater.forEach(item => { if (needsHydration(item, false)) missingIds.add(Number(item.id)); });
+      userDataCache.favorites.forEach(item => { if (needsHydration(item, false)) missingIds.add(Number(item.id)); });
+
+      if (missingIds.size === 0) return;
+
+      const batch = Array.from(missingIds).slice(0, 25);
+      batch.forEach(id => hydratedIdsAttempted.add(id));
+      hydrationInFlight = true;
+
+      try {
+        const q = `
+          query ($ids: [Int]) {
+            Page(perPage: 25) {
+              media(id_in: $ids, type: ANIME) {
+                id idMal title { romaji english } coverImage { extraLarge large medium }
+                episodes nextAiringEpisode { episode } averageScore format genres startDate { year }
+              }
+            }
+          }
+        `;
+        const data = await fetchAniList(q, { ids: batch });
+        const mediaList = data?.Page?.media || [];
+        if (!mediaList.length) return;
+        const byId = new Map(mediaList.map(m => [Number(m.id), m]));
+
+        let histChanged = false;
+        let wlChanged = false;
+        let favChanged = false;
+
+        userDataCache.history = userDataCache.history.map(item => {
+          const m = byId.get(Number(item.id));
+          if (!m) return item;
+          const poster = m.coverImage?.extraLarge || m.coverImage?.large || m.coverImage?.medium || '';
+          if (poster && !item.img) {
+            histChanged = true;
+            const patched = { ...item, img: poster, genres: (item.genres && item.genres.length) ? item.genres : (m.genres || []) };
+            if (currentUser) userDoc('history').doc(String(item.id)).set({ img: poster, genres: patched.genres }, { merge: true }).catch(() => {});
+            return patched;
+          }
+          return item;
+        });
+
+        const patchLibraryItem = (item, collectionName) => {
+          const m = byId.get(Number(item.id));
+          if (!m) return { item, changed: false };
+          const hasPoster = Boolean(getBestPosterUrl(item));
+          const needsMeta = !hasPoster || !item.averageScore || !item.format || !Array.isArray(item.genres) || item.genres.length === 0;
+          if (!needsMeta) return { item, changed: false };
+          const patch = {
+            coverImage: m.coverImage || item.coverImage || null,
+            averageScore: m.averageScore || item.averageScore || null,
+            format: m.format || item.format || null,
+            genres: (m.genres && m.genres.length) ? m.genres : (item.genres || []),
+            episodes: m.episodes || item.episodes || null,
+            startDate: m.startDate || item.startDate || null
+          };
+          if (currentUser) userDoc(collectionName).doc(String(item.id)).set(patch, { merge: true }).catch(() => {});
+          return { item: { ...item, ...patch }, changed: true };
+        };
+
+        userDataCache.watchLater = userDataCache.watchLater.map(item => {
+          const res = patchLibraryItem(item, 'watchLater');
+          if (res.changed) wlChanged = true;
+          return res.item;
+        });
+
+        userDataCache.favorites = userDataCache.favorites.map(item => {
+          const res = patchLibraryItem(item, 'favorites');
+          if (res.changed) favChanged = true;
+          return res.item;
+        });
+
+        if (histChanged) localStorage.setItem(LS_HISTORY, JSON.stringify(userDataCache.history));
+        if (wlChanged) localStorage.setItem(LS_WATCH_LATER, JSON.stringify(userDataCache.watchLater));
+        if (favChanged) localStorage.setItem(LS_FAVORITES, JSON.stringify(userDataCache.favorites));
+
+        if (histChanged || wlChanged || favChanged) {
+          renderUserPersonalizedSections();
+        }
+      } catch (_) {
+      } finally {
+        hydrationInFlight = false;
+      }
+    }
+
     async function renderUserPersonalizedSections() {
       const history = getHistory();
       const watchLater = getWatchLater();
@@ -2184,6 +2494,9 @@
       const wlSec = document.getElementById('watchLaterSection');
       const favSec = document.getElementById('favoritesSection');
       const recSec = document.getElementById('recommendationsSection');
+      const continueNavLink = document.getElementById('navContinueLink');
+      const mobileContinueNavLink = document.getElementById('mobileNavContinueLink');
+      const continueCountBadge = document.getElementById('continueCountBadge');
       const wlNavLink = document.getElementById('navWatchLaterLink');
       const favNavLink = document.getElementById('navFavoritesLink');
       const mobileWlNavLink = document.getElementById('mobileNavWatchLaterLink');
@@ -2191,9 +2504,12 @@
       const wlCountBadge = document.getElementById('watchLaterCountBadge');
       const favCountBadge = document.getElementById('favoritesCountBadge');
 
-      // 1. Render Continue Watching
+      // 1. Render Continue Watching (latest 6 on homepage, View All opens library.html?tab=history)
       if (history.length > 0) {
         continueSec.classList.remove('hidden');
+        if (continueNavLink) continueNavLink.classList.remove('hidden');
+        if (mobileContinueNavLink) mobileContinueNavLink.classList.remove('hidden');
+        if (continueCountBadge) continueCountBadge.innerText = `(${history.length})`;
         continueGrid.innerHTML = '';
         history.slice(0, 6).forEach(item => {
           const card = document.createElement('div');
@@ -2203,14 +2519,18 @@
           const mins = Math.floor(timeSec / 60);
           const secs = Math.floor(timeSec % 60);
           const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+          const posterUrl = item.img || getBestPosterUrl(item);
+          const imgHtml = posterUrl
+            ? `<img src="${escapeHtml(posterUrl)}" alt="${escapeHtml(item.title || '')}" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">`
+            : `<div class="w-full h-full ww-skeleton"></div>`;
 
           card.innerHTML = `
             <div class="relative aspect-[3/4.2] overflow-hidden bg-surface-950">
-              <img src="${escapeHtml(item.img || '')}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+              ${imgHtml}
               <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-transparent to-transparent opacity-80"></div>
               
               <span class="absolute top-2 left-2 bg-brand-500 text-black text-[10px] font-black uppercase px-2 py-0.5 rounded-md">EP ${escapeHtml(item.episode || 1)}</span>
-              <button type="button" onclick="event.stopPropagation(); removeHistoryItem(${item.id})" class="absolute top-2 right-2 w-6 h-6 rounded-lg bg-black/75 border border-zinc-700/80 text-zinc-300 hover:text-red-400 hover:border-red-500/50 flex items-center justify-center text-[11px] transition z-10" title="Remove from history" aria-label="Remove from history">
+              <button type="button" onclick="event.stopPropagation(); removeHistoryItem(${item.id})" class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/80 border border-zinc-700/80 text-zinc-300 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/60 flex items-center justify-center text-xs transition z-10 shadow-md" title="Remove from history" aria-label="Remove from history">
                 <i class="fa-solid fa-xmark"></i>
               </button>
               <span class="absolute bottom-2 left-2 bg-surface-950/90 text-brand-400 text-[10px] font-bold px-2 py-0.5 rounded-md border border-zinc-800">
@@ -2230,6 +2550,8 @@
         });
       } else {
         continueSec.classList.add('hidden');
+        if (continueNavLink) continueNavLink.classList.add('hidden');
+        if (mobileContinueNavLink) mobileContinueNavLink.classList.add('hidden');
       }
 
       // 2. Render Watch Later (latest 6 on homepage, View All opens library.html?tab=watchlater)
@@ -2258,7 +2580,10 @@
         if (mobileFavNavLink) mobileFavNavLink.classList.add('hidden');
       }
 
-      // 4. Render Recommendations ("Anime You Might Like")
+      // Auto-heal any saved cards missing thumbnails or metadata
+      hydrateMissingUserMetadata();
+
+      // 4. Render Recommendations ("Anime You Might Like") — below all three personal lists
       if (history.length > 0 || watchLater.length > 0 || favorites.length > 0) {
         const topItem = history[0] || watchLater[0] || favorites[0];
         const genre = (topItem.genres && topItem.genres[0]) || 'Action';
@@ -2312,21 +2637,25 @@
           : 'bg-zinc-800 text-zinc-400 border border-zinc-700/60';
 
         const removeBtnHtml = removeAction === 'favorite'
-          ? `<button type="button" onclick="event.stopPropagation(); removeFavoriteFromCard(${Number(anilistId)})" class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/80 border border-zinc-700/80 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/60 flex items-center justify-center text-[11px] transition z-10 shadow-md" title="Remove from Favourites" aria-label="Remove from Favourites"><i class="fa-solid fa-xmark"></i></button>`
+          ? `<button type="button" onclick="event.stopPropagation(); removeFavoriteFromCard(${Number(anilistId)})" class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/80 border border-zinc-700/80 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/60 flex items-center justify-center text-xs transition z-10 shadow-md" title="Remove from Favourites" aria-label="Remove from Favourites"><i class="fa-solid fa-xmark"></i></button>`
           : (removeAction === 'watchlater'
-            ? `<button type="button" onclick="event.stopPropagation(); removeWatchLaterFromCard(${Number(anilistId)})" class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/80 border border-zinc-700/80 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 hover:border-amber-400/60 flex items-center justify-center text-[11px] transition z-10 shadow-md" title="Remove from Watch Later" aria-label="Remove from Watch Later"><i class="fa-solid fa-xmark"></i></button>`
+            ? `<button type="button" onclick="event.stopPropagation(); removeWatchLaterFromCard(${Number(anilistId)})" class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/80 border border-zinc-700/80 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 hover:border-amber-400/60 flex items-center justify-center text-xs transition z-10 shadow-md" title="Remove from Watch Later" aria-label="Remove from Watch Later"><i class="fa-solid fa-xmark"></i></button>`
             : `<span class="absolute top-2 right-2 bg-surface-950/90 text-brand-400 text-xs font-black px-2 py-0.5 rounded-md border border-zinc-800 flex items-center gap-1"><i class="fa-solid fa-star text-[10px]"></i> ${score}</span>`);
 
         const bottomRightHtml = removeAction
           ? `<span class="bg-surface-950/90 text-brand-400 text-[10px] font-black px-1.5 py-0.5 rounded-md border border-zinc-800 flex items-center gap-0.5"><i class="fa-solid fa-star text-[9px]"></i> ${score}</span>`
           : (year ? `<span class="text-zinc-400 font-normal">${year}</span>` : '');
 
+        const posterHtml = imgUrl
+          ? `<img src="${escapeHtml(imgUrl)}" alt="${safeTitle}" loading="lazy" decoding="async" class="w-full h-full object-cover md:group-hover:scale-105 md:transition-transform md:duration-300">`
+          : `<div class="w-full h-full ww-skeleton"></div>`;
+
         const card = document.createElement('div');
         card.className = 'group relative bg-surface-900 border border-zinc-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/60 transition-colors duration-200 flex flex-col';
         card.style.contain = 'layout style paint';
         card.innerHTML = `
           <div class="relative aspect-[3/4.2] overflow-hidden bg-surface-950">
-            <img src="${escapeHtml(imgUrl)}" alt="${safeTitle}" loading="lazy" decoding="async" class="w-full h-full object-cover md:group-hover:scale-105 md:transition-transform md:duration-300">
+            ${posterHtml}
             <div class="absolute inset-0 bg-gradient-to-t from-surface-950 via-surface-950/20 to-transparent opacity-85 group-hover:opacity-40 transition-opacity duration-200"></div>
             
             <div class="absolute top-2 left-2 flex items-center gap-1">
@@ -2747,7 +3076,9 @@
       const el = document.getElementById(sectionId);
       if (!el) return;
       if (el.classList.contains('hidden')) {
-        if (sectionId === 'watchLaterSection') {
+        if (sectionId === 'continueWatchingSection') {
+          showToast('<i class="fa-solid fa-clock-rotate-left text-brand-400"></i> No watch history yet. Start watching something!');
+        } else if (sectionId === 'watchLaterSection') {
           showToast('<i class="fa-solid fa-bookmark text-amber-400"></i> No anime in Watch Later yet. Tap the bookmark on an anime to save it.');
         } else if (sectionId === 'favoritesSection') {
           showToast('<i class="fa-solid fa-heart text-red-500"></i> No favourites yet. Tap the heart on an anime to save it.');
@@ -2760,6 +3091,7 @@
     // Scroll spy: automatically highlight the category the user has scrolled to
     (function initCategoryScrollSpy() {
       const categorySections = [
+        'continueWatchingSection',
         'watchLaterSection',
         'favoritesSection',
         'trending',
