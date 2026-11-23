@@ -141,52 +141,6 @@
     .ww-mask-bar-fill {
       animation: wwMaskBar 1.15s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     }
-    /* Web-only seamless fullscreen across episode changes (Desktop & Android use native simulated GUI button clicks) */
-    .ww-player-shell:fullscreen,
-    .ww-player-shell:-webkit-full-screen,
-    .ww-player-shell.ww-web-fs {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      inset: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      max-width: none !important;
-      max-height: none !important;
-      margin: 0 !important;
-      z-index: 99990 !important;
-      border-radius: 0 !important;
-      border: none !important;
-      aspect-ratio: auto !important;
-      background: #000 !important;
-      clip-path: none !important;
-      -webkit-mask-image: none !important;
-    }
-    .ww-player-shell.ww-web-fs iframe {
-      width: 100% !important;
-      height: calc(100vh - 1px) !important;
-      border-radius: 0 !important;
-    }
-    body.ww-web-fs-lock {
-      overflow: hidden !important;
-      background: #000 !important;
-    }
-    body.ww-web-fs-lock header,
-    body.ww-web-fs-lock footer,
-    body.ww-web-fs-lock #watchBackdropBg {
-      display: none !important;
-    }
-    body.ww-web-fs-lock main {
-      animation: none !important;
-      transform: none !important;
-      position: static !important;
-      z-index: auto !important;
-      max-width: none !important;
-      padding: 0 !important;
-      margin: 0 !important;
-    }
     button, a {
       transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     }
@@ -1905,75 +1859,11 @@
     let lastSimTriggerAt = 0;
     let episodeMaskHideTimer = null;
     let episodeMaskSafetyTimer = null;
-    let isWebSeamlessFs = false;
-    let isWebFsTransitioning = false;
-    let isExitingWebFs = false;
-    let webFsPollTimer = null;
     let lastBrowserFsExitAt = 0;
     let hadBrowserFs = false;
 
-    setTimeout(() => {
-      document.querySelector('main')?.classList.remove('ww-fade-in');
-    }, 450);
-
     function getActiveFullscreenEl() {
       return document.fullscreenElement || document.webkitFullscreenElement || document.webkitCurrentFullScreenElement || null;
-    }
-
-    function setWebSeamlessOverlay(enable) {
-      const shell = document.querySelector('.ww-player-shell');
-      if (shell) shell.classList.toggle('ww-web-fs', !!enable);
-      document.body.classList.toggle('ww-web-fs-lock', !!enable);
-    }
-
-    function stopWebFsPoll() {
-      if (webFsPollTimer) {
-        clearInterval(webFsPollTimer);
-        webFsPollTimer = null;
-      }
-    }
-
-    function startWebFsPoll() {
-      stopWebFsPoll();
-      webFsPollTimer = setInterval(() => {
-        if (!isWebSeamlessFs) {
-          stopWebFsPoll();
-          return;
-        }
-        if (isExitingWebFs || isWebFsTransitioning) return;
-        const fsEl = getActiveFullscreenEl();
-        const shell = document.querySelector('.ww-player-shell');
-        if (fsEl && fsEl !== shell) {
-          exitWebSeamlessFullscreen();
-        }
-      }, 80);
-    }
-
-    async function exitWebSeamlessFullscreen() {
-      if (isExitingWebFs) return;
-      isExitingWebFs = true;
-      isWebSeamlessFs = false;
-      pendingSimFullscreen = false;
-      clearTimeout(pendingSimFullscreenTimer);
-      stopWebFsPoll();
-      hideEpisodeTransitionMask(0);
-      try {
-        if (getActiveFullscreenEl()) {
-          await new Promise(r => setTimeout(r, 50));
-        }
-        const delays = [0, 70, 140, 220];
-        for (let i = 0; i < delays.length; i++) {
-          if (delays[i] > 0) await new Promise(r => setTimeout(r, delays[i]));
-          if (!getActiveFullscreenEl()) break;
-          try {
-            if (document.exitFullscreen) await document.exitFullscreen();
-            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-          } catch (_) {}
-        }
-        setWebSeamlessOverlay(false);
-      } finally {
-        setTimeout(() => { isExitingWebFs = false; }, 140);
-      }
     }
 
     function showEpisodeTransitionMask(epNum) {
@@ -2057,17 +1947,11 @@
         return;
       }
 
-      // Standard Web Browser: shell is already in seamless fullscreen (.ww-web-fs); lift the transition curtain
       pendingSimFullscreen = false;
       clearTimeout(pendingSimFullscreenTimer);
-      hideEpisodeTransitionMask(350);
     }
 
     function handleFullscreenMaskSync() {
-      const isNativeClient = Boolean(
-        (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') ||
-        (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.simulatePlayerFullscreen === 'function')
-      );
       const fsEl = getActiveFullscreenEl();
       if (fsEl) {
         hadBrowserFs = true;
@@ -2076,57 +1960,43 @@
         lastBrowserFsExitAt = Date.now();
       }
 
-      if (isNativeClient) {
-        if (fsEl && (isEpisodeMaskActive() || pendingSimFullscreen)) {
-          window.__wwOnNativeFullscreenReady();
-        }
-        return;
-      }
-
-      if (!fsEl) return;
-      if (isExitingWebFs || isWebFsTransitioning) return;
-      // While in Web seamless fullscreen (.ww-web-fs), document.fullscreenElement stays null.
-      // The first click on the player's GUI fullscreen button promotes the iframe into fullscreen,
-      // which immediately fires this handler and exits cleanly on 1 single click.
-      if (isWebSeamlessFs) {
-        exitWebSeamlessFullscreen();
+      const isNativeClient = Boolean(
+        (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') ||
+        (window.WonderWatchAndroid && typeof window.WonderWatchAndroid.simulatePlayerFullscreen === 'function')
+      );
+      if (isNativeClient && fsEl && (isEpisodeMaskActive() || pendingSimFullscreen)) {
+        window.__wwOnNativeFullscreenReady();
       }
     }
 
     document.addEventListener('fullscreenchange', handleFullscreenMaskSync);
     document.addEventListener('webkitfullscreenchange', handleFullscreenMaskSync);
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        if (isWebSeamlessFs) {
-          exitWebSeamlessFullscreen();
-          return;
-        }
-        if (isEpisodeMaskActive()) {
-          pendingSimFullscreen = false;
-          clearTimeout(pendingSimFullscreenTimer);
-          hideEpisodeTransitionMask(0);
-          try {
-            if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
-              window.chrome.webview.postMessage('ww:fs_transition_cancel');
-            }
-          } catch (_) {}
-        }
+      if (e.key === 'Escape' && isEpisodeMaskActive()) {
+        pendingSimFullscreen = false;
+        clearTimeout(pendingSimFullscreenTimer);
+        hideEpisodeTransitionMask(0);
+        try {
+          if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
+            window.chrome.webview.postMessage('ww:fs_transition_cancel');
+          }
+        } catch (_) {}
       }
     });
 
     async function loadPlayer(restoreFullscreen = false) {
-      const shell = document.querySelector('.ww-player-shell');
       const currentFsEl = getActiveFullscreenEl();
-      const wasShellFs = Boolean(shell && currentFsEl === shell);
       const isDesktopClient = Boolean(window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function');
       const isAndroidClient = Boolean(window.WonderWatchAndroid && typeof window.WonderWatchAndroid.simulatePlayerFullscreen === 'function');
+      const isNativeClient = isDesktopClient || isAndroidClient;
       const wasAndroidFs = Boolean(
         window.WonderWatchAndroid &&
         typeof window.WonderWatchAndroid.isFullscreen === 'function' &&
         window.WonderWatchAndroid.isFullscreen()
       );
       const wasBrowserFs = Boolean(currentFsEl) || ((Date.now() - lastBrowserFsExitAt) < 1600);
-      const shouldRestore = restoreFullscreen || isWebSeamlessFs || wasAndroidFs || wasBrowserFs;
+      // Auto-fullscreen is enabled on Desktop & Android native clients only (standard web browsers stay untouched)
+      const shouldRestore = isNativeClient && (restoreFullscreen || wasAndroidFs || wasBrowserFs);
 
       pendingSimFullscreen = shouldRestore;
       lastSimTriggerAt = 0;
@@ -2160,26 +2030,15 @@
             pendingSimFullscreen = false;
             hideEpisodeTransitionMask(0);
           }, 8500);
-        } else {
-          // Web: use .ww-web-fs (without shell.requestFullscreen()) so document.fullscreenElement stays null.
-          // That way the very first click on the player's own GUI fullscreen button triggers fullscreenchange
-          // and exits cleanly on 1 press instead of needing 2 clicks.
-          isWebSeamlessFs = true;
-          setWebSeamlessOverlay(true);
-          startWebFsPoll();
-          episodeMaskSafetyTimer = setTimeout(() => hideEpisodeTransitionMask(0), 2500);
         }
 
         // Let the old iframe exit native fullscreen cleanly behind the curtain
-        const postFsEl = getActiveFullscreenEl();
-        if (postFsEl) {
-          isWebFsTransitioning = true;
+        if (currentFsEl) {
           try {
             if (document.exitFullscreen) await document.exitFullscreen();
             else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
           } catch (_) {}
           await new Promise(r => setTimeout(r, 150));
-          isWebFsTransitioning = false;
         }
       }
 
