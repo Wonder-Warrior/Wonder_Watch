@@ -1,11 +1,11 @@
-﻿{
+{
     "desktop":  {
                     "version":  "2.4.25",
                     "exeUrl":  "https://raw.githubusercontent.com/wonder-warrior/Wonder_Watch/main/desktopclient/WonderWatch.exe",
                     "installerUrl":  "https://raw.githubusercontent.com/wonder-warrior/Wonder_Watch/main/desktopclient/WonderWatch-Setup-win-x64.exe"
                 },
     "android":  {
-                    "version":  "2.4.7",
+                    "version":  "2.4.10",
                     "apkUrl":  "https://raw.githubusercontent.com/wonder-warrior/Wonder_Watch/main/androidclient/WonderWatch-Android.apk"
                 }
 }

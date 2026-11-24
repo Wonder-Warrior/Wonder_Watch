@@ -10,8 +10,8 @@ android {
         applicationId "com.wonderwatch.app"
         minSdk 26
         targetSdk 36
-        versionCode 20407
-        versionName "2.4.7"
+        versionCode 20410
+        versionName "2.4.10"
     }
 
     signingConfigs {

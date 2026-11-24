@@ -26,7 +26,35 @@ if (Test-Path $versionJsonPath) {
     }
 }
 
-$javaHome = "C:\Program Files\Android\Android Studio\jbr"
+$javaHome = $null
+$javaCandidates = @(
+    $env:JAVA_HOME,
+    "C:\Program Files\Android\Android Studio\jbr"
+)
+$parentProjects = Split-Path -Parent $repoRoot
+$jdkSearchRoots = @(
+    $parentProjects,
+    "C:\Program Files\Eclipse Adoptium",
+    "C:\Program Files\Java",
+    "C:\Program Files\Microsoft",
+    "C:\Program Files\OpenJDK"
+)
+foreach ($root in $jdkSearchRoots) {
+    if ($root -and (Test-Path $root)) {
+        $found = Get-ChildItem -Path $root -Directory -Filter "*jdk*" -ErrorAction SilentlyContinue | Sort-Object Name -Descending
+        foreach ($d in $found) { $javaCandidates += $d.FullName }
+    }
+}
+foreach ($cand in $javaCandidates) {
+    if ($cand -and (Test-Path (Join-Path $cand "bin\javac.exe"))) {
+        $javaHome = $cand
+        break
+    }
+}
+if (-not $javaHome) {
+    throw "JDK not found. Install OpenJDK or Android Studio and set JAVA_HOME."
+}
+Write-Host "Using JDK: $javaHome"
 $sdkDir = Join-Path $env:LOCALAPPDATA "Android\Sdk"
 
 $gradleBat = Get-ChildItem "$env:USERPROFILE\.gradle\wrapper\dists\gradle-9.6.0-bin" -Recurse -Filter "gradle.bat" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
