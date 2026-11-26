@@ -2212,7 +2212,14 @@
       }
     }
 
-    function handleNextEpisode() {
+    let lastAutoNextAt = 0;
+
+    function handleNextEpisode(isAuto = false) {
+      const now = Date.now();
+      if (isAuto && (now - lastAutoNextAt) < 2500) {
+        return;
+      }
+      lastAutoNextAt = now;
       if (currentEpisode < totalEpisodes) {
         playSoundCue('nav');
         currentEpisode++;
@@ -2258,6 +2265,8 @@
     window.addEventListener('message', (event) => {
       try {
         if (!event.origin || !TRUSTED_PLAYER_ORIGINS.has(event.origin)) return;
+        const activeFrame = document.getElementById('playerFrame');
+        if (activeFrame && event.source && event.source !== activeFrame.contentWindow) return;
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         if (!data) return;
 
@@ -2272,7 +2281,7 @@
             }
           }
           if (data.name === 'ended' || data.name === 'next') {
-            handleNextEpisode();
+            handleNextEpisode(true);
           }
           if (pendingSimFullscreen && (data.name === 'ready' || data.name === 'play' || data.name === 'playing')) {
             triggerSimulatedPlayerFullscreen();
@@ -2317,7 +2326,7 @@
 
         // Auto-advance on episode end
         if (eventType === 'aniembed:ended' || eventType === 'ended' || eventType === 'complete') {
-          handleNextEpisode();
+          handleNextEpisode(true);
         }
       } catch (e) {
         // Not a JSON message, ignore
